@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './splash.styles';
-import { RootStackParamList } from '../../navigation/AppNavigator';
+import { RootStackParamList } from '../../navigation/types';
 
 type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -34,12 +34,12 @@ const SplashScreen = () => {
       -1,
       true
     );
-  }, []);
+  }, [buttonScale]);
 
   const navigateToNextScreen = () => {
     const isLoggedIn = false;
     if (isLoggedIn) {
-      navigation.replace('Home' as any);
+      navigation.replace('Mining');
     } else {
       navigation.replace('Login');
     }
