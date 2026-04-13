@@ -14,7 +14,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
   return (
     <Pressable style={({ pressed }) => [styles.pressable, pressed && styles.pressablePressed]}>
       <LinearGradient
-        colors={['rgba(78, 102, 22, 0.78)', 'rgba(12, 17, 8, 0.94)']}
+        colors={[COLORS.backgroundGradientStart,COLORS. backgroundGradientEnd]}
         start={{ x: 0.15, y: 0 }}
         end={{ x: 0.88, y: 1 }}
         style={styles.card}>

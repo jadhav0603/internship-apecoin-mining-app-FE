@@ -4,6 +4,6 @@
     "types": ["jest"],
     "jsx": "react-native"
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "src/screens/Reward"],
   "exclude": ["**/node_modules", "**/Pods"]
 }
