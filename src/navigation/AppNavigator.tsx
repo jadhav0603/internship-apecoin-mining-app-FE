@@ -46,7 +46,7 @@ const AppNavigator = () => {
           options={{ animation: 'none' }}
         />
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
+        {/* <Stack.Screen name="Home" component={HomeScreen} /> */}
         <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
         <Stack.Screen
           name="Mining"
