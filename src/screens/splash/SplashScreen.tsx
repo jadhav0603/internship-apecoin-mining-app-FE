@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './splash.styles';
 import { RootStackParamList } from '../../navigation/types';
+import { authService } from '../../services/authService';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -49,8 +50,20 @@ const SplashScreen = () => {
     };
   }, [buttonScale]);
 
-  const navigateToNextScreen = () => {
-    navigation.replace('SignIn');
+  const navigateToNextScreen = async () => {
+    try {
+      const user =
+        authService.getCurrentUser() ?? (await authService.waitForAuthRestore());
+
+      if (user) {
+        navigation.replace('MainTabs', {screen: 'Home'});
+        return;
+      }
+
+      navigation.replace('SignIn');
+    } catch {
+      navigation.replace('SignIn');
+    }
   };
 
   const handlePress = () => {

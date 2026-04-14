@@ -1,9 +1,11 @@
 import { getApp } from '@react-native-firebase/app';
 import {
   createUserWithEmailAndPassword,
+  FirebaseAuthTypes,
   getIdToken,
   getAuth,
   GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -117,6 +119,23 @@ const getGoogleIdToken = async (): Promise<string> => {
 };
 
 export const authService = {
+  getCurrentUser(): FirebaseAuthTypes.User | null {
+    return firebaseAuth.currentUser;
+  },
+
+  async waitForAuthRestore(): Promise<FirebaseAuthTypes.User | null> {
+    if (firebaseAuth.currentUser) {
+      return firebaseAuth.currentUser;
+    }
+
+    return new Promise(resolve => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, user => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
+  },
+
   /**
    * Register a new user with email and password
    */
