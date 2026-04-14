@@ -50,7 +50,7 @@ const SplashScreen = () => {
   }, [buttonScale]);
 
   const navigateToNextScreen = () => {
-    navigation.replace('Login');
+    navigation.replace('SignIn');
   };
 
   const handlePress = () => {

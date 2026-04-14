@@ -1,11 +1,11 @@
 import React from 'react';
 import { StatusBar, StyleSheet } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AppNavigator from './src/navigation/AppNavigator';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from './src/constants/COLORS';
+import AppNavigator from './src/navigation/AppNavigator';
 
-function App() {
+function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>

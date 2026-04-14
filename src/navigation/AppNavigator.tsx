@@ -7,9 +7,9 @@ import {
 import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack';
+import SignIn from '../screens/Auth/SignIn';
+import SignUp from '../screens/Auth/SignUp';
 import SplashScreen from '../screens/splash/SplashScreen';
-import LoginScreen from '../screens/LoginScreen';
-import HomeScreen from '../screens/home/HomeScreen'
 import MiningScreen from '../screens/mining/MiningScreen';
 import { COLORS } from '../constants/COLORS';
 import BottomTabNavigator from './BottomTabNavigator';
@@ -45,8 +45,12 @@ const AppNavigator = () => {
           component={SplashScreen}
           options={{ animation: 'none' }}
         />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        {/* <Stack.Screen name="Home" component={HomeScreen} /> */}
+        <Stack.Screen name="SignIn" component={SignIn} />
+        <Stack.Screen
+          name="SignUp"
+          component={SignUp}
+          options={{ animation: 'slide_from_right' }}
+        />
         <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
         <Stack.Screen
           name="Mining"

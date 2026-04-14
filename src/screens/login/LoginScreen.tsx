@@ -9,10 +9,7 @@ import { COLORS } from '../../constants/COLORS';
 import { RootStackParamList } from '../../navigation/types';
 import styles from './login.styles';
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Login'
->;
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
