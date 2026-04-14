@@ -1,9 +1,11 @@
 import { getApp } from '@react-native-firebase/app';
 import {
   createUserWithEmailAndPassword,
+  FirebaseAuthTypes,
   getIdToken,
   getAuth,
   GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -78,8 +80,23 @@ const postSync = async (baseURL: string, idToken: string) => {
   return response.data;
 };
 
+const resetGoogleSignInSession = async () => {
+  // This package version does not expose `prompt: 'select_account'`,
+  // so we clear the cached Google session before every sign-in attempt.
+  if (!GoogleSignin.hasPreviousSignIn()) {
+    return;
+  }
+
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // Ignore cached-session cleanup failures and continue with interactive sign-in.
+  }
+};
+
 const getGoogleIdToken = async (): Promise<string> => {
   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  await resetGoogleSignInSession();
 
   const signInResult = await GoogleSignin.signIn();
   if (signInResult.type !== 'success') {
@@ -102,6 +119,23 @@ const getGoogleIdToken = async (): Promise<string> => {
 };
 
 export const authService = {
+  getCurrentUser(): FirebaseAuthTypes.User | null {
+    return firebaseAuth.currentUser;
+  },
+
+  async waitForAuthRestore(): Promise<FirebaseAuthTypes.User | null> {
+    if (firebaseAuth.currentUser) {
+      return firebaseAuth.currentUser;
+    }
+
+    return new Promise(resolve => {
+      const unsubscribe = onAuthStateChanged(firebaseAuth, user => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
+  },
+
   /**
    * Register a new user with email and password
    */

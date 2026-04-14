@@ -76,7 +76,7 @@ const SignUp: React.FC<Props> = ({navigation}) => {
     setLoading(true);
     try {
       await authService.signUp(email, password);
-      navigation.replace('Demo');
+      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setErrors({email: 'That email address is already in use!'});
@@ -94,7 +94,7 @@ const SignUp: React.FC<Props> = ({navigation}) => {
     try {
       setLoading(true);
       await authService.googleSignIn();
-      navigation.replace('Demo');
+      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       setErrors({
         email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),

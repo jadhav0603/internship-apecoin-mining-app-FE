@@ -17,7 +17,7 @@ import {RootStackParamList} from '../navigation/types';
 const BG_IMAGE = require('../assets/images/auth_bg.png');
 
 type Props = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Demo'>;
+  navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
 const Demo: React.FC<Props> = ({navigation}) => {
