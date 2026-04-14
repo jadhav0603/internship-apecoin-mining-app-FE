@@ -4,4 +4,5 @@ module.exports = {
       packageName: 'com.apecoin',
     },
   },
+  assets: ['./node_modules/react-native-vector-icons/Fonts'],
 };

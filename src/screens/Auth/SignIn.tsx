@@ -68,7 +68,7 @@ const SignIn: React.FC<Props> = ({navigation}) => {
     setLoading(true);
     try {
       await authService.signIn(email, password);
-      navigation.replace('Demo');
+      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       const message =
         typeof error?.code === 'string' && error.code.startsWith('auth/')
@@ -84,7 +84,7 @@ const SignIn: React.FC<Props> = ({navigation}) => {
     try {
       setLoading(true);
       await authService.googleSignIn();
-      navigation.replace('Demo');
+      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       setErrors({
         email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),
