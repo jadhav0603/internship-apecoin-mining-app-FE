@@ -18,6 +18,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
         start={{ x: 0.15, y: 0 }}
         end={{ x: 0.88, y: 1 }}
         style={styles.card}>
+       <Text style={styles.footerText}>TAP TO CONTINUE</Text>
         <View style={styles.cardGlow} />
 
         <Pressable onPress={onPress} style={styles.ringWrapper}>

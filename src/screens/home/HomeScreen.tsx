@@ -70,7 +70,9 @@ const HomeScreen = () => {
             styles.scrollContent,
             { paddingBottom: tabBarHeight + 36 },
           ]}>
-          <LinearGradient
+
+        
+          {/* <LinearGradient
             colors={['rgba(38, 54, 14, 0.92)', 'rgba(13, 19, 9, 0.96)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -95,18 +97,45 @@ const HomeScreen = () => {
                 </View>
               ))}
             </View>
-          </LinearGradient>
+          </LinearGradient> */}
 
-          <View style={styles.section}>
+
+
+          {/* <View style={styles.section}>
             <Text style={styles.sectionEyebrow}>Quick Action</Text>
             <Text style={styles.sectionTitle}>Launch the mining dashboard</Text>
             <Text style={styles.sectionSubtitle}>
               The main CTA stays centered in the content area, with breathing room
               above and below.
             </Text>
-          </View>
+          </View> */}
 
-          <MiningButton onPress={handleOpenMining} />
+
+
+          {/* <MiningButton onPress={handleOpenMining} /> */}
+
+
+
+            <SafeAreaView style={styles.safeArea}>
+                    <View style={styles.primaryGlow} />
+                    <View style={styles.secondaryGlow} />
+            
+                    <View>
+                      {/* <Text style={styles.badge}>APECOIN ACCESS</Text> */}
+                      <Text style={styles.title}>Launch the mining Dashboard</Text>
+                      <Text style={styles.subtitle}>
+                        The main CTA stays centered in the content area, with breathing room
+                        above and below.
+                      </Text>
+            
+                      <View style={styles.buttonContainer}>
+                        <MiningButton onPress={handleOpenMining} />
+                      </View>
+            
+                      <Text style={styles.footerText}>TAP TO CONTINUE</Text>
+                    </View>
+                  </SafeAreaView>
+
 
           <View style={styles.analyticsGrid}>
             <LinearGradient
@@ -133,6 +162,7 @@ const HomeScreen = () => {
               </Text>
             </LinearGradient>
           </View>
+
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>

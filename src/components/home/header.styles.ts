@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
   title: {
     color: COLORS.textPrimary,
     fontFamily: FONTS.bold,
-    fontSize: 26,
+    fontSize: 24,
     lineHeight: 30,
   },
   menuButton: {
