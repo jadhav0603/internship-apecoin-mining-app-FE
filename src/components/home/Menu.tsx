@@ -9,18 +9,17 @@ import {
   ScrollView,
 } from 'react-native';
 
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
-import styles from './header.styles';
+import styles from './Menu.styles';
 import { COLORS } from '../../constants/COLORS';
 import { getAuth, signOut } from '@react-native-firebase/auth';
 import UserHeader from './UserHeader';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const Header = () => {
+const Menu = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
@@ -44,9 +43,7 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       const authInstance = getAuth();
-
       if (!authInstance.currentUser) return;
-
       await signOut(authInstance);
     } catch (err) {
       console.log("Logout error", err);
@@ -54,38 +51,39 @@ const Header = () => {
   };
 
   return (
-    <View style={styles.main}>
-      <View>
-        <View style={styles.topRow}>
-          <UserHeader />
+    <>
+      {/* HEADER */}
+      <View style={styles.topRow}>
+        <UserHeader />
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.menuButton}
-            onPress={toggleMenu}
-          >
-            <Ionicons name="menu" size={22} color={COLORS.textPrimary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Overlay */}
-        {menuOpen && (
-          <TouchableOpacity
-            style={styles.overlay}
-            activeOpacity={1}
-            onPress={toggleMenu}
-          />
-        )}
-
-        {/* 🔥 Sliding Menu */}
-        <Animated.View
-          style={[
-            styles.menuContainer,
-            { transform: [{ translateX: slideAnim }] },
-          ]}
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={toggleMenu}
         >
+          <Ionicons name="menu" size={22} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* OVERLAY */}
+      {menuOpen && (
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={toggleMenu}
+        />
+      )}
+
+      {/* FULL SCREEN MENU */}
+      <Animated.View
+        pointerEvents={menuOpen ? "auto" : "none"}
+        style={[
+          styles.menuContainer,
+          { transform: [{ translateX: slideAnim }] },
+        ]}
+      >
+        <View style={styles.drawer}>
           <ImageBackground
-            source={require('../../assets/images/menu-bg.jpeg')}
+            source={require('../../assets/images/drawer-bg2.png')}
             style={styles.menuBg}
             imageStyle={styles.menuBgImage}
           >
@@ -100,7 +98,6 @@ const Header = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Scrollable Menu */}
               <ScrollView showsVerticalScrollIndicator={false}>
                 {[
                   "Leader Dashboard",
@@ -125,44 +122,10 @@ const Header = () => {
 
             </View>
           </ImageBackground>
-        </Animated.View>
-
-        {/* Bottom Cards */}
-        <View style={styles.container}>
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCard}>
-              <View style={styles.metricIconWrap}>
-                <MaterialCommunityIcons
-                  name="flash-outline"
-                  size={18}
-                  color={COLORS.primary}
-                />
-              </View>
-              <View style={styles.metricContent}>
-                <Text style={styles.metricLabel}>Mining Power</Text>
-                <Text style={styles.metricValue}>0.471609 APC</Text>
-              </View>
-            </View>
-
-            <View style={styles.metricCard}>
-              <View style={styles.metricIconWrap}>
-                <Ionicons
-                  name="wallet-outline"
-                  size={18}
-                  color={COLORS.primary}
-                />
-              </View>
-              <View style={styles.metricContent}>
-                <Text style={styles.metricLabel}>Liquid Balance</Text>
-                <Text style={styles.metricValue}>0.00000000</Text>
-              </View>
-            </View>
-          </View>
         </View>
-
-      </View>
-    </View>
+      </Animated.View>
+    </>
   );
 };
 
-export default Header;
+export default Menu;
