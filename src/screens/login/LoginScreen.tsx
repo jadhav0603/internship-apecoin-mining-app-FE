@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import MiningButton from '../../components/home/MiningButton';
+import MiningButton from '../../components/mining/MiningButton';
 import { COLORS } from '../../constants/COLORS';
 import { RootStackParamList } from '../../navigation/types';
 import styles from './login.styles';

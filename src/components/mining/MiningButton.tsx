@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { use } from 'react';
 import { Pressable, View, Text } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { COLORS } from '../../constants/COLORS';
-import SegmentedRing from '../mining/SegmentedRing';
+import SegmentedRing from './SegmentedRing';
 import styles from './miningButton.styles';
+import { useTimeModal } from '../../context/TimeModal';
+
 
 type MiningButtonProps = {
   onPress?: () => void;
 };
 
 export default function MiningButton({ onPress }: MiningButtonProps) {
+  
+  const {setShowModal} = useTimeModal();
+  
   return (
     <Pressable style={({ pressed }) => [styles.pressable, pressed && styles.pressablePressed]}>
       <LinearGradient
@@ -18,9 +23,10 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
         start={{ x: 0.15, y: 0 }}
         end={{ x: 0.88, y: 1 }}
         style={styles.card}>
+       <Text style={styles.footerText}>TAP TO CONTINUE</Text>
         <View style={styles.cardGlow} />
 
-        <Pressable onPress={onPress} style={styles.ringWrapper}>
+        <Pressable onPress={()=>setShowModal(true)} style={styles.ringWrapper}>
           <SegmentedRing
             size={182}
             segmentCount={56}

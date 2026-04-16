@@ -53,7 +53,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: FONTS.letterSpacing.ultraWide,
     fontFamily: FONTS.semibold,
-    marginBottom: 10,
+    // marginBottom: 10,
+    position: 'relative',
+    bottom: 45,
+    
   },
   title: {
     color: COLORS.textPrimary,
@@ -62,6 +65,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FONTS.bold,
     marginBottom: 8,
+    marginTop: -30,
   },
   subtitle: {
     color: COLORS.textSecondary,
@@ -70,6 +74,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FONTS.regular,
     maxWidth: 260,
+  },
+    footerText: {
+    color: COLORS.textMuted,
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    textAlign: 'center',
+    letterSpacing: FONTS.letterSpacing.wide,
   },
 });
 

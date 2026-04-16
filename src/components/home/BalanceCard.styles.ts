@@ -1,45 +1,21 @@
-import { StyleSheet } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+
 const styles = StyleSheet.create({
-  container: {
+container: {
     borderRadius: 26,
     borderWidth: 1,
     borderColor: COLORS.glassBorder,
     backgroundColor: 'rgba(9, 14, 7, 0.78)',
-    padding: 18,
+    padding: 8,
     gap: 18,
+    marginHorizontal:5,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  eyebrow: {
-    color: COLORS.textMuted,
-    fontFamily: FONTS.medium,
-    fontSize: 12,
-    letterSpacing: FONTS.letterSpacing.wide,
-    marginBottom: 6,
-  },
-  title: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.bold,
-    fontSize: 26,
-    lineHeight: 30,
-  },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-  },
-  metricsRow: {
+   metricsRow: {
     flexDirection: 'row',
     gap: 12,
   },
@@ -75,6 +51,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
     fontSize: 14,
   },
-});
 
-export default styles;
+ })
+
+ export default styles;
