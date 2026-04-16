@@ -14,6 +14,8 @@ import MiningButton from '../../components/home/MiningButton';
 import Header from '../../components/home/Header';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
+import UserHeader from '../../components/home/UserHeader';
+
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Home'>,
@@ -59,7 +61,9 @@ const HomeScreen = () => {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.primaryGlow} />
         <View style={styles.secondaryGlow} />
-
+         
+          {/* <UserHeader /> */}
+      
         <View style={styles.headerWrap}>
           <Header />
         </View>

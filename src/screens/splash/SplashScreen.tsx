@@ -11,31 +11,24 @@ import Animated, {
   withRepeat,
   Easing,
 } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './splash.styles';
-import { RootStackParamList } from '../../navigation/types';
-import { authService } from '../../services/authService';
+import { useNavigation } from '@react-navigation/native';
 
-type SplashScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Splash'
->;
+import { getAuth } from '@react-native-firebase/auth';
 
-const SplashScreen = () => {
-  const navigation = useNavigation<SplashScreenNavigationProp>();
+const SplashScreen = ({ onFinish }: any) => {
   const buttonScale = useSharedValue(1);
-  const [isNavigating, setIsNavigating] = useState(false);
-  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const [isPressed, setIsPressed] = useState(false);
+  const timeoutRef = useRef<any>(null);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     buttonScale.value = withRepeat(
       withSequence(
-        withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.05, { duration: 1000 }),
+        withTiming(1, { duration: 1000 })
       ),
       -1,
       true
@@ -43,45 +36,23 @@ const SplashScreen = () => {
 
     return () => {
       cancelAnimation(buttonScale);
-
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [buttonScale]);
-
-  const navigateToNextScreen = async () => {
-    try {
-      const user =
-        authService.getCurrentUser() ?? (await authService.waitForAuthRestore());
-
-      if (user) {
-        navigation.replace('MainTabs', {screen: 'Home'});
-        return;
-      }
-
-      navigation.replace('SignIn');
-    } catch {
-      navigation.replace('SignIn');
-    }
-  };
+  }, []);
 
   const handlePress = () => {
-    if (isNavigating) {
-      return;
-    }
+  if (isPressed) return;
 
-    setIsNavigating(true);
-    cancelAnimation(buttonScale);
-    buttonScale.value = withTiming(0.97, { duration: 120 });
-    navigationTimeoutRef.current = setTimeout(navigateToNextScreen, 140);
-  };
+  setIsPressed(true);
 
-  const animatedButtonStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: buttonScale.value }],
-    };
-  });
+  setTimeout(() => {
+    onFinish();
+  }, 300);
+};
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
 
   return (
     <View style={styles.container}>
@@ -89,31 +60,30 @@ const SplashScreen = () => {
         <Image
           source={require('../../assets/images/splashScreen-2.png')}
           style={styles.image}
-          resizeMode="cover"
         />
+
         <LinearGradient
-          colors={['transparent', 'rgba(10, 15, 10, 0.8)', '#0A0F0A']}
+          colors={['transparent', 'rgba(10,15,10,0.8)', '#0A0F0A']}
           style={styles.gradientOverlay}
-          locations={[0.4, 0.8, 1]}
         />
-        <View style={styles.lottieContainer} pointerEvents="none">
-          <LottieView
-            source={require('../../assets/animations/Falling_coins.json')}
-            autoPlay
-            loop
-            style={styles.lottie}
-          />
-        </View>
+
+        <LottieView
+          source={require('../../assets/animations/Falling_coins.json')}
+          autoPlay
+          loop
+          style={styles.lottie}
+        />
       </View>
 
-      <SafeAreaView edges={['bottom']} style={styles.bottomSection}>
-        <Text style={styles.title}>Trusted{'\n'}& Secure{'\n'}Crypto Wallet</Text>
-        <Text style={styles.subtitle}>Manage all your exchange accounts is easy</Text>
+      <SafeAreaView style={styles.bottomSection}>
+        <Text style={styles.title}>
+          Trusted{'\n'}& Secure{'\n'}Crypto Wallet
+        </Text>
 
-        <Pressable disabled={isNavigating} onPress={handlePress}>
+        <Pressable onPress={handlePress}>
           <Animated.View style={[styles.button, animatedButtonStyle]}>
             <Text style={styles.buttonText}>
-              {isNavigating ? 'Opening...' : 'Get Started'}
+              {isPressed ? 'Opening...' : 'Get Started'}
             </Text>
           </Animated.View>
         </Pressable>

@@ -4,10 +4,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from './src/constants/COLORS';
 import AppNavigator from './src/navigation/AppNavigator';
+import { UserProvider } from './src/context/UserContext';
 
 function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
+      <UserProvider>
       <SafeAreaProvider>
         <StatusBar
           barStyle="light-content"
@@ -15,6 +17,7 @@ function App(): React.JSX.Element {
         />
         <AppNavigator />
       </SafeAreaProvider>
+      </UserProvider>
     </GestureHandlerRootView>
   );
 }
