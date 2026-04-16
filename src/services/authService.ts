@@ -12,9 +12,8 @@ import {
 } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import axios from 'axios';
-import { NativeModules, Platform } from 'react-native';
 import apiClient from '../api/apiClient';
-import { API_CONFIG, FIREBASE_CONFIG } from '../api/config';
+import { API_CONFIG, FIREBASE_CONFIG, getDevApiBaseUrls } from '../api/config';
 
 const firebaseAuth = getAuth(getApp());
 
@@ -33,36 +32,6 @@ type SyncedUser = {
 type BackendSyncResponse = {
   message: string;
   user: SyncedUser;
-};
-
-const unique = (values: string[]) => [...new Set(values)];
-
-const getDevApiBaseUrls = () => {
-  const urls = [API_CONFIG.BASE_URL, API_CONFIG.DEV_LAN_BASE_URL];
-
-  if (!__DEV__) {
-    return urls;
-  }
-
-  if (Platform.OS === 'android') {
-    urls.push('http://10.0.2.2:5000/api');
-  }
-
-  urls.push('http://127.0.0.1:5000/api', 'http://localhost:5000/api');
-
-  const scriptUrl = NativeModules?.SourceCode?.scriptURL as string | undefined;
-  if (scriptUrl) {
-    try {
-      const metroHost = new URL(scriptUrl).hostname;
-      if (metroHost) {
-        urls.push(`http://${metroHost}:5000/api`);
-      }
-    } catch {
-      // Ignore malformed URL and continue with static fallbacks.
-    }
-  }
-
-  return unique(urls);
 };
 
 const postSync = async (baseURL: string, idToken: string) => {

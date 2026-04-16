@@ -12,7 +12,7 @@ import { COLORS } from '../constants/COLORS';
 import { FONTS } from '../constants/FONTS';
 import HomeScreen from '../screens/home/HomeScreen';
 import WalletScreen from '../screens/wallet/WalletScreen';
-import RewardScreen from '../screens/Reward/RewardScreen';
+import DailyRewardsScreen from '../screens/Reward/DailyRewardsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import { BottomTabParamList } from './types';
 
@@ -103,7 +103,7 @@ const BottomTabNavigator = () => {
     <Tab.Navigator initialRouteName="Home" screenOptions={screenOptions}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Reward" component={RewardScreen} />
+      <Tab.Screen name="Reward" component={DailyRewardsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
