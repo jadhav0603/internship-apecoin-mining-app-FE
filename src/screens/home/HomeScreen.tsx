@@ -13,12 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../constants/COLORS';
-import MiningButton from '../../components/home/MiningButton';
+import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
 import UserHeader from '../../components/home/UserHeader';
 import BalanceCard from '../../components/home/BalanceCard';
+import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Home'>,
@@ -66,13 +67,9 @@ const HomeScreen = () => {
         <View style={styles.primaryGlow} />
         <View style={styles.secondaryGlow} />
 
-        {/* <UserHeader /> */}
+        <Menu />
 
-         <Menu />
-
-       
-          <BalanceCard />
-      
+        <BalanceCard />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -96,6 +93,8 @@ const HomeScreen = () => {
               <View style={styles.buttonContainer}>
                 <MiningButton onPress={handleOpenMining} />
               </View>
+
+              <MiningTimeSelectionPopup />
 
               {/* <Text style={styles.footerText}>TAP TO CONTINUE</Text> */}
             </View>
@@ -128,9 +127,7 @@ const HomeScreen = () => {
               </Text>
             </LinearGradient>
           </View>
-       
         </ScrollView>
-
       </SafeAreaView>
     </LinearGradient>
   );

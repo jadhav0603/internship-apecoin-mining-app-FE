@@ -1,4 +1,4 @@
-import React from 'react';
+import React  from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -7,8 +7,40 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import SegmentedRing from '../../components/mining/SegmentedRing';
 import { COLORS } from '../../constants/COLORS';
 import styles from './mining.styles';
+import { useRoute } from '@react-navigation/native';
+import {  useState ,useEffect } from 'react';
+
 
 const MiningScreen = () => {
+  const route: any = useRoute();
+  const time = route?.params?.time || 1;
+
+  const [seconds, setSeconds] = useState(time * 3600);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setSeconds(prev => {
+      if (prev <= 0) {
+        clearInterval(interval);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
+
+const formatTime = (sec : number) => {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+
+  return `${h}:${m}:${s}`;
+};
+
+
   return (
     <LinearGradient
       colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientMid, COLORS.backgroundGradientEnd]}
@@ -95,11 +127,11 @@ const MiningScreen = () => {
                 end={{ x: 0.85, y: 1 }}
                 style={styles.timerCore}>
                 <View style={styles.timerCoreGlow} />
-                <View style={styles.playButton}>
+                {/* <View style={styles.playButton}>
                   <FontAwesome5 name="play" size={25} color={COLORS.textPrimary} style={styles.playIcon} />
-                </View>
+                </View> */}
                 <Text style={styles.storageLabel}>Time Storage</Text>
-                <Text style={styles.timerText}>00:00:00</Text>
+                <Text style={styles.timerText}>{formatTime(seconds)}</Text>
               </LinearGradient>
             </SegmentedRing>
           </View>

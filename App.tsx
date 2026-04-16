@@ -5,18 +5,21 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from './src/constants/COLORS';
 import AppNavigator from './src/navigation/AppNavigator';
 import { UserProvider } from './src/context/UserContext';
+import { TimeModalProvider } from './src/context/TimeModal';
 
 function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
       <UserProvider>
-      <SafeAreaProvider>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={COLORS.backgroundDeep}
-        />
-        <AppNavigator />
-      </SafeAreaProvider>
+        <TimeModalProvider>
+          <SafeAreaProvider>
+            <StatusBar
+              barStyle="light-content"
+              backgroundColor={COLORS.backgroundDeep}
+            />
+            <AppNavigator />
+          </SafeAreaProvider>
+        </TimeModalProvider>
       </UserProvider>
     </GestureHandlerRootView>
   );

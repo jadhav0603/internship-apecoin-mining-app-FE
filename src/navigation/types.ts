@@ -12,5 +12,5 @@ export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
-  Mining: undefined;
+  Mining: { time: number };
 };
