@@ -16,6 +16,9 @@ import WalletScreen from '../screens/wallet/WalletScreen';
 import DailyRewardsScreen from '../screens/Reward/DailyRewardsScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import { BottomTabParamList } from './types';
+import { View } from 'react-native';
+import MiningLiveBar from '../components/mining/MiningLiveBar';
+
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 const TAB_BAR_BASE_HEIGHT = 74;
@@ -112,14 +115,24 @@ const BottomTabNavigator = () => {
     tabBarIcon: ({ color, size }) => getTabBarIcon(route, color, size),
   });
 
-  return (
-    <Tab.Navigator initialRouteName="Home" screenOptions={screenOptions}>
+ return (
+  <View style={{ flex: 1 }}>
+    
+    <Tab.Navigator
+      initialRouteName="Home"
+      screenOptions={screenOptions}
+    >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />
       <Tab.Screen name="Reward" component={DailyRewardsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
-  );
+
+    {/* ✅ LIVE BAR */}
+    <MiningLiveBar />
+
+  </View>
+);
 };
 
 export default BottomTabNavigator;

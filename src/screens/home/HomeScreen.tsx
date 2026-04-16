@@ -11,15 +11,16 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
-import UserHeader from '../../components/home/UserHeader';
 import BalanceCard from '../../components/home/BalanceCard';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
+import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
+
+
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Home'>,
@@ -82,6 +83,10 @@ const navigation = useNavigation<HomeScreenNavigationProp>();  const tabBarHeigh
               {/* <Text style={styles.footerText}>TAP TO CONTINUE</Text> */}
             </View>
           </SafeAreaView>
+
+
+          <ClaimRewardModal />
+
 
           <View style={styles.analyticsGrid}>
             <LinearGradient
