@@ -1,4 +1,5 @@
 import axios from 'axios';
+import auth from '@react-native-firebase/auth';
 import { API_CONFIG, getDevApiBaseUrls } from './config';
 
 const apiClient = axios.create({
@@ -11,25 +12,28 @@ const apiClient = axios.create({
 
 // Helpful debug: show which baseURL we're using in dev builds
 if (__DEV__) {
-  // eslint-disable-next-line no-console
   console.debug('[apiClient] baseURL:', apiClient.defaults.baseURL);
 }
-// You can add interceptors here (e.g., for attaching auth tokens)
+
 apiClient.interceptors.request.use(
-  (config) => {
-    // Add logic before request is sent
+  async config => {
+    const user = auth().currentUser;
+
+    if (user && !config.headers?.Authorization) {
+      const token = await user.getIdToken();
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 
 apiClient.interceptors.response.use(
   response => response,
   async error => {
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.debug('[apiClient] response error:', {
         message: error?.message,
         url: error?.config?.url,

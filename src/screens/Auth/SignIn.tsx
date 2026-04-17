@@ -34,7 +34,6 @@ const SignIn: React.FC<Props> = ({navigation}) => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [securePassword, setSecurePassword] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
@@ -68,7 +67,6 @@ const SignIn: React.FC<Props> = ({navigation}) => {
     setLoading(true);
     try {
       await authService.signIn(email, password);
-      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       const message =
         typeof error?.code === 'string' && error.code.startsWith('auth/')
@@ -84,7 +82,6 @@ const SignIn: React.FC<Props> = ({navigation}) => {
     try {
       setLoading(true);
       await authService.googleSignIn();
-      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       setErrors({
         email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),
@@ -149,7 +146,7 @@ const SignIn: React.FC<Props> = ({navigation}) => {
           )}
 
           {/* ── Password Field ── */}
-          <Text style={[styles.label, {marginTop: 14}]}>Password*</Text>
+          <Text style={[styles.label, styles.passwordLabel]}>Password*</Text>
           <View
             style={[
               styles.inputContainer,
@@ -218,15 +215,16 @@ const SignIn: React.FC<Props> = ({navigation}) => {
           <TouchableOpacity
             style={styles.googleBtn}
             onPress={handleGoogle}
-            activeOpacity={0.8}>
+            activeOpacity={0.8}
+            disabled={loading}>
             {/* Google 'G' colored letters */}
             <View style={styles.gLetterRow}>
-              <Text style={[styles.gLetter, {color: '#4285F4'}]}>G</Text>
-              <Text style={[styles.gLetter, {color: '#EA4335'}]}>o</Text>
-              <Text style={[styles.gLetter, {color: '#FBBC05'}]}>o</Text>
-              <Text style={[styles.gLetter, {color: '#4285F4'}]}>g</Text>
-              <Text style={[styles.gLetter, {color: '#34A853'}]}>l</Text>
-              <Text style={[styles.gLetter, {color: '#EA4335'}]}>e</Text>
+              <Text style={[styles.gLetter, styles.gBlue]}>G</Text>
+              <Text style={[styles.gLetter, styles.gRed]}>o</Text>
+              <Text style={[styles.gLetter, styles.gYellow]}>o</Text>
+              <Text style={[styles.gLetter, styles.gBlue]}>g</Text>
+              <Text style={[styles.gLetter, styles.gGreen]}>l</Text>
+              <Text style={[styles.gLetter, styles.gRed]}>e</Text>
             </View>
           </TouchableOpacity>
 
@@ -301,6 +299,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginBottom: 8,
+  },
+  passwordLabel: {
+    marginTop: 14,
   },
 
   // ── Input ──
@@ -442,6 +443,18 @@ const styles = StyleSheet.create({
   gLetter: {
     fontSize: 18,
     fontWeight: '800',
+  },
+  gBlue: {
+    color: '#4285F4',
+  },
+  gRed: {
+    color: '#EA4335',
+  },
+  gYellow: {
+    color: '#FBBC05',
+  },
+  gGreen: {
+    color: '#34A853',
   },
 
   // ── Bottom link ──
