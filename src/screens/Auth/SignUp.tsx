@@ -76,7 +76,6 @@ const SignUp: React.FC<Props> = ({navigation}) => {
     setLoading(true);
     try {
       await authService.signUp(email, password);
-      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setErrors({email: 'That email address is already in use!'});
@@ -94,7 +93,6 @@ const SignUp: React.FC<Props> = ({navigation}) => {
     try {
       setLoading(true);
       await authService.googleSignIn();
-      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       setErrors({
         email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),
@@ -241,14 +239,15 @@ const SignUp: React.FC<Props> = ({navigation}) => {
           <TouchableOpacity
             style={styles.googleBtn}
             onPress={handleGoogle}
-            activeOpacity={0.8}>
+            activeOpacity={0.8}
+            disabled={loading}>
             <View style={styles.gLetterRow}>
-              <Text style={[styles.gLetter, {color: '#4285F4'}]}>G</Text>
-              <Text style={[styles.gLetter, {color: '#EA4335'}]}>o</Text>
-              <Text style={[styles.gLetter, {color: '#FBBC05'}]}>o</Text>
-              <Text style={[styles.gLetter, {color: '#4285F4'}]}>g</Text>
-              <Text style={[styles.gLetter, {color: '#34A853'}]}>l</Text>
-              <Text style={[styles.gLetter, {color: '#EA4335'}]}>e</Text>
+              <Text style={[styles.gLetter, styles.gBlue]}>G</Text>
+              <Text style={[styles.gLetter, styles.gRed]}>o</Text>
+              <Text style={[styles.gLetter, styles.gYellow]}>o</Text>
+              <Text style={[styles.gLetter, styles.gBlue]}>g</Text>
+              <Text style={[styles.gLetter, styles.gGreen]}>l</Text>
+              <Text style={[styles.gLetter, styles.gRed]}>e</Text>
             </View>
           </TouchableOpacity>
 
@@ -430,6 +429,18 @@ const styles = StyleSheet.create({
   gLetter: {
     fontSize: 17,
     fontWeight: '800',
+  },
+  gBlue: {
+    color: '#4285F4',
+  },
+  gRed: {
+    color: '#EA4335',
+  },
+  gYellow: {
+    color: '#FBBC05',
+  },
+  gGreen: {
+    color: '#34A853',
   },
 
   // ── Bottom link ──

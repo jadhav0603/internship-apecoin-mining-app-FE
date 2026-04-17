@@ -15,7 +15,7 @@ const LoginScreen = () => {
   const navigation = useNavigation<LoginScreenNavigationProp>();
 
   const handleOpenApp = () => {
-    navigation.replace('MainTabs', { screen: 'Home' });
+    navigation.navigate('SignIn');
   };
 
   return (

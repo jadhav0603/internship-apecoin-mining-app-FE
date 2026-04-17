@@ -14,7 +14,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 
 import styles from './Menu.styles';
 import { COLORS } from '../../constants/COLORS';
-import { getAuth, signOut } from '@react-native-firebase/auth';
+import { authService } from '../../services/authService';
 import UserHeader from './UserHeader';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -42,9 +42,7 @@ const Menu = () => {
 
   const handleLogout = async () => {
     try {
-      const authInstance = getAuth();
-      if (!authInstance.currentUser) return;
-      await signOut(authInstance);
+      await authService.signOut();
     } catch (err) {
       console.log("Logout error", err);
     }
@@ -114,7 +112,7 @@ const Menu = () => {
                 ))}
 
                 <TouchableOpacity style={styles.menuItemBox} onPress={handleLogout}>
-                  <Text style={[styles.menuItem, { color: 'red' }]}>
+                  <Text style={[styles.menuItem, localStyles.logoutText]}>
                     Logout
                   </Text>
                 </TouchableOpacity>
@@ -127,5 +125,11 @@ const Menu = () => {
     </>
   );
 };
+
+const localStyles = {
+  logoutText: {
+    color: 'red',
+  },
+} as const;
 
 export default Menu;

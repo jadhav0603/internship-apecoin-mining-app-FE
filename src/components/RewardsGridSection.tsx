@@ -44,10 +44,10 @@ const RewardsGridSection: React.FC<RewardsGridSectionProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sectionWrapper: {
-    width: '100%',
-    marginHorizontal: 8,
-    paddingVertical: 8,
+    sectionWrapper: {
+      width: '100%',
+  paddingHorizontal: 10,
+  paddingVertical: 8,
     backgroundColor: 'transparent',
   },
   sectionLabel: {
@@ -59,13 +59,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   columnWrapper: {
-    justifyContent: 'space-around', // Center cards in rows with fewer than three items
+    justifyContent: 'space-between', // Center cards in rows with fewer than three items
     marginBottom: 10,
   },
   cardContainer: {
-    flex: 1,
-    alignItems: 'center', // Centers each card in its grid cell
-    marginBottom: 6,
+     width: '33%',
+     paddingHorizontal: 4,
+     marginBottom: 10,
   },
 });
 
