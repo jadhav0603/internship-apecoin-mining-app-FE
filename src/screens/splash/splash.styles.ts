@@ -37,7 +37,7 @@ borderBottomRightRadius: 100,
     justifyContent: 'center',
   },
   lottie: {
-    width: width * 1.5,
+    width: width * 1.1,
     height: width * 1.5,
   },
   bottomSection: {
@@ -53,14 +53,16 @@ borderBottomRightRadius: 100,
     fontWeight: '800',
     color: COLORS.textPrimary,
     lineHeight: 46,
-    marginBottom: 8,
+    // marginBottom: 8,
+    marginTop: -28
   },
   subtitle: {
     fontSize: 16,
     color: COLORS.textSecondary,
-    marginBottom: 40,
+    // marginBottom: 40,
     fontWeight: '400',
     lineHeight: 24,
+    marginTop: -25
   },
   button: {
     backgroundColor: COLORS.primary,

@@ -57,28 +57,32 @@ const SplashScreen = ({ onFinish }: any) => {
   return (
     <View style={styles.container}>
       <View style={styles.topSection}>
-        <Image
-          source={require('../../assets/images/splashScreen-2.png')}
-          style={styles.image}
-        />
+  <Image
+    source={require('../../assets/images/splashScreen-2.png')}
+    style={styles.image}
+  />
 
-        <LinearGradient
-          colors={['transparent', 'rgba(10,15,10,0.8)', '#0A0F0A']}
-          style={styles.gradientOverlay}
-        />
+  <LinearGradient
+    colors={['transparent', 'rgba(10,15,10,0.8)', '#0A0F0A']}
+    style={styles.gradientOverlay}
+  />
 
-        <LottieView
-          source={require('../../assets/animations/Falling_coins.json')}
-          autoPlay
-          loop
-          style={styles.lottie}
-        />
-      </View>
+  {/* ✅ Wrap Lottie inside container */}
+  <View style={styles.lottieContainer}>
+    <LottieView
+      source={require('../../assets/animations/Falling_coins.json')}
+      autoPlay
+      loop
+      style={styles.lottie}
+    />
+  </View>
+</View>
 
       <SafeAreaView style={styles.bottomSection}>
         <Text style={styles.title}>
           Trusted{'\n'}& Secure{'\n'}Crypto Wallet
         </Text>
+        <Text style={styles.subtitle}>Manage all your exchange account is easy</Text>
 
         <Pressable onPress={handlePress}>
           <Animated.View style={[styles.button, animatedButtonStyle]}>
