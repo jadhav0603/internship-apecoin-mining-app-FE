@@ -17,6 +17,8 @@ import { useRoute } from '@react-navigation/native';
 import { useState, useEffect } from 'react';
 import { useMining } from '../../context/MiningContext';
 import { Pressable } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const MiningScreen = () => {
   const route: any = useRoute();
@@ -25,7 +27,7 @@ const MiningScreen = () => {
   const [seconds, setSeconds] = useState(time * 3600);
 
   const { earned, secondsLeft, multiplier, setMultiplier } = useMining();
-
+  const navigation = useNavigation();
   const multipliers = [1, 2, 4, 8, 10, 12];
 
   useEffect(() => {
@@ -67,8 +69,16 @@ const MiningScreen = () => {
 
         <View style={styles.topBar}>
           <View style={styles.profileChip}>
-            <Text style={styles.profileText}>AJ</Text>
-          </View>
+  <Pressable
+    onPress={() => {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    }}
+  >
+    <Ionicons name="arrow-back" size={22} color="#f6f2f2" />
+  </Pressable>
+</View>
 
           <View style={styles.topActions}>
             <View style={styles.topActionButton}>
