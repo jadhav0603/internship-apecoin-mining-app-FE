@@ -94,15 +94,15 @@ const DailyRewardsScreen = () => {
         `rewards/daily/${encodeURIComponent(user.email)}`
       );
       const data = response.data;
-      const curr = data.currency || 'APE';
+      const currencyFromBackend = data.currency || 'APE';
 
       setCurrentDay(data.currentDay);
       setIsAvailable(data.isAvailable);
-      setCurrency(curr);
+      setCurrency(currencyFromBackend);
 
       setTimeLeft(data.nextAvailableIn || 0);
 
-      const built = buildRewards(data.rewards || [], data.currentDay, data.isAvailable, curr);
+      const built = buildRewards(data.rewards || [], data.currentDay, data.isAvailable, currencyFromBackend);
       setRewards(built);
 
       // Auto-open modal if reward is claimable today
@@ -125,30 +125,7 @@ const DailyRewardsScreen = () => {
           baseURL: axios.isAxiosError(error) ? error.config?.baseURL || apiClient.defaults.baseURL : undefined,
         });
       }
-      // Fallback dummy data if backend is unreachable so cards show on screen
-      const dummyCurr = 'APE';
-      const dummyCurrentDay = 1;
-      const dummyIsAvailable = true;
-      const dummyRewards = [
-        { day: 1, amount: '0.014', locked: false },
-        { day: 2, amount: '0.017', locked: true },
-        { day: 3, amount: '0.021', locked: true },
-        { day: 4, amount: '0.023', locked: true },
-        { day: 5, amount: '0.029', locked: true },
-        { day: 6, amount: '0.035', locked: true },
-        { day: 7, amount: '0.036', locked: true },
-      ];
-
-      setCurrentDay(dummyCurrentDay);
-      setIsAvailable(dummyIsAvailable);
-      setCurrency(dummyCurr);
-      setTimeLeft(0);
-
-      const built = buildRewards(dummyRewards, dummyCurrentDay, dummyIsAvailable, dummyCurr);
-      setRewards(built);
-
-      // Commenting out alert as per user request to just show the cards
-      // Alert.alert('Rewards unavailable', message);
+      Alert.alert('Rewards unavailable', message);
     } finally {
       setLoading(false);
     }
@@ -264,10 +241,16 @@ const DailyRewardsScreen = () => {
           </Text>
         )}
 
-        <RewardsGridSection
-          rewards={rewards}
-          onCardPress={handleOpenModal}
-        />
+        {rewards.length > 0 ? (
+          <RewardsGridSection
+            rewards={rewards}
+            onCardPress={handleOpenModal}
+          />
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Loading dynamic rewards from root backend...</Text>
+          </View>
+        )}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -376,6 +359,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  emptyContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   bottomSpacer: {
     height: 40,
