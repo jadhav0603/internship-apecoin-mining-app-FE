@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -15,15 +16,13 @@ import { FONTS } from '../../constants/FONTS';
 import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
 import RevenueChart from '../../components/wallet/RevenueChart';
 import { THEME, formatAmount } from '../../components/wallet/theme';
-
-const MINING_TOTAL = 8200;
-const REWARD_TOTAL = 3150;
-const REFERRAL_TOTAL = 1100;
-const TOTAL_ASSETS = MINING_TOTAL + REWARD_TOTAL + REFERRAL_TOTAL;
+import { useRewardsData } from '../../hooks/useRewardsData';
 
 const WalletScreen = () => {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
+
+  const { totalCollected, weekData, loading } = useRewardsData();
 
   return (
     <ImageBackground
@@ -44,6 +43,7 @@ const WalletScreen = () => {
             { paddingBottom: Math.max(100, tabBarHeight + 28) },
           ]}
         >
+          {/* Header */}
           <View
             style={[
               styles.headerRow,
@@ -61,29 +61,40 @@ const WalletScreen = () => {
             </Pressable>
           </View>
 
+          {/* Total Rewards Collected */}
           <View style={styles.totalSection}>
             <View style={styles.totalLabelRow}>
               <Ionicons
-                name="wallet-outline"
+                name="gift-outline"
                 size={16}
                 color={THEME.textMuted}
                 style={styles.totalLabelIcon}
               />
-              <Text style={styles.totalLabel}>Total Assets</Text>
+              <Text style={styles.totalLabel}>Total Rewards Collected</Text>
             </View>
 
-            <Text style={styles.totalAmount}>
-              {formatAmount(TOTAL_ASSETS)}
-              <Text style={styles.apcLabel}> APC</Text>
-            </Text>
+            {loading ? (
+              <ActivityIndicator
+                size="large"
+                color={THEME.neonGreen}
+                style={styles.loadingIndicator}
+              />
+            ) : (
+              <Text style={styles.totalAmount}>
+                {formatAmount(totalCollected)}
+                <Text style={styles.apcLabel}> APE</Text>
+              </Text>
+            )}
           </View>
 
+          {/* Live Rewards Chart */}
           <RevenueChart
-            miningTotal={MINING_TOTAL}
-            rewardTotal={REWARD_TOTAL}
-            referralTotal={REFERRAL_TOTAL}
+            weekData={weekData}
+            totalCollected={totalCollected}
+            loading={loading}
           />
 
+          {/* Transaction History */}
           <PendingPaidTabs />
         </ScrollView>
       </View>
@@ -150,6 +161,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
     paddingHorizontal: 20,
+    minHeight: 80,
+    justifyContent: 'center',
   },
   totalLabelRow: {
     flexDirection: 'row',
@@ -173,10 +186,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   apcLabel: {
-    color: THEME.white,
+    color: THEME.neonGreen,
     fontSize: 22,
     fontFamily: FONTS.regular,
     fontWeight: '400',
+  },
+  loadingIndicator: {
+    marginTop: 8,
   },
 });
 
