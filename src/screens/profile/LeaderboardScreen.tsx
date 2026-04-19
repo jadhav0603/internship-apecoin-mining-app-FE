@@ -79,11 +79,12 @@ const AnimatedRing = ({ type }: { type: string }) => {
 const PodiumItem = ({ data }: { data: typeof PODIUM_DATA[0] }) => {
   const isGold = data.type === 'gold';
   const scale = isGold ? 1.2 : 1;
-  const colors = {
+  const colorMap: Record<string, string[]> = {
     gold: ['#FFD700', '#B8860B'],
     silver: ['#C0C0C0', '#808080'],
     bronze: ['#CD7F32', '#8B4513'],
-  }[data.type as keyof typeof colors];
+  };
+  const colors = colorMap[data.type] || ['#FFF', '#FFF'];
 
   return (
     <View style={[styles.podiumItem, { transform: [{ scale }] }]}>
