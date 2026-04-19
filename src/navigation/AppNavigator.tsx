@@ -1,24 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { startTransition, useEffect, useState } from 'react';
 import {
   DarkTheme,
   NavigationContainer,
   Theme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { getAuth, onAuthStateChanged } from "@react-native-firebase/auth";
+import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 
-// Screens
 import SignIn from '../screens/Auth/SignIn';
 import SignUp from '../screens/Auth/SignUp';
 import SplashScreen from '../screens/splash/SplashScreen';
 import MiningScreen from '../screens/mining/MiningScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
-
-
 import { useUser } from '../context/UserContext';
 import { userService } from '../services/userService';
-
 
 const Stack = createNativeStackNavigator();
 
@@ -35,56 +32,92 @@ const navigationTheme: Theme = {
   },
 };
 
+const mapFirebaseUserToAppUser = (firebaseUser: FirebaseAuthTypes.User) => ({
+  uid: firebaseUser.uid,
+  email: firebaseUser.email ?? '',
+  displayName: firebaseUser.displayName ?? firebaseUser.email ?? 'ApeCoin User',
+  photoURL: firebaseUser.photoURL ?? undefined,
+  plan: 'Free',
+});
+
 const AppNavigator = () => {
-  // const [user, setUser] = useState<any>(null); 
-  const {user,setUser} = useUser();
+  const { user, setUser } = useUser();
   const [initializing, setInitializing] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
 
- useEffect(() => {
+  useEffect(() => {
     const auth = getAuth();
+    let isActive = true;
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // 🔥 FETCH FROM MONGODB
-          const userData = await userService.getMe();
-          setUser(userData); // store backend user
-        } catch (err) {
-          console.log("User fetch error", err);
-          setUser(null);
+    const hydrateBackendUser = async (firebaseUser: FirebaseAuthTypes.User) => {
+      try {
+        const userData = await userService.getMe();
+
+        if (!isActive) {
+          return;
         }
-      } else {
-        setUser(null);
+
+        startTransition(() => {
+          setUser((currentUser: any) => {
+            if (currentUser?.uid && currentUser.uid !== firebaseUser.uid) {
+              return currentUser;
+            }
+
+            return {
+              ...mapFirebaseUserToAppUser(firebaseUser),
+              ...userData,
+            };
+          });
+        });
+      } catch (error) {
+        if (__DEV__) {
+          console.log('User fetch error', error);
+        }
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      if (firebaseUser) {
+        startTransition(() => {
+          setUser(mapFirebaseUserToAppUser(firebaseUser));
+        });
+        setInitializing(false);
+        hydrateBackendUser(firebaseUser);
+        return;
       }
 
+      startTransition(() => {
+        setUser(null);
+      });
       setInitializing(false);
     });
 
-    return unsubscribe;
-  }, []);
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
+  }, [setUser]);
 
-  //   if (initializing) {
-  //   return <SplashScreen />;
-  // }
+  const isSplashVisible = showSplash || initializing;
 
   return (
-
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash" >
-
-        {showSplash && (
-      <Stack.Screen name="Splash">
-        {(props) => (
-          <SplashScreen
-            {...props}
-            onFinish={() => setShowSplash(false)} 
-          />
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        initialRouteName="Splash"
+      >
+        {isSplashVisible && (
+          <Stack.Screen name="Splash">
+            {props => (
+              <SplashScreen
+                {...props}
+                onFinish={() => setShowSplash(false)}
+              />
+            )}
+          </Stack.Screen>
         )}
-      </Stack.Screen>
-    )}
 
-        { user ? (
+        {user ? (
           <>
             <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
             <Stack.Screen name="Mining" component={MiningScreen} />
@@ -95,10 +128,8 @@ const AppNavigator = () => {
             <Stack.Screen name="SignUp" component={SignUp} />
           </>
         )}
-
       </Stack.Navigator>
     </NavigationContainer>
- 
   );
 };
 

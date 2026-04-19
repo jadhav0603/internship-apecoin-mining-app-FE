@@ -1,5 +1,43 @@
 import axios from 'axios';
+import { getApp } from '@react-native-firebase/app';
+import { getAuth } from '@react-native-firebase/auth';
 import { API_CONFIG, getDevApiBaseUrls } from './config';
+
+const firebaseAuth = getAuth(getApp());
+
+let cachedBearerToken: string | null = null;
+let cachedTokenExpiry = 0;
+let cachedTokenUserUid: string | null = null;
+
+const getAuthorizationHeader = async () => {
+  const user = firebaseAuth.currentUser;
+
+  if (!user) {
+    cachedBearerToken = null;
+    cachedTokenExpiry = 0;
+    cachedTokenUserUid = null;
+    return null;
+  }
+
+  const now = Date.now();
+  if (
+    cachedBearerToken &&
+    cachedTokenUserUid === user.uid &&
+    now < cachedTokenExpiry
+  ) {
+    return `Bearer ${cachedBearerToken}`;
+  }
+
+  const tokenResult = await user.getIdTokenResult();
+  cachedBearerToken = tokenResult.token;
+  cachedTokenUserUid = user.uid;
+  cachedTokenExpiry = Math.max(
+    now,
+    new Date(tokenResult.expirationTime).getTime() - 60 * 1000
+  );
+
+  return `Bearer ${tokenResult.token}`;
+};
 
 const apiClient = axios.create({
   baseURL: API_CONFIG.BASE_URL,
@@ -11,13 +49,26 @@ const apiClient = axios.create({
 
 // Helpful debug: show which baseURL we're using in dev builds
 if (__DEV__) {
-  // eslint-disable-next-line no-console
   console.debug('[apiClient] baseURL:', apiClient.defaults.baseURL);
 }
 // You can add interceptors here (e.g., for attaching auth tokens)
 apiClient.interceptors.request.use(
-  (config) => {
-    // Add logic before request is sent
+  async (config) => {
+    if (!config.headers?.Authorization) {
+      const authorizationHeader = await getAuthorizationHeader();
+
+      if (authorizationHeader) {
+        if (config.headers?.set) {
+          config.headers.set('Authorization', authorizationHeader);
+        } else {
+          config.headers = axios.AxiosHeaders.from({
+            ...config.headers,
+            Authorization: authorizationHeader,
+          });
+        }
+      }
+    }
+
     return config;
   },
   (error) => {
@@ -29,7 +80,6 @@ apiClient.interceptors.response.use(
   response => response,
   async error => {
     if (__DEV__) {
-      // eslint-disable-next-line no-console
       console.debug('[apiClient] response error:', {
         message: error?.message,
         url: error?.config?.url,

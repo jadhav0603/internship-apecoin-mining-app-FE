@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Image, Pressable } from 'react-native';
+import { InteractionManager, View, Text, Image, Pressable } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
 import Animated, {
@@ -9,20 +9,16 @@ import Animated, {
   withTiming,
   withSequence,
   withRepeat,
-  Easing,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './splash.styles';
-import { useNavigation } from '@react-navigation/native';
-
-import { getAuth } from '@react-native-firebase/auth';
 
 const SplashScreen = ({ onFinish }: any) => {
   const buttonScale = useSharedValue(1);
   const [isPressed, setIsPressed] = useState(false);
-  const timeoutRef = useRef<any>(null);
-
-  const navigation = useNavigation();
+  const [showCoinsAnimation, setShowCoinsAnimation] = useState(false);
+  const interactionHandleRef =
+    useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
 
   useEffect(() => {
     buttonScale.value = withRepeat(
@@ -34,21 +30,22 @@ const SplashScreen = ({ onFinish }: any) => {
       true
     );
 
+    interactionHandleRef.current = InteractionManager.runAfterInteractions(() => {
+      setShowCoinsAnimation(true);
+    });
+
     return () => {
       cancelAnimation(buttonScale);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      interactionHandleRef.current?.cancel?.();
     };
-  }, []);
+  }, [buttonScale]);
 
   const handlePress = () => {
-  if (isPressed) return;
+    if (isPressed) return;
 
-  setIsPressed(true);
-
-  setTimeout(() => {
+    setIsPressed(true);
     onFinish();
-  }, 300);
-};
+  };
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
@@ -67,12 +64,14 @@ const SplashScreen = ({ onFinish }: any) => {
           style={styles.gradientOverlay}
         />
 
-        <LottieView
-          source={require('../../assets/animations/Falling_coins.json')}
-          autoPlay
-          loop
-          style={styles.lottie}
-        />
+        {showCoinsAnimation && (
+          <LottieView
+            source={require('../../assets/animations/Falling_coins.json')}
+            autoPlay
+            loop
+            style={styles.lottie}
+          />
+        )}
       </View>
 
       <SafeAreaView style={styles.bottomSection}>
