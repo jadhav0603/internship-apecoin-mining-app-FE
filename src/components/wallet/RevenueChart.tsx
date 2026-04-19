@@ -20,34 +20,53 @@ type RevenueChartProps = {
   loading: boolean;
 };
 
+type RevenueKey = 'mining' | 'reward' | 'referral';
+
+type DayDatum = {
+  day: string;   // 'Mon', 'Tue', …
+  mining: number;
+  reward: number;
+  referral: number;
+};
+
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
 const CHART_HEIGHT = 160;
-const BAR_WIDTH = 22;
+const BAR_WIDTH = 8;
+const BAR_GAP = 3;
 const COLUMN_GAP = 14;
+
+// ─── Hardcoded mining & referral data (per day label) ────────────────────────
+
+const MINING_REFERRAL_DATA: Record<string, { mining: number; referral: number }> = {
+  Mon: { mining: 65, referral: 30 },
+  Tue: { mining: 80, referral: 40 },
+  Wed: { mining: 55, referral: 35 },
+  Thu: { mining: 90, referral: 45 },
+  Fri: { mining: 75, referral: 38 },
+  Sat: { mining: 95, referral: 42 },
+  Sun: { mining: 70, referral: 28 },
+};
+
+const MINING_TOTAL = 8200;
+const REFERRAL_TOTAL = 1100;
+
+// ─── Bar config ───────────────────────────────────────────────────────────────
+
+const BAR_CONFIG: Record<RevenueKey, { label: string; color: string; glowColor?: string }> = {
+  mining:   { label: 'Mining',   color: THEME.barMining,   glowColor: THEME.neonGreen },
+  reward:   { label: 'Reward',   color: THEME.barReward,   glowColor: '#F5F5F5' },
+  referral: { label: 'Referral', color: THEME.barReferral, glowColor: THEME.neonGreenDim },
+};
+
+const BAR_ORDER: RevenueKey[] = ['mining', 'reward', 'referral'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Returns the UTC day label (e.g. "Mon") for today. */
 const getTodayUtcLabel = () => {
   const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return labels[new Date().getUTCDay()];
 };
-
-// ─── Skeleton bar (shown while loading) ──────────────────────────────────────
-
-const SkeletonBar = ({ height }: { height: number }) => (
-  <View
-    style={[
-      styles.bar,
-      {
-        height,
-        backgroundColor: '#2a2a2a',
-        opacity: 0.6,
-      },
-    ]}
-  />
-);
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -57,138 +76,163 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
 
   const todayLabel = useMemo(getTodayUtcLabel, []);
 
-  // Ensure Animated.Values exist for every entry
-  weekData.forEach(entry => {
-    if (!animatedBars.current[entry.date]) {
-      animatedBars.current[entry.date] = new Animated.Value(0);
-    }
+  // Build combined dataset: mining & referral hardcoded, reward from backend
+  const combinedData: DayDatum[] = useMemo(() => {
+    // Max reward amount for scaling reward bars to the same 0-100 scale
+    const maxRewardAmount = Math.max(...weekData.map(d => d.totalAmount), 0.000001);
+
+    return weekData.map(entry => {
+      const mr = MINING_REFERRAL_DATA[entry.dayLabel] ?? { mining: 0, referral: 0 };
+      // Scale reward bar to 0-100 range (same range mining/referral use)
+      const rewardScaled = (entry.totalAmount / maxRewardAmount) * 80;
+      return {
+        day: entry.dayLabel,
+        mining: mr.mining,
+        reward: rewardScaled,
+        referral: mr.referral,
+      };
+    });
+  }, [weekData]);
+
+  // Ensure Animated.Values exist for every bar
+  combinedData.forEach(entry => {
+    BAR_ORDER.forEach(key => {
+      const id = `${entry.day}-${key}`;
+      if (!animatedBars.current[id]) {
+        animatedBars.current[id] = new Animated.Value(0);
+      }
+    });
   });
 
-  // Compute the max amount for scaling bars proportionally
-  const maxAmount = useMemo(
-    () => Math.max(...weekData.map(d => d.totalAmount), 0.000001),
-    [weekData]
-  );
-
   useEffect(() => {
-    if (loading || weekData.length === 0) return;
+    if (combinedData.length === 0) return;
 
-    const getTargetHeight = (entry: WeekDayDatum) =>
-      (entry.totalAmount / maxAmount) * CHART_HEIGHT;
+    const getTargetHeight = (entry: DayDatum, key: RevenueKey) =>
+      (entry[key] / 100) * CHART_HEIGHT;
 
     if (!hasMountedAnimation.current) {
-      const introAnimations = weekData.map(entry =>
-        Animated.spring(animatedBars.current[entry.date], {
-          toValue: getTargetHeight(entry),
-          useNativeDriver: false,
-          tension: 40,
-          friction: 7,
-        })
+      const introAnimations = combinedData.flatMap(entry =>
+        BAR_ORDER.map(key =>
+          Animated.spring(animatedBars.current[`${entry.day}-${key}`], {
+            toValue: getTargetHeight(entry, key),
+            useNativeDriver: false,
+            tension: 40,
+            friction: 7,
+          })
+        )
       );
       Animated.stagger(60, introAnimations).start();
       hasMountedAnimation.current = true;
       return;
     }
 
-    weekData.forEach(entry => {
-      Animated.timing(animatedBars.current[entry.date], {
-        toValue: getTargetHeight(entry),
-        duration: 700,
-        useNativeDriver: false,
-      }).start();
+    combinedData.forEach(entry => {
+      BAR_ORDER.forEach(key => {
+        Animated.timing(animatedBars.current[`${entry.day}-${key}`], {
+          toValue: getTargetHeight(entry, key),
+          duration: 700,
+          useNativeDriver: false,
+        }).start();
+      });
     });
-  }, [weekData, maxAmount, loading]);
+  }, [combinedData]);
+
+  // Legend items — mining & referral hardcoded, reward live
+  const legendItems = [
+    { key: 'mining',   label: 'Mining',   value: formatCompactValue(MINING_TOTAL),    color: THEME.barMining },
+    { key: 'reward',   label: 'Reward',   value: formatCompactValue(totalCollected),  color: THEME.barReward },
+    { key: 'referral', label: 'Referral', value: formatCompactValue(REFERRAL_TOTAL),  color: THEME.barReferral },
+  ] as const;
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <NeonBorderCard style={styles.chartCard}>
+      {/* Card header */}
       <View style={styles.headerRow}>
-        <Text style={styles.cardTitle}>Rewards Overview</Text>
+        <Text style={styles.cardTitle}>Revenue Overview</Text>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>Last 7 Days</Text>
+          <Text style={styles.badgeText}>This Week</Text>
         </View>
       </View>
 
-      {/* Chart area */}
+      {/* Chart */}
       <View style={styles.chartWrap}>
-        {/* Horizontal guide lines */}
         {[1, 2, 3].map(line => (
           <View
             key={line}
             style={[
               styles.dashLine,
-              {
-                bottom:
-                  line === 3 ? CHART_HEIGHT - 1 : (CHART_HEIGHT / 3) * line,
-              },
+              { bottom: line === 3 ? CHART_HEIGHT - 1 : (CHART_HEIGHT / 3) * line },
             ]}
           />
         ))}
 
-        {loading ? (
-          /* Skeleton bars while loading */
-          <View style={styles.skeletonRow}>
-            {Array.from({ length: 7 }).map((_, i) => (
-              <View key={i} style={styles.dayColumn}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chartScrollContent}
+        >
+          {combinedData.map((entry, index) => {
+            const isToday = entry.day === todayLabel;
+
+            return (
+              <View
+                key={entry.day}
+                style={[
+                  styles.dayColumn,
+                  index < combinedData.length - 1 && { marginRight: COLUMN_GAP },
+                ]}
+              >
                 <View style={styles.barTrack}>
-                  <SkeletonBar height={Math.random() * 80 + 20} />
-                </View>
-                <View style={styles.skeletonLabel} />
-              </View>
-            ))}
-          </View>
-        ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chartScrollContent}
-          >
-            {weekData.map((entry, index) => {
-              const isToday = entry.dayLabel === todayLabel;
-
-              return (
-                <View
-                  key={entry.date}
-                  style={[
-                    styles.dayColumn,
-                    index < weekData.length - 1 && { marginRight: COLUMN_GAP },
-                  ]}
-                >
-                  <View style={styles.barTrack}>
-                    <Animated.View
-                      style={[
-                        styles.bar,
-                        {
-                          height: animatedBars.current[entry.date] ?? new Animated.Value(0),
-                          backgroundColor: isToday ? THEME.neonGreen : THEME.barReward,
-                        },
-                        isToday && styles.todayBarGlow,
-                      ]}
-                    />
+                  <View style={styles.barGroup}>
+                    {BAR_ORDER.map(key => (
+                      <Animated.View
+                        key={`${entry.day}-${key}`}
+                        style={[
+                          styles.bar,
+                          {
+                            backgroundColor: BAR_CONFIG[key].color,
+                            height: animatedBars.current[`${entry.day}-${key}`],
+                            marginHorizontal: BAR_GAP / 2,
+                          },
+                          isToday && styles.todayBarGlow,
+                          isToday &&
+                            BAR_CONFIG[key].glowColor && {
+                              shadowColor: BAR_CONFIG[key].glowColor,
+                            },
+                        ]}
+                      />
+                    ))}
                   </View>
-
-                  <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
-                    {entry.dayLabel}
-                  </Text>
                 </View>
-              );
-            })}
-          </ScrollView>
-        )}
+
+                <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
+                  {entry.day}
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Legend */}
       <View style={styles.legendRow}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: THEME.neonGreen }]} />
-          <Text style={styles.legendLabel}>Daily Rewards</Text>
-          {loading ? (
-            <ActivityIndicator size="small" color={THEME.neonGreen} style={{ marginTop: 4 }} />
-          ) : (
-            <Text style={styles.legendValue}>{formatCompactValue(totalCollected)} APE</Text>
-          )}
-        </View>
+        {legendItems.map((item, index) => (
+          <React.Fragment key={item.key}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+              <Text style={styles.legendLabel}>{item.label}</Text>
+              {item.key === 'reward' && loading ? (
+                <ActivityIndicator size="small" color={THEME.white} style={{ marginTop: 4 }} />
+              ) : (
+                <Text style={styles.legendValue}>{item.value}</Text>
+              )}
+            </View>
+
+            {index < legendItems.length - 1 && <View style={styles.legendDivider} />}
+          </React.Fragment>
+        ))}
       </View>
     </NeonBorderCard>
   );
@@ -246,13 +290,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingHorizontal: 4,
   },
-  skeletonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    height: CHART_HEIGHT + 30,
-    alignItems: 'flex-end',
-  },
   dayColumn: {
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -261,17 +298,21 @@ const styles = StyleSheet.create({
     height: CHART_HEIGHT,
     justifyContent: 'flex-end',
   },
+  barGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
   bar: {
     width: BAR_WIDTH,
-    borderRadius: 6,
+    borderRadius: 4,
     alignSelf: 'flex-end',
   },
   todayBarGlow: {
-    shadowColor: THEME.neonGreen,
-    shadowOpacity: 0.9,
-    shadowRadius: 10,
+    shadowOpacity: 0.92,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 0 },
-    elevation: 12,
+    elevation: 10,
   },
   dayLabel: {
     marginTop: 12,
@@ -284,24 +325,17 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontWeight: '700',
   },
-  skeletonLabel: {
-    marginTop: 12,
-    width: 24,
-    height: 10,
-    borderRadius: 4,
-    backgroundColor: '#2a2a2a',
-    opacity: 0.5,
-  },
   legendRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'space-around',
+    alignItems: 'stretch',
     marginTop: 20,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: THEME.borderMuted,
   },
   legendItem: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -322,6 +356,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.black,
     fontWeight: '800',
     marginTop: 4,
+  },
+  legendDivider: {
+    width: 1,
+    backgroundColor: THEME.borderMuted,
+    marginHorizontal: 4,
   },
 });
 
