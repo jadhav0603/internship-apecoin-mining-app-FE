@@ -1,4 +1,5 @@
-import React, { startTransition, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import {
   DarkTheme,
   NavigationContainer,
@@ -12,12 +13,18 @@ import SignIn from '../screens/Auth/SignIn';
 import SignUp from '../screens/Auth/SignUp';
 import SplashScreen from '../screens/splash/SplashScreen';
 import MiningScreen from '../screens/mining/MiningScreen';
+import LeaderboardScreen from '../screens/profile/LeaderboardScreen';
+import ReferAndEarnScreen from '../screens/profile/ReferAndEarnScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
+
+import { RootStackParamList } from './types';
 import { useUser } from '../context/UserContext';
 import { userService } from '../services/userService';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 const navigationTheme: Theme = {
   ...DarkTheme,
@@ -32,81 +39,87 @@ const navigationTheme: Theme = {
   },
 };
 
-const mapFirebaseUserToAppUser = (firebaseUser: FirebaseAuthTypes.User) => ({
+const AuthLoadingScreen = () => (
+  <View style={styles.loadingScreen}>
+    <ActivityIndicator size="large" color={COLORS.primary} />
+  </View>
+);
+
+const mapFirebaseUserToAppUser = (firebaseUser: NonNullable<ReturnType<typeof getAuth>['currentUser']>) => ({
   uid: firebaseUser.uid,
   email: firebaseUser.email ?? '',
-  displayName: firebaseUser.displayName ?? firebaseUser.email ?? 'ApeCoin User',
-  photoURL: firebaseUser.photoURL ?? undefined,
+  displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+  photoURL: firebaseUser.photoURL ?? '',
   plan: 'Free',
 });
 
 const AppNavigator = () => {
-  const { user, setUser } = useUser();
-  const [initializing, setInitializing] = useState(true);
+  const { setUser } = useUser();
   const [showSplash, setShowSplash] = useState(true);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
 
   useEffect(() => {
     const auth = getAuth();
-    let isActive = true;
+    let isMounted = true;
+    let authRequestId = 0;
 
-    const hydrateBackendUser = async (firebaseUser: FirebaseAuthTypes.User) => {
-      try {
-        const userData = await userService.getMe();
+    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      const requestId = ++authRequestId;
 
-        if (!isActive) {
+      const bootstrapSession = async () => {
+        if (!firebaseUser) {
+          if (!isMounted || requestId !== authRequestId) {
+            return;
+          }
+
+          setUser(null);
+          setAuthStatus('unauthenticated');
           return;
         }
 
-        startTransition(() => {
-          setUser((currentUser: any) => {
-            if (currentUser?.uid && currentUser.uid !== firebaseUser.uid) {
-              return currentUser;
-            }
-
-            return {
-              ...mapFirebaseUserToAppUser(firebaseUser),
-              ...userData,
-            };
-          });
-        });
-      } catch (error) {
-        if (__DEV__) {
-          console.log('User fetch error', error);
+        if (isMounted && requestId === authRequestId) {
+          setAuthStatus('loading');
         }
-      }
-    };
 
-    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
-      if (firebaseUser) {
-        startTransition(() => {
-          setUser(mapFirebaseUserToAppUser(firebaseUser));
-        });
-        setInitializing(false);
-        hydrateBackendUser(firebaseUser);
-        return;
-      }
+        try {
+          const userData = await userService.getMe();
 
-      startTransition(() => {
-        setUser(null);
-      });
-      setInitializing(false);
+          if (!isMounted || requestId !== authRequestId) {
+            return;
+          }
+
+          setUser({
+             ...mapFirebaseUserToAppUser(firebaseUser as any),
+             ...userData,
+          });
+          setAuthStatus('authenticated');
+        } catch (error) {
+          if (__DEV__) {
+            console.log('[auth] failed to hydrate backend user, using Firebase session fallback', error);
+          }
+
+          if (!isMounted || requestId !== authRequestId) {
+            return;
+          }
+
+          setUser(mapFirebaseUserToAppUser(firebaseUser as any));
+          setAuthStatus('authenticated');
+        }
+      };
+
+      bootstrapSession().catch(() => undefined);
     });
 
     return () => {
-      isActive = false;
+      isMounted = false;
       unsubscribe();
     };
   }, [setUser]);
 
-  const isSplashVisible = showSplash || initializing;
-
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName="Splash"
-      >
-        {isSplashVisible && (
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
+        {showSplash ? (
           <Stack.Screen name="Splash">
             {props => (
               <SplashScreen
@@ -115,12 +128,14 @@ const AppNavigator = () => {
               />
             )}
           </Stack.Screen>
-        )}
-
-        {user ? (
+        ) : authStatus === 'loading' ? (
+          <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
+        ) : authStatus === 'authenticated' ? (
           <>
             <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
             <Stack.Screen name="Mining" component={MiningScreen} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+            <Stack.Screen name="ReferAndEarn" component={ReferAndEarnScreen} />
           </>
         ) : (
           <>
@@ -132,5 +147,14 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 
 export default AppNavigator;

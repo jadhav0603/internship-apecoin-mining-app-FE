@@ -51,7 +51,7 @@ const apiClient = axios.create({
 if (__DEV__) {
   console.debug('[apiClient] baseURL:', apiClient.defaults.baseURL);
 }
-// You can add interceptors here (e.g., for attaching auth tokens)
+
 apiClient.interceptors.request.use(
   async (config) => {
     if (!config.headers?.Authorization) {
@@ -61,19 +61,17 @@ apiClient.interceptors.request.use(
         if (config.headers?.set) {
           config.headers.set('Authorization', authorizationHeader);
         } else {
+          // Fallback for older axios versions or custom headers object
           config.headers = axios.AxiosHeaders.from({
-            ...config.headers,
+            ...(config.headers as any),
             Authorization: authorizationHeader,
           });
         }
       }
     }
-
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 
 apiClient.interceptors.response.use(

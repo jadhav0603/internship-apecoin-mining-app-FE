@@ -2,9 +2,16 @@ import React, { useState } from 'react';
 import { Text, View, Modal, TouchableOpacity } from 'react-native';
 import { useTimeModal } from '../../context/TimeModal';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+
+type MiningPopupNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Mining'
+>;
 
 const MiningTimeSelectionPopup = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<MiningPopupNavigationProp>();
   const { showModal, setShowModal } = useTimeModal();
   const [selectedTime, setSelectedTime] = useState(1);
 

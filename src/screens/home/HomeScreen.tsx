@@ -11,13 +11,11 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
-import UserHeader from '../../components/home/UserHeader';
 import BalanceCard from '../../components/home/BalanceCard';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 
@@ -26,30 +24,12 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-const marketSignals = [
-  {
-    label: '24h Portfolio',
-    value: '+12.48%',
-    icon: 'trending-up',
-  },
-  {
-    label: 'Active Miners',
-    value: '128',
-    icon: 'lightning-bolt-outline',
-  },
-  {
-    label: 'Reward Cycle',
-    value: '03h 28m',
-    icon: 'timer-sand',
-  },
-];
-
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const tabBarHeight = useBottomTabBarHeight();
 
   const handleOpenMining = () => {
-    navigation.navigate('Mining');
+    navigation.navigate('Mining', { time: 1 });
   };
 
   return (
