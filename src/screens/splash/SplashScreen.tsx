@@ -17,6 +17,7 @@ const SplashScreen = ({ onFinish }: any) => {
   const buttonScale = useSharedValue(1);
   const [isPressed, setIsPressed] = useState(false);
   const [showCoinsAnimation, setShowCoinsAnimation] = useState(false);
+
   const interactionHandleRef =
     useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
 
@@ -30,6 +31,7 @@ const SplashScreen = ({ onFinish }: any) => {
       true
     );
 
+    // ✅ Delay heavy animation until interactions finish
     interactionHandleRef.current = InteractionManager.runAfterInteractions(() => {
       setShowCoinsAnimation(true);
     });
@@ -64,19 +66,25 @@ const SplashScreen = ({ onFinish }: any) => {
           style={styles.gradientOverlay}
         />
 
+        {/* ✅ Combined: container + conditional rendering */}
         {showCoinsAnimation && (
-          <LottieView
-            source={require('../../assets/animations/Falling_coins.json')}
-            autoPlay
-            loop
-            style={styles.lottie}
-          />
+          <View style={styles.lottieContainer}>
+            <LottieView
+              source={require('../../assets/animations/Falling_coins.json')}
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
+          </View>
         )}
       </View>
 
       <SafeAreaView style={styles.bottomSection}>
         <Text style={styles.title}>
           Trusted{'\n'}& Secure{'\n'}Crypto Wallet
+        </Text>
+        <Text style={styles.subtitle}>
+          Manage all your exchange account is easy
         </Text>
 
         <Pressable onPress={handlePress}>

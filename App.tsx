@@ -6,19 +6,25 @@ import { COLORS } from './src/constants/COLORS';
 import AppNavigator from './src/navigation/AppNavigator';
 import { UserProvider } from './src/context/UserContext';
 import { TimeModalProvider } from './src/context/TimeModal';
+import { MiningProvider } from './src/context/MiningContext';
+import { WalletProvider } from './src/context/WalletContext';
 
 function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
       <UserProvider>
         <TimeModalProvider>
-          <SafeAreaProvider>
-            <StatusBar
-              barStyle="light-content"
-              backgroundColor={COLORS.backgroundDeep}
-            />
-            <AppNavigator />
-          </SafeAreaProvider>
+          <MiningProvider>
+            <WalletProvider>
+              <SafeAreaProvider>
+                <StatusBar
+                  barStyle="light-content"
+                  backgroundColor={COLORS.backgroundDeep}
+                />
+                <AppNavigator />
+              </SafeAreaProvider>
+            </WalletProvider>
+          </MiningProvider>
         </TimeModalProvider>
       </UserProvider>
     </GestureHandlerRootView>

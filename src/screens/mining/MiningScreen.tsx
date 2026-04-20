@@ -1,59 +1,61 @@
-import React  from 'react';
-import { Text, View } from 'react-native';
+import React from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Defs,
+  Ellipse,
+  RadialGradient,
+  Stop,
+} from 'react-native-svg';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import SegmentedRing from '../../components/mining/SegmentedRing';
 import { COLORS } from '../../constants/COLORS';
 import styles from './mining.styles';
-import { useRoute } from '@react-navigation/native';
-import {  useState ,useEffect } from 'react';
-
+import { useMining } from '../../context/MiningContext';
+import { useNavigation } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const MiningScreen = () => {
-  const route: any = useRoute();
-  const time = route?.params?.time || 1;
+  const { earned, secondsLeft, multiplier, setMultiplier } = useMining();
+  const navigation = useNavigation();
+  const multipliers = [1, 2, 4, 8, 10, 12];
 
-  const [seconds, setSeconds] = useState(time * 3600);
+  const formatTime = (sec: number) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
 
-useEffect(() => {
-  const interval = setInterval(() => {
-    setSeconds(prev => {
-      if (prev <= 0) {
-        clearInterval(interval);
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
-
-  return () => clearInterval(interval);
-}, []);
-
-
-const formatTime = (sec : number) => {
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const s = sec % 60;
-
-  return `${h}:${m}:${s}`;
-};
-
+    return `${h}:${m}:${s}`;
+  };
 
   return (
     <LinearGradient
-      colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientMid, COLORS.backgroundGradientEnd]}
+      colors={[
+        COLORS.backgroundGradientStart,
+        COLORS.backgroundGradientMid,
+        COLORS.backgroundGradientEnd,
+      ]}
       start={{ x: 0.12, y: 0 }}
       end={{ x: 0.88, y: 1 }}
-      style={styles.background}>
+      style={styles.background}
+    >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.screenGlowTop} />
         <View style={styles.screenGlowBottom} />
 
         <View style={styles.topBar}>
           <View style={styles.profileChip}>
-            <Text style={styles.profileText}>AJ</Text>
+            <Pressable
+              onPress={() => {
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                }
+              }}
+            >
+              <Ionicons name="arrow-back" size={22} color="#f6f2f2" />
+            </Pressable>
           </View>
 
           <View style={styles.topActions}>
@@ -102,7 +104,8 @@ const formatTime = (sec : number) => {
               colors={['rgba(229, 255, 141, 0.42)', 'rgba(76, 105, 19, 0.94)']}
               start={{ x: 0.15, y: 0 }}
               end={{ x: 0.85, y: 1 }}
-              style={styles.coinBadge}>
+              style={styles.coinBadge}
+            >
               <View style={styles.coinBadgeInner}>
                 <FontAwesome5 name="dollar-sign" size={32} color="#F4FFC4" />
               </View>
@@ -111,7 +114,7 @@ const formatTime = (sec : number) => {
           </View>
 
           <Text style={styles.rateText}>0.02083 Kryptons/hour</Text>
-          <Text style={styles.amountText}>$5.000000</Text>
+          <Text style={styles.amountText}>${earned.toFixed(6)}</Text>
 
           <View style={styles.ringSection}>
             <SegmentedRing
@@ -120,55 +123,156 @@ const formatTime = (sec : number) => {
               activeSegments={24}
               segmentWidth={7}
               segmentHeight={24}
-              rotationDuration={18000}>
+              rotationDuration={18000}
+            >
               <LinearGradient
                 colors={['rgba(84, 112, 24, 0.96)', 'rgba(22, 32, 12, 0.96)']}
                 start={{ x: 0.15, y: 0.05 }}
                 end={{ x: 0.85, y: 1 }}
-                style={styles.timerCore}>
+                style={styles.timerCore}
+              >
                 <View style={styles.timerCoreGlow} />
                 {/* <View style={styles.playButton}>
                   <FontAwesome5 name="play" size={25} color={COLORS.textPrimary} style={styles.playIcon} />
                 </View> */}
                 <Text style={styles.storageLabel}>Time Storage</Text>
-                <Text style={styles.timerText}>{formatTime(seconds)}</Text>
+                <Text style={styles.timerText}>{formatTime(secondsLeft)}</Text>
               </LinearGradient>
             </SegmentedRing>
           </View>
         </View>
 
-        <LinearGradient
-          colors={['rgba(39, 57, 15, 0.9)', 'rgba(10, 15, 8, 0.96)']}
-          start={{ x: 0.1, y: 0 }}
-          end={{ x: 0.9, y: 1 }}
-          style={styles.statsCard}>
-          <View style={styles.statsHeader}>
-            <View>
-              <Text style={styles.statsLabel}>MINING STATUS</Text>
-              <Text style={styles.statsTitle}>Core charged and ready</Text>
-            </View>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>LIVE</Text>
-            </View>
-          </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            marginVertical: 15,
+          }}
+        >
+          {/*   
+  {multipliers.map(m => {
+    const isActive = multiplier === m;
 
-          <View style={styles.divider} />
+    return (
+      <Pressable
+        key={m}
+        onPress={() => setMultiplier(m)}
+        style={({ pressed }) => ({
+          paddingVertical: 10,
+          paddingHorizontal: 18,
+          margin: 6,
+          borderRadius: 25,
+          backgroundColor: isActive ? '#00E676' : '#1E1E1E',
+          borderWidth: isActive ? 0 : 1,
+          borderColor: '#333',
+          transform: [{ scale: pressed ? 0.95 : 1 }],
+          shadowColor: isActive ? '#00E676' : '#000',
+          shadowOpacity: isActive ? 0.6 : 0.2,
+          shadowRadius: 6,
+          elevation: isActive ? 6 : 2,
+        })}
+      >
+        <Text style={{
+          color: isActive ? '#000' : '#fff',
+          fontWeight: '600',
+          fontSize: 14
+        }}>
+          {m}x
+        </Text>
+      </Pressable>
+    );
+  })} */}
 
-          <View style={styles.metricsRow}>
-            <View style={styles.metricBlock}>
-              <Text style={styles.metricValue}>72</Text>
-              <Text style={styles.metricCaption}>Circular neon ticks</Text>
+          <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+            {/* MULTIPLIER SECTION */}
+            <View
+              style={{
+                paddingVertical: 10,
+                paddingHorizontal: 10,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {multipliers.map(m => {
+                  const isActive = multiplier === m;
+
+                  return (
+                    <Pressable
+                      key={m}
+                      onPress={() => setMultiplier(m)}
+                      style={({ pressed }) => ({
+                        paddingVertical: 10,
+                        paddingHorizontal: 16,
+                        margin: 5,
+                        borderRadius: 22,
+                        backgroundColor: isActive ? '#00E676' : '#1E1E1E',
+                        borderWidth: 1,
+                        borderColor: isActive ? '#00E676' : '#333',
+                        transform: [{ scale: pressed ? 0.95 : 1 }],
+                      })}
+                    >
+                      <Text
+                        style={{
+                          color: isActive ? '#000' : '#fff',
+                          fontWeight: '600',
+                        }}
+                      >
+                        {m}x
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-            <View style={styles.metricBlock}>
-              <Text style={styles.metricValue}>5.00</Text>
-              <Text style={styles.metricCaption}>Current mined balance</Text>
-            </View>
-            <View style={styles.metricBlock}>
-              <Text style={styles.metricValue}>24</Text>
-              <Text style={styles.metricCaption}>Active glowing segments</Text>
-            </View>
+
+            {/* STATS CARD */}
+
+            <LinearGradient
+              colors={['rgba(39, 57, 15, 0.9)', 'rgba(10, 15, 8, 0.96)']}
+              start={{ x: 0.1, y: 0 }}
+              end={{ x: 0.9, y: 1 }}
+              style={styles.statsCard}
+            >
+              <View style={styles.statsHeader}>
+                <View>
+                  <Text style={styles.statsLabel}>MINING STATUS</Text>
+                  <Text style={styles.statsTitle}>Core charged and ready</Text>
+                </View>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusBadgeText}>LIVE</Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.metricsRow}>
+                <View style={styles.metricBlock}>
+                  <Text style={styles.metricValue}>72</Text>
+                  <Text style={styles.metricCaption}>Circular neon ticks</Text>
+                </View>
+                <View style={styles.metricBlock}>
+                  <Text style={styles.metricValue}>5.00</Text>
+                  <Text style={styles.metricCaption}>
+                    Current mined balance
+                  </Text>
+                </View>
+                <View style={styles.metricBlock}>
+                  <Text style={styles.metricValue}>24</Text>
+                  <Text style={styles.metricCaption}>
+                    Active glowing segments
+                  </Text>
+                </View>
+              </View>
+            </LinearGradient>
           </View>
-        </LinearGradient>
+        </View>
       </SafeAreaView>
     </LinearGradient>
   );

@@ -11,6 +11,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
@@ -18,6 +19,7 @@ import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
 import BalanceCard from '../../components/home/BalanceCard';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
+import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Home'>,
@@ -27,10 +29,6 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const tabBarHeight = useBottomTabBarHeight();
-
-  const handleOpenMining = () => {
-    navigation.navigate('Mining', { time: 1 });
-  };
 
   return (
     <LinearGradient
@@ -48,7 +46,6 @@ const HomeScreen = () => {
         <View style={styles.secondaryGlow} />
 
         <Menu />
-
         <BalanceCard />
 
         <ScrollView
@@ -63,7 +60,6 @@ const HomeScreen = () => {
             <View style={styles.secondaryGlow} />
 
             <View>
-              {/* <Text style={styles.badge}>APECOIN ACCESS</Text> */}
               <Text style={styles.title}>Launch the mining Dashboard</Text>
               <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
@@ -71,14 +67,14 @@ const HomeScreen = () => {
               </Text>
 
               <View style={styles.buttonContainer}>
-                <MiningButton onPress={handleOpenMining} />
+                <MiningButton />
               </View>
 
               <MiningTimeSelectionPopup />
-
-              {/* <Text style={styles.footerText}>TAP TO CONTINUE</Text> */}
             </View>
           </SafeAreaView>
+
+          <ClaimRewardModal />
 
           <View style={styles.analyticsGrid}>
             <LinearGradient
