@@ -12,10 +12,11 @@ import {
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { FONTS } from '../../constants/FONTS';
 import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
 import RevenueChart from '../../components/wallet/RevenueChart';
 import { THEME, formatAmount } from '../../components/wallet/theme';
+import { FONTS } from '../../constants/FONTS';
+import { useMiningWalletData } from '../../hooks/useMiningWalletData';
 import { useRewardsData } from '../../hooks/useRewardsData';
 
 const WalletScreen = () => {
@@ -23,6 +24,10 @@ const WalletScreen = () => {
   const insets = useSafeAreaInsets();
 
   const { totalCollected, weekData, loading } = useRewardsData();
+  const { miningTotal, miningHistory, loading: miningLoading } = useMiningWalletData();
+
+  const totalBalance = totalCollected + miningTotal;
+  const isBalanceLoading = loading || miningLoading;
 
   return (
     <ImageBackground
@@ -43,7 +48,6 @@ const WalletScreen = () => {
             { paddingBottom: Math.max(100, tabBarHeight + 28) },
           ]}
         >
-          {/* Header */}
           <View
             style={[
               styles.headerRow,
@@ -61,19 +65,18 @@ const WalletScreen = () => {
             </Pressable>
           </View>
 
-          {/* Total Rewards Collected */}
           <View style={styles.totalSection}>
             <View style={styles.totalLabelRow}>
               <Ionicons
-                name="gift-outline"
+                name="wallet-outline"
                 size={16}
                 color={THEME.textMuted}
                 style={styles.totalLabelIcon}
               />
-              <Text style={styles.totalLabel}>Total Rewards Collected</Text>
+              <Text style={styles.totalLabel}>Total Balance</Text>
             </View>
 
-            {loading ? (
+            {isBalanceLoading ? (
               <ActivityIndicator
                 size="large"
                 color={THEME.neonGreen}
@@ -81,20 +84,65 @@ const WalletScreen = () => {
               />
             ) : (
               <Text style={styles.totalAmount}>
-                {formatAmount(totalCollected)}
+                {formatAmount(totalBalance)}
                 <Text style={styles.apcLabel}> APE</Text>
               </Text>
             )}
           </View>
 
-          {/* Live Rewards Chart */}
+          <View style={styles.breakdownRow}>
+            <View style={[styles.breakdownCard, styles.breakdownCardSpacing]}>
+              <View style={styles.breakdownHeader}>
+                <Ionicons name="gift-outline" size={16} color={THEME.textMuted} />
+                <Text style={styles.breakdownLabel}>Rewards</Text>
+              </View>
+
+              {loading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={THEME.neonGreen}
+                  style={styles.breakdownLoader}
+                />
+              ) : (
+                <Text style={styles.breakdownValue}>
+                  {formatAmount(totalCollected)}
+                  <Text style={styles.breakdownUnit}> APE</Text>
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.breakdownCard}>
+              <View style={styles.breakdownHeader}>
+                <Ionicons name="hardware-chip-outline" size={16} color={THEME.textMuted} />
+                <Text style={styles.breakdownLabel}>Mining</Text>
+              </View>
+
+              {miningLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={THEME.neonGreen}
+                  style={styles.breakdownLoader}
+                />
+              ) : (
+                <Text style={styles.breakdownValue}>
+                  {formatAmount(miningTotal)}
+                  <Text style={styles.breakdownUnit}> APE</Text>
+                </Text>
+              )}
+
+              {/* <Text style={styles.breakdownCaption}>Current mining balance</Text> */}
+            </View>
+          </View>
+
           <RevenueChart
             weekData={weekData}
             totalCollected={totalCollected}
+            miningHistory={miningHistory}
+            miningTotal={miningTotal}
             loading={loading}
+            miningLoading={miningLoading}
           />
 
-          {/* Transaction History */}
           <PendingPaidTabs />
         </ScrollView>
       </View>
@@ -193,6 +241,57 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     marginTop: 8,
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  breakdownCard: {
+    flex: 1,
+    minHeight: 120,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: THEME.borderMuted,
+    backgroundColor: 'rgba(28, 32, 24, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    justifyContent: 'center',
+  },
+  breakdownCardSpacing: {
+    marginRight: 12,
+  },
+  breakdownHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  breakdownLabel: {
+    marginLeft: 8,
+    color: THEME.textMuted,
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+  },
+  breakdownValue: {
+    marginTop: 10,
+    color: THEME.white,
+    fontSize: 28,
+    fontFamily: FONTS.black,
+    fontWeight: '800',
+  },
+  breakdownUnit: {
+    color: THEME.neonGreen,
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    fontWeight: '600',
+  },
+  breakdownCaption: {
+    marginTop: 8,
+    color: THEME.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  breakdownLoader: {
+    marginTop: 18,
   },
 });
 

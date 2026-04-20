@@ -8,93 +8,112 @@ import {
   View,
 } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
+import type { MiningHistoryDatum } from '../../hooks/useMiningWalletData';
+import type { WeekDayDatum } from '../../hooks/useRewardsData';
 import NeonBorderCard from './NeonBorderCard';
 import { THEME, formatCompactValue } from './theme';
-import type { WeekDayDatum } from '../../hooks/useRewardsData';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type RevenueChartProps = {
   weekData: WeekDayDatum[];
   totalCollected: number;
+  miningHistory: MiningHistoryDatum[];
+  miningTotal: number;
   loading: boolean;
+  miningLoading: boolean;
 };
 
 type RevenueKey = 'mining' | 'reward' | 'referral';
 
 type DayDatum = {
-  day: string;   // 'Mon', 'Tue', …
+  day: string;
   mining: number;
   reward: number;
   referral: number;
 };
 
-// ─── Layout constants ─────────────────────────────────────────────────────────
+type BaseHistoryDatum = {
+  date: string;
+  dayLabel: string;
+  totalAmount: number;
+};
 
 const CHART_HEIGHT = 160;
 const BAR_WIDTH = 8;
 const BAR_GAP = 3;
 const COLUMN_GAP = 14;
 
-// ─── Hardcoded mining & referral data (per day label) ────────────────────────
-
-const MINING_REFERRAL_DATA: Record<string, { mining: number; referral: number }> = {
-  Mon: { mining: 65, referral: 30 },
-  Tue: { mining: 80, referral: 40 },
-  Wed: { mining: 55, referral: 35 },
-  Thu: { mining: 90, referral: 45 },
-  Fri: { mining: 75, referral: 38 },
-  Sat: { mining: 95, referral: 42 },
-  Sun: { mining: 70, referral: 28 },
+const REFERRAL_DATA: Record<string, number> = {
+  Mon: 30,
+  Tue: 40,
+  Wed: 35,
+  Thu: 45,
+  Fri: 38,
+  Sat: 42,
+  Sun: 28,
 };
 
-const MINING_TOTAL = 8200;
 const REFERRAL_TOTAL = 1100;
 
-// ─── Bar config ───────────────────────────────────────────────────────────────
-
 const BAR_CONFIG: Record<RevenueKey, { label: string; color: string; glowColor?: string }> = {
-  mining:   { label: 'Mining',   color: THEME.barMining,   glowColor: THEME.neonGreen },
-  reward:   { label: 'Reward',   color: THEME.barReward,   glowColor: '#F5F5F5' },
+  mining: { label: 'Mining', color: THEME.barMining, glowColor: THEME.neonGreen },
+  reward: { label: 'Reward', color: THEME.barReward, glowColor: '#F5F5F5' },
   referral: { label: 'Referral', color: THEME.barReferral, glowColor: THEME.neonGreenDim },
 };
 
 const BAR_ORDER: RevenueKey[] = ['mining', 'reward', 'referral'];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getTodayUtcLabel = () => {
   const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   return labels[new Date().getUTCDay()];
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) => {
+const RevenueChart = ({
+  weekData,
+  totalCollected,
+  miningHistory,
+  miningTotal,
+  loading,
+  miningLoading,
+}: RevenueChartProps) => {
   const animatedBars = useRef<Record<string, Animated.Value>>({});
   const hasMountedAnimation = useRef(false);
 
   const todayLabel = useMemo(getTodayUtcLabel, []);
 
-  // Build combined dataset: mining & referral hardcoded, reward from backend
   const combinedData: DayDatum[] = useMemo(() => {
-    // Max reward amount for scaling reward bars to the same 0-100 scale
-    const maxRewardAmount = Math.max(...weekData.map(d => d.totalAmount), 0.000001);
+    const fallbackBaseData: BaseHistoryDatum[] = miningHistory.map(entry => ({
+      date: entry.date,
+      dayLabel: entry.dayLabel,
+      totalAmount: 0,
+    }));
+    const baseHistory = weekData.length > 0 ? weekData : fallbackBaseData;
 
-    return weekData.map(entry => {
-      const mr = MINING_REFERRAL_DATA[entry.dayLabel] ?? { mining: 0, referral: 0 };
-      // Scale reward bar to 0-100 range (same range mining/referral use)
-      const rewardScaled = (entry.totalAmount / maxRewardAmount) * 80;
+    if (baseHistory.length === 0) {
+      return [];
+    }
+
+    const rewardByDate = new Map(
+      weekData.map(entry => [entry.date, entry.totalAmount] as const)
+    );
+    const miningByDate = new Map(
+      miningHistory.map(entry => [entry.date, entry.totalAmount] as const)
+    );
+    const maxRewardAmount = Math.max(...weekData.map(d => d.totalAmount), 0.000001);
+    const maxMiningAmount = Math.max(...miningHistory.map(d => d.totalAmount), 0.000001);
+
+    return baseHistory.map(entry => {
+      const rewardAmount = rewardByDate.get(entry.date) ?? 0;
+      const miningAmount = miningByDate.get(entry.date) ?? 0;
+
       return {
         day: entry.dayLabel,
-        mining: mr.mining,
-        reward: rewardScaled,
-        referral: mr.referral,
+        mining: maxMiningAmount > 0 ? (miningAmount / maxMiningAmount) * 80 : 0,
+        reward: maxRewardAmount > 0 ? (rewardAmount / maxRewardAmount) * 80 : 0,
+        referral: REFERRAL_DATA[entry.dayLabel] ?? 0,
       };
     });
-  }, [weekData]);
+  }, [weekData, miningHistory]);
 
-  // Ensure Animated.Values exist for every bar
   combinedData.forEach(entry => {
     BAR_ORDER.forEach(key => {
       const id = `${entry.day}-${key}`;
@@ -105,7 +124,9 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
   });
 
   useEffect(() => {
-    if (combinedData.length === 0) return;
+    if (combinedData.length === 0) {
+      return;
+    }
 
     const getTargetHeight = (entry: DayDatum, key: RevenueKey) =>
       (entry[key] / 100) * CHART_HEIGHT;
@@ -121,6 +142,7 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
           })
         )
       );
+
       Animated.stagger(60, introAnimations).start();
       hasMountedAnimation.current = true;
       return;
@@ -137,18 +159,14 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
     });
   }, [combinedData]);
 
-  // Legend items — mining & referral hardcoded, reward live
   const legendItems = [
-    { key: 'mining',   label: 'Mining',   value: formatCompactValue(MINING_TOTAL),    color: THEME.barMining },
-    { key: 'reward',   label: 'Reward',   value: formatCompactValue(totalCollected),  color: THEME.barReward },
-    { key: 'referral', label: 'Referral', value: formatCompactValue(REFERRAL_TOTAL),  color: THEME.barReferral },
+    { key: 'mining', label: 'Mining', value: formatCompactValue(miningTotal), color: THEME.barMining },
+    { key: 'reward', label: 'Reward', value: formatCompactValue(totalCollected), color: THEME.barReward },
+    { key: 'referral', label: 'Referral', value: formatCompactValue(REFERRAL_TOTAL), color: THEME.barReferral },
   ] as const;
-
-  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <NeonBorderCard style={styles.chartCard}>
-      {/* Card header */}
       <View style={styles.headerRow}>
         <Text style={styles.cardTitle}>Revenue Overview</Text>
         <View style={styles.badge}>
@@ -156,7 +174,6 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
         </View>
       </View>
 
-      {/* Chart */}
       <View style={styles.chartWrap}>
         {[1, 2, 3].map(line => (
           <View
@@ -216,15 +233,15 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
         </ScrollView>
       </View>
 
-      {/* Legend */}
       <View style={styles.legendRow}>
         {legendItems.map((item, index) => (
           <React.Fragment key={item.key}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
               <Text style={styles.legendLabel}>{item.label}</Text>
-              {item.key === 'reward' && loading ? (
-                <ActivityIndicator size="small" color={THEME.white} style={{ marginTop: 4 }} />
+              {(item.key === 'reward' && loading) ||
+              (item.key === 'mining' && miningLoading) ? (
+                <ActivityIndicator size="small" color={THEME.white} style={styles.legendLoader} />
               ) : (
                 <Text style={styles.legendValue}>{item.value}</Text>
               )}
@@ -237,8 +254,6 @@ const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) 
     </NeonBorderCard>
   );
 };
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   chartCard: {
@@ -361,6 +376,9 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: THEME.borderMuted,
     marginHorizontal: 4,
+  },
+  legendLoader: {
+    marginTop: 4,
   },
 });
 
