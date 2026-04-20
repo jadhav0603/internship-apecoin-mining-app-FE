@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   ScrollView,
   StyleSheet,
@@ -9,71 +10,92 @@ import {
 import { FONTS } from '../../constants/FONTS';
 import NeonBorderCard from './NeonBorderCard';
 import { THEME, formatCompactValue } from './theme';
+import type { WeekDayDatum } from '../../hooks/useRewardsData';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type RevenueChartProps = {
-  miningTotal: number;
-  rewardTotal: number;
-  referralTotal: number;
+  weekData: WeekDayDatum[];
+  totalCollected: number;
+  loading: boolean;
 };
 
 type RevenueKey = 'mining' | 'reward' | 'referral';
 
 type DayDatum = {
-  day: string;
+  day: string;   // 'Mon', 'Tue', …
   mining: number;
   reward: number;
   referral: number;
 };
+
+// ─── Layout constants ─────────────────────────────────────────────────────────
 
 const CHART_HEIGHT = 160;
 const BAR_WIDTH = 8;
 const BAR_GAP = 3;
 const COLUMN_GAP = 14;
 
-const BAR_CONFIG: Record<
-  RevenueKey,
-  { label: string; color: string; glowColor?: string }
-> = {
-  mining: { label: 'Mining', color: THEME.barMining, glowColor: THEME.neonGreen },
-  reward: { label: 'Reward', color: THEME.barReward, glowColor: '#F5F5F5' },
+// ─── Hardcoded mining & referral data (per day label) ────────────────────────
+
+const MINING_REFERRAL_DATA: Record<string, { mining: number; referral: number }> = {
+  Mon: { mining: 65, referral: 30 },
+  Tue: { mining: 80, referral: 40 },
+  Wed: { mining: 55, referral: 35 },
+  Thu: { mining: 90, referral: 45 },
+  Fri: { mining: 75, referral: 38 },
+  Sat: { mining: 95, referral: 42 },
+  Sun: { mining: 70, referral: 28 },
+};
+
+const MINING_TOTAL = 8200;
+const REFERRAL_TOTAL = 1100;
+
+// ─── Bar config ───────────────────────────────────────────────────────────────
+
+const BAR_CONFIG: Record<RevenueKey, { label: string; color: string; glowColor?: string }> = {
+  mining:   { label: 'Mining',   color: THEME.barMining,   glowColor: THEME.neonGreen },
+  reward:   { label: 'Reward',   color: THEME.barReward,   glowColor: '#F5F5F5' },
   referral: { label: 'Referral', color: THEME.barReferral, glowColor: THEME.neonGreenDim },
 };
 
-const DUMMY_WEEK_DATA: DayDatum[] = [
-  { day: 'Mon', mining: 65, reward: 45, referral: 30 },
-  { day: 'Tue', mining: 80, reward: 60, referral: 40 },
-  { day: 'Wed', mining: 55, reward: 50, referral: 35 },
-  { day: 'Thu', mining: 90, reward: 70, referral: 45 },
-  { day: 'Fri', mining: 75, reward: 55, referral: 38 },
-  { day: 'Sat', mining: 95, reward: 65, referral: 42 },
-  { day: 'Sun', mining: 0, reward: 0, referral: 0 },
-];
-
 const BAR_ORDER: RevenueKey[] = ['mining', 'reward', 'referral'];
 
-const getTodayLabel = (date: Date) =>
-  new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getLiveProgress = (date: Date) => {
-  const secondsSinceMidnight =
-    date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
-
-  return secondsSinceMidnight / 86400;
+const getTodayUtcLabel = () => {
+  const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return labels[new Date().getUTCDay()];
 };
 
-const RevenueChart = ({
-  miningTotal,
-  rewardTotal,
-  referralTotal,
-}: RevenueChartProps) => {
-  const [now, setNow] = useState(() => new Date());
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const RevenueChart = ({ weekData, totalCollected, loading }: RevenueChartProps) => {
   const animatedBars = useRef<Record<string, Animated.Value>>({});
   const hasMountedAnimation = useRef(false);
 
-  const todayLabel = useMemo(() => getTodayLabel(now), [now]);
-  const liveProgress = useMemo(() => getLiveProgress(now), [now]);
+  const todayLabel = useMemo(getTodayUtcLabel, []);
 
-  DUMMY_WEEK_DATA.forEach(entry => {
+  // Build combined dataset: mining & referral hardcoded, reward from backend
+  const combinedData: DayDatum[] = useMemo(() => {
+    // Max reward amount for scaling reward bars to the same 0-100 scale
+    const maxRewardAmount = Math.max(...weekData.map(d => d.totalAmount), 0.000001);
+
+    return weekData.map(entry => {
+      const mr = MINING_REFERRAL_DATA[entry.dayLabel] ?? { mining: 0, referral: 0 };
+      // Scale reward bar to 0-100 range (same range mining/referral use)
+      const rewardScaled = (entry.totalAmount / maxRewardAmount) * 80;
+      return {
+        day: entry.dayLabel,
+        mining: mr.mining,
+        reward: rewardScaled,
+        referral: mr.referral,
+      };
+    });
+  }, [weekData]);
+
+  // Ensure Animated.Values exist for every bar
+  combinedData.forEach(entry => {
     BAR_ORDER.forEach(key => {
       const id = `${entry.day}-${key}`;
       if (!animatedBars.current[id]) {
@@ -83,37 +105,28 @@ const RevenueChart = ({
   });
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 60000);
+    if (combinedData.length === 0) return;
 
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const getTargetHeight = (entry: DayDatum, key: RevenueKey) => {
-      const baseHeight = (entry[key] / 100) * CHART_HEIGHT;
-      return entry.day === todayLabel ? baseHeight * liveProgress : baseHeight;
-    };
+    const getTargetHeight = (entry: DayDatum, key: RevenueKey) =>
+      (entry[key] / 100) * CHART_HEIGHT;
 
     if (!hasMountedAnimation.current) {
-      const introAnimations = DUMMY_WEEK_DATA.flatMap(entry =>
+      const introAnimations = combinedData.flatMap(entry =>
         BAR_ORDER.map(key =>
           Animated.spring(animatedBars.current[`${entry.day}-${key}`], {
             toValue: getTargetHeight(entry, key),
             useNativeDriver: false,
             tension: 40,
             friction: 7,
-          }),
-        ),
+          })
+        )
       );
-
       Animated.stagger(60, introAnimations).start();
       hasMountedAnimation.current = true;
       return;
     }
 
-    DUMMY_WEEK_DATA.forEach(entry => {
+    combinedData.forEach(entry => {
       BAR_ORDER.forEach(key => {
         Animated.timing(animatedBars.current[`${entry.day}-${key}`], {
           toValue: getTargetHeight(entry, key),
@@ -122,31 +135,20 @@ const RevenueChart = ({
         }).start();
       });
     });
-  }, [liveProgress, todayLabel]);
+  }, [combinedData]);
 
+  // Legend items — mining & referral hardcoded, reward live
   const legendItems = [
-    {
-      key: 'mining',
-      label: 'Mining',
-      value: formatCompactValue(miningTotal),
-      color: THEME.barMining,
-    },
-    {
-      key: 'reward',
-      label: 'Reward',
-      value: formatCompactValue(rewardTotal),
-      color: THEME.barReward,
-    },
-    {
-      key: 'referral',
-      label: 'Referral',
-      value: formatCompactValue(referralTotal),
-      color: THEME.barReferral,
-    },
-  ];
+    { key: 'mining',   label: 'Mining',   value: formatCompactValue(MINING_TOTAL),    color: THEME.barMining },
+    { key: 'reward',   label: 'Reward',   value: formatCompactValue(totalCollected),  color: THEME.barReward },
+    { key: 'referral', label: 'Referral', value: formatCompactValue(REFERRAL_TOTAL),  color: THEME.barReferral },
+  ] as const;
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <NeonBorderCard style={styles.chartCard}>
+      {/* Card header */}
       <View style={styles.headerRow}>
         <Text style={styles.cardTitle}>Revenue Overview</Text>
         <View style={styles.badge}>
@@ -154,16 +156,14 @@ const RevenueChart = ({
         </View>
       </View>
 
+      {/* Chart */}
       <View style={styles.chartWrap}>
         {[1, 2, 3].map(line => (
           <View
             key={line}
             style={[
               styles.dashLine,
-              {
-                bottom:
-                  line === 3 ? CHART_HEIGHT - 1 : (CHART_HEIGHT / 3) * line,
-              },
+              { bottom: line === 3 ? CHART_HEIGHT - 1 : (CHART_HEIGHT / 3) * line },
             ]}
           />
         ))}
@@ -173,7 +173,7 @@ const RevenueChart = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chartScrollContent}
         >
-          {DUMMY_WEEK_DATA.map((entry, index) => {
+          {combinedData.map((entry, index) => {
             const isToday = entry.day === todayLabel;
 
             return (
@@ -181,9 +181,7 @@ const RevenueChart = ({
                 key={entry.day}
                 style={[
                   styles.dayColumn,
-                  index < DUMMY_WEEK_DATA.length - 1 && {
-                    marginRight: COLUMN_GAP,
-                  },
+                  index < combinedData.length - 1 && { marginRight: COLUMN_GAP },
                 ]}
               >
                 <View style={styles.barTrack}>
@@ -218,13 +216,18 @@ const RevenueChart = ({
         </ScrollView>
       </View>
 
+      {/* Legend */}
       <View style={styles.legendRow}>
         {legendItems.map((item, index) => (
           <React.Fragment key={item.key}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
               <Text style={styles.legendLabel}>{item.label}</Text>
-              <Text style={styles.legendValue}>{item.value}</Text>
+              {item.key === 'reward' && loading ? (
+                <ActivityIndicator size="small" color={THEME.white} style={{ marginTop: 4 }} />
+              ) : (
+                <Text style={styles.legendValue}>{item.value}</Text>
+              )}
             </View>
 
             {index < legendItems.length - 1 && <View style={styles.legendDivider} />}
@@ -234,6 +237,8 @@ const RevenueChart = ({
     </NeonBorderCard>
   );
 };
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   chartCard: {

@@ -3,13 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Image,
   TouchableOpacity,
 } from 'react-native';
 
-const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = (screenWidth - 40) / 3;
+
 
 interface DayCardProps {
   day: number;
@@ -71,9 +69,8 @@ export default DayCard;
 
 const styles = StyleSheet.create({
   container: {
-    width: CARD_WIDTH,
-    height: 150,
-    margin: 6,
+    width: '100%',
+    height: 130,
     borderRadius: 12,
     overflow: 'hidden',
     alignItems: 'center',
@@ -88,7 +85,7 @@ const styles = StyleSheet.create({
 
   dayText: {
     position: 'absolute',
-    top: 16,
+    top: 14,
     fontSize: 13,
     fontWeight: '900',
     color: '#e6d159',
@@ -120,8 +117,8 @@ const styles = StyleSheet.create({
 
   amount: {
     position: 'absolute',
-    bottom: 30,
-    fontSize: 14,
+    bottom: 25,
+    fontSize: 12,
     fontWeight: '500',
     color: '#eaaf0f',
     textAlign: 'center',
@@ -130,10 +127,10 @@ const styles = StyleSheet.create({
 
   glowCard: {
     shadowColor: '#b1ff14',
-    shadowOffset: { width: 5, height: 5 },
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
-    shadowRadius: 10,
-    elevation: 45,
+    shadowRadius: 12,
+    elevation: 14,
   },
 
   claimedOverlay: {

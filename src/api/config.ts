@@ -2,7 +2,7 @@ import { NativeModules, Platform } from 'react-native';
 
 const DEV_PORT = 5000;
 // Update this to your development machine's LAN IP so physical devices can reach the API
-const DEV_LAN_HOST = '192.168.1.101';
+const DEV_LAN_HOST = '192.168.1.12';
 const DEV_LAN_BASE_URL = `http://${DEV_LAN_HOST}:${DEV_PORT}/api`;
 
 const unique = (values: string[]) => [...new Set(values)];
