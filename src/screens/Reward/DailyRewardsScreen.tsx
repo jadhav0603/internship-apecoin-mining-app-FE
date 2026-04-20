@@ -167,6 +167,15 @@ const DailyRewardsScreen = () => {
       // If claim fails, hide success and show error
       setShowSuccess(false);
       const msg = error.response?.data?.message || 'Failed to claim reward.';
+      
+      if (__DEV__) {
+        console.warn('[DailyRewardsScreen] handleClaim failed', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+      }
+
       Alert.alert('Claim Failed', msg);
     } finally {
       setClaiming(false);
