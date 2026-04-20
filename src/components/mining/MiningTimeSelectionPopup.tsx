@@ -1,12 +1,23 @@
 import React, { useState } from 'react';
 import { Text, View, Modal, TouchableOpacity } from 'react-native';
 import { useTimeModal } from '../../context/TimeModal';
-import { useNavigation } from '@react-navigation/native';
+
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
+
 import styles from './miningTimeSelectionPopup.styles';
 import { COLORS } from '../../constants/COLORS';
 import { useMining } from '../../context/MiningContext';
+
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+
+// ✅ Typed navigation (from Testing branch)
+type MiningPopupNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Mining'
+>;
 
 const SIZE = 200;
 const RADIUS = 80;
@@ -14,11 +25,12 @@ const STROKE = 10;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 const MiningTimeSelectionPopup = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<MiningPopupNavigationProp>();
+
   const { showModal, setShowModal } = useTimeModal();
+  const { startMining } = useMining();
 
   const [hours, setHours] = useState(1);
-  const { startMining } = useMining();
 
   const increase = () => {
     if (hours < 12) setHours(hours + 1);
@@ -35,12 +47,10 @@ const MiningTimeSelectionPopup = () => {
   return (
     <Modal visible={showModal} transparent animationType="fade">
       <View style={styles.overlay}>
-        
         <LinearGradient
           colors={[COLORS.backgroundLight, COLORS.backgroundDeep]}
           style={styles.modalBox}
         >
-
           {/* ❌ Close */}
           <TouchableOpacity
             style={styles.closeBtn}
@@ -54,7 +64,6 @@ const MiningTimeSelectionPopup = () => {
           {/* 🔥 Circular Dial */}
           <View style={styles.circleWrapper}>
             <Svg width={SIZE} height={SIZE}>
-              
               {/* Track */}
               <Circle
                 cx={SIZE / 2}
@@ -109,7 +118,6 @@ const MiningTimeSelectionPopup = () => {
           >
             <Text style={styles.confirmText}>START MINING</Text>
           </TouchableOpacity>
-
         </LinearGradient>
       </View>
     </Modal>

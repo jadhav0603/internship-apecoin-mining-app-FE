@@ -1,72 +1,399 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  ImageSourcePropType,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import TabScene from '../../components/layout/TabScene';
-import { authService } from '../../services/authService';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AvatarWithGlow from '../../components/profile/AvatarWithGlow';
+import CoinsSummaryCard from '../../components/profile/CoinsSummaryCard';
+import MyAccountModal from '../../components/profile/MyAccountModal';
+import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
+import ProfileSkeleton from '../../components/profile/ProfileSkeleton';
+import {
+  PROFILE_THEME,
+  buildHandle,
+  resolveProfileName,
+} from '../../components/profile/profileTheme';
+import { getUserDisplayName, useUser } from '../../context/UserContext';
 import { RootStackParamList } from '../../navigation/types';
+import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const { user } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
+  const [username, setUsername] = useState(getUserDisplayName(user));
+
+  useEffect(() => {
+    setEmail(currentEmail => currentEmail || user?.email || '');
+    setAvatarUri(currentAvatar => currentAvatar || user?.photoURL || '');
+    setUsername(currentName => {
+      const nextName = getUserDisplayName(user);
+      return currentName === 'User' || !currentName ? nextName : currentName;
+    });
+  }, [user]);
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('MainTabs', { screen: 'Home' });
+  };
+
+  const handleComingSoon = (label: string) => {
+    Alert.alert(label, 'Frontend-only placeholder');
+  };
+
+  const openAccountModal = () => {
+    setIsAccountModalVisible(true);
+  };
+
+  const closeAccountModal = () => {
+    setIsAccountModalVisible(false);
+  };
 
   const handleLogout = async () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
     try {
       await authService.signOut();
-      navigation.replace('SignIn');
-    } catch (error) {
-      console.error('Profile logout error:', error);
+    } catch {
+      Alert.alert('Log Out', 'Unable to log out right now. Please try again.');
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
+  const confirmLogout = () => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Log Out',
+        style: 'destructive',
+        onPress: () => {
+          handleLogout().catch(() => undefined);
+        },
+      },
+    ]);
+  };
+
+  const menuItems = useMemo(
+    () => [
+      {
+        id: 'account',
+        label: 'My Account',
+        icon: 'person-outline' as const,
+        iconBg: '#1a3a1a',
+        active: true,
+      },
+      {
+        id: 'referral',
+        label: 'Refer and Earn',
+        icon: 'people-outline' as const,
+        iconBg: '#1a1a3a',
+        active: false,
+      },
+      {
+        id: 'leaderboard',
+        label: 'Leader Board',
+        icon: 'trophy-outline' as const,
+        iconBg: '#3a3114',
+        active: false,
+      },
+      {
+        id: 'progress',
+        label: 'My Progress',
+        icon: 'stats-chart-outline' as const,
+        iconBg: '#123033',
+        active: false,
+      },
+      {
+        id: 'about',
+        label: 'About Us',
+        icon: 'information-circle-outline' as const,
+        iconBg: '#321536',
+        active: false,
+      },
+      {
+        id: 'logout',
+        label: 'Log Out',
+        icon: 'log-out-outline' as const,
+        iconBg: PROFILE_THEME.dangerBg,
+        active: false,
+        tone: 'danger' as const,
+      },
+    ],
+    [],
+  );
+  const menuAnimations = useRef(
+    menuItems.map(() => new Animated.Value(0)),
+  ).current;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        const profile = await userService.getProfileIdentity();
+        if (!isMounted) {
+          return;
+        }
+
+        const resolvedName = resolveProfileName(profile.username, profile.email);
+        setUsername(resolvedName);
+        setEmail(profile.email);
+        setAvatarUri(profile.photoURL ?? '');
+      } catch {
+        if (isMounted) {
+          setUsername(getUserDisplayName(user));
+          setEmail(user?.email ?? '');
+          setAvatarUri(user?.photoURL ?? '');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    const animation = Animated.stagger(
+      80,
+      menuAnimations.map(anim =>
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+      ),
+    );
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [menuAnimations]);
+
+  const userHandle = useMemo(() => buildHandle(username), [username]);
+  const avatarSource = useMemo<ImageSourcePropType | undefined>(
+    () => (avatarUri ? { uri: avatarUri } : undefined),
+    [avatarUri],
+  );
+
   return (
-    <TabScene
-      eyebrow="PROFILE SETTINGS"
-      title="Keep account controls in the same visual system."
-      description="Profile is now rendered inside the tab navigator instead of a raw placeholder view, which keeps spacing, safe areas, and bottom navigation behavior consistent."
-      metrics={[
-        { label: 'Security Score', value: '92 / 100' },
-        { label: 'Devices Online', value: '03' },
-        { label: 'Backup Status', value: 'Synced' },
-      ]}
-      cardTitle="Account Readiness"
-      cardBody="KYC status, security actions, and preference modules can now slot into a structured profile layout without fighting the header or tab bar placement."
-    >
-      <View style={styles.actionRow}>
-        <Text style={styles.actionLabel}>Demo logout</Text>
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          onPress={handleLogout}
-          activeOpacity={0.75}
-        >
-          <Text style={styles.logoutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
-    </TabScene>
+    <View style={styles.container}>
+      <StatusBar backgroundColor={PROFILE_THEME.bg} barStyle="light-content" />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: Math.max(insets.top + 10, 54),
+            paddingBottom: Math.max(100, tabBarHeight + 28),
+          },
+        ]}
+      >
+        <View style={styles.topRow}>
+          <View style={styles.navSide}>
+            <Pressable style={styles.navCircle} onPress={handleBack}>
+              <Ionicons
+                name="chevron-back"
+                size={22}
+                color={PROFILE_THEME.backIcon}
+              />
+            </Pressable>
+          </View>
+
+          <View style={styles.navSideRight}>
+            <Pressable
+              style={styles.navCircle}
+              onPress={() => handleComingSoon('Settings')}
+            >
+              <Ionicons
+                name="settings-outline"
+                size={22}
+                color={PROFILE_THEME.settingsIcon}
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        {isLoading ? (
+          <ProfileSkeleton />
+        ) : (
+          <>
+            <AvatarWithGlow
+              username={username}
+              source={avatarSource}
+              onPress={openAccountModal}
+            />
+            <Text style={styles.userName}>{username}</Text>
+            <Text style={styles.userHandle}>{userHandle}</Text>
+          </>
+        )}
+
+        <CoinsSummaryCard />
+
+        <View style={styles.menuContainer}>
+          {menuItems.map((item, index) => (
+            <Animated.View
+              key={item.id}
+              style={{
+                opacity: menuAnimations[index],
+                transform: [
+                  {
+                    translateY: menuAnimations[index].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [18, 0],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <ProfileMenuItem
+                label={item.label}
+                icon={item.icon}
+                iconBg={item.iconBg}
+                active={item.active}
+                tone={item.tone}
+                disabled={item.id === 'logout' && isLoggingOut}
+                onPress={() => {
+                  if (item.id === 'account') {
+                    openAccountModal();
+                    return;
+                  }
+
+                  if (item.id === 'logout') {
+                    confirmLogout();
+                    return;
+                  }
+
+                  if (item.id === 'referral') {
+                    navigation.navigate('ReferAndEarn', {
+                      email,
+                      username,
+                    });
+                    return;
+                  }
+
+                  if (item.id === 'leaderboard') {
+                    navigation.navigate('Leaderboard', {
+                      email,
+                      username,
+                      avatarUri,
+                    });
+                    return;
+                  }
+
+                  handleComingSoon(item.label);
+                }}
+              />
+            </Animated.View>
+          ))}
+        </View>
+      </ScrollView>
+
+      <MyAccountModal
+        visible={isAccountModalVisible}
+        username={username}
+        email={email}
+        avatarSource={avatarSource}
+        isLoggingOut={isLoggingOut}
+        onClose={closeAccountModal}
+        onLogout={() => {
+          handleLogout().catch(() => undefined);
+        }}
+        onEditUsername={() => handleComingSoon('Edit Username')}
+        onChangePhoto={() => handleComingSoon('Change Photo')}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  actionRow: {
-    marginTop: 10,
+  container: {
+    flex: 1,
+    backgroundColor: PROFILE_THEME.bg,
+  },
+  scrollContent: {
+    paddingHorizontal: 0,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  navSide: {
+    alignItems: 'flex-start',
+  },
+  navSideRight: {
+    alignItems: 'flex-end',
+  },
+  navCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: PROFILE_THEME.buttonBg,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  actionLabel: {
-    color: '#B0C987',
-    marginBottom: 10,
+  userName: {
+    color: PROFILE_THEME.white,
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  userHandle: {
+    color: PROFILE_THEME.neonGreen,
     fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 4,
   },
-  logoutBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    borderRadius: 28,
-    paddingVertical: 14,
-    paddingHorizontal: 36,
-  },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+  menuContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
   },
 });
 

@@ -11,11 +11,11 @@ import {
   signOut as firebaseSignOut,
 } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import axios from 'axios';
 import apiClient from '../api/apiClient';
-import { API_CONFIG, FIREBASE_CONFIG, getDevApiBaseUrls } from '../api/config';
+import { FIREBASE_CONFIG, API_CONFIG, getDevApiBaseUrls } from '../api/config';
 
 const firebaseAuth = getAuth(getApp());
+let authRestorePromise: Promise<FirebaseAuthTypes.User | null> | null = null;
 
 // Configure Google Sign-In once
 GoogleSignin.configure({
@@ -27,6 +27,7 @@ type SyncedUser = {
   email: string;
   displayName?: string;
   photoURL?: string;
+  plan?: string;
 };
 
 type BackendSyncResponse = {
@@ -34,21 +35,85 @@ type BackendSyncResponse = {
   user: SyncedUser;
 };
 
-const postSync = async (baseURL: string, idToken: string) => {
-  const response = await axios.post<BackendSyncResponse>(
-    `${baseURL}/auth/sync`,
-    { idToken },
-    {
-      timeout: API_CONFIG.TIMEOUT,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  );
+const signOutFromProviders = async () => {
+  try {
+    await GoogleSignin.signOut();
+  } catch {
+    // No-op: user may not be signed in with Google.
+  }
 
-  return response.data;
+  if (firebaseAuth.currentUser) {
+    await firebaseSignOut(firebaseAuth);
+  }
 };
 
+const syncWithBackendRequest = async (
+  idToken: string
+): Promise<BackendSyncResponse> => {
+  try {
+    const response = await apiClient.post<BackendSyncResponse>('/auth/sync', { idToken });
+    return response.data;
+  } catch (error: any) {
+    const isNetworkError = !error?.response;
+    if (!isNetworkError) {
+      if (__DEV__) {
+        console.log(
+          `Backend sync failed (baseURL: ${API_CONFIG.BASE_URL}):`,
+          error?.response?.data ?? error?.message ?? error
+        );
+      }
+      throw error;
+    }
+
+    let lastError = error;
+    const fallbackUrls = getDevApiBaseUrls().filter((url: string) => url !== API_CONFIG.BASE_URL);
+
+    for (const baseURL of fallbackUrls) {
+      try {
+        const data = await postSync(baseURL, idToken);
+        if (__DEV__) {
+          console.log(`Backend sync succeeded via fallback baseURL: ${baseURL}`);
+        }
+        return data;
+      } catch (fallbackError: any) {
+        lastError = fallbackError;
+      }
+    }
+
+    if (__DEV__) {
+      console.log(
+        `Backend sync failed on all base URLs: ${getDevApiBaseUrls().join(', ')}`,
+        lastError?.response?.data ?? lastError?.message ?? lastError
+      );
+    }
+    throw lastError;
+  }
+};
+
+const syncFirebaseSession = async (
+  user: FirebaseAuthTypes.User,
+  options?: { rollbackOnFailure?: boolean }
+): Promise<BackendSyncResponse> => {
+  const idToken = await getIdToken(user, true);
+
+  try {
+    return await syncWithBackendRequest(idToken);
+  } catch (error) {
+    if (options?.rollbackOnFailure) {
+      await signOutFromProviders().catch(() => undefined);
+    }
+
+    throw error;
+  }
+};
+
+const postSync = async (baseURL: string, idToken: string) => {
+  const response = await apiClient.post<BackendSyncResponse>(
+    `${baseURL}/auth/sync`,
+    { idToken }
+  );
+  return response.data;
+};
 const resetGoogleSignInSession = async () => {
   // This package version does not expose `prompt: 'select_account'`,
   // so we clear the cached Google session before every sign-in attempt.
@@ -97,40 +162,39 @@ export const authService = {
       return firebaseAuth.currentUser;
     }
 
-    return new Promise(resolve => {
-      const unsubscribe = onAuthStateChanged(firebaseAuth, user => {
-        unsubscribe();
-        resolve(user);
+    if (!authRestorePromise) {
+      authRestorePromise = new Promise(resolve => {
+        const unsubscribe = onAuthStateChanged(firebaseAuth, user => {
+          unsubscribe();
+          authRestorePromise = null;
+          resolve(user);
+        });
       });
-    });
+    }
+
+    return authRestorePromise;
   },
 
   /**
    * Register a new user with email and password
    */
-  async signUp(email: string, password: string): Promise<BackendSyncResponse> {
+  async signUp(email: string, password: string): Promise<FirebaseAuthTypes.User> {
     const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
-    const idToken = await getIdToken(userCredential.user);
-
-    // Sync with backend
-    return this.syncWithBackend(idToken);
+    return userCredential.user;
   },
 
   /**
    * Log in an existing user with email and password
    */
-  async signIn(email: string, password: string): Promise<BackendSyncResponse> {
+  async signIn(email: string, password: string): Promise<FirebaseAuthTypes.User> {
     const userCredential = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
-    const idToken = await getIdToken(userCredential.user);
-
-    // Sync with backend
-    return this.syncWithBackend(idToken);
+    return userCredential.user;
   },
 
   /**
    * Perform Google Sign-In and sync with backend
    */
-  async googleSignIn(): Promise<BackendSyncResponse> {
+  async googleSignIn(): Promise<FirebaseAuthTypes.User> {
     // 1. Get Google ID token
     const googleIdToken = await getGoogleIdToken();
 
@@ -140,61 +204,32 @@ export const authService = {
     // 3. Sign-in the user with the credential
     const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
 
-    // 4. Get Firebase ID Token (for our backend)
-    const firebaseIdToken = await getIdToken(userCredential.user);
+    return userCredential.user;
+  },
 
-    // 5. Sync with backend
-    return this.syncWithBackend(firebaseIdToken);
+  async syncCurrentSession(
+    options?: { rollbackOnFailure?: boolean }
+  ): Promise<BackendSyncResponse | null> {
+    const user = firebaseAuth.currentUser ?? (await this.waitForAuthRestore());
+
+    if (!user) {
+      return null;
+    }
+
+    return syncFirebaseSession(user, options);
   },
 
   /**
    * Sync Firebase session with MongoDB backend
    */
   async syncWithBackend(idToken: string): Promise<BackendSyncResponse> {
-    try {
-      const response = await apiClient.post<BackendSyncResponse>('/auth/sync', { idToken });
-      return response.data;
-    } catch (error: any) {
-      const isNetworkError = !error?.response;
-      if (!isNetworkError) {
-        console.error(
-          `Backend sync failed (baseURL: ${API_CONFIG.BASE_URL}):`,
-          error?.response?.data ?? error?.message ?? error
-        );
-        throw error;
-      }
-
-      let lastError = error;
-      const fallbackUrls = getDevApiBaseUrls().filter(url => url !== API_CONFIG.BASE_URL);
-
-      for (const baseURL of fallbackUrls) {
-        try {
-          const data = await postSync(baseURL, idToken);
-          console.log(`Backend sync succeeded via fallback baseURL: ${baseURL}`);
-          return data;
-        } catch (fallbackError: any) {
-          lastError = fallbackError;
-        }
-      }
-
-      console.error(
-        `Backend sync failed on all base URLs: ${getDevApiBaseUrls().join(', ')}`,
-        lastError?.response?.data ?? lastError?.message ?? lastError
-      );
-      throw lastError;
-    }
+    return syncWithBackendRequest(idToken);
   },
 
   /**
    * Log out the current user
    */
   async signOut() {
-    try {
-      await GoogleSignin.signOut();
-    } catch {
-      // No-op: user may not be signed in with Google.
-    }
-
-    return firebaseSignOut(firebaseAuth);
+    return signOutFromProviders();
   },
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Image, Pressable } from 'react-native';
+import { InteractionManager, View, Text, Image, Pressable } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
 import Animated, {
@@ -9,20 +9,17 @@ import Animated, {
   withTiming,
   withSequence,
   withRepeat,
-  Easing,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './splash.styles';
-import { useNavigation } from '@react-navigation/native';
-
-import { getAuth } from '@react-native-firebase/auth';
 
 const SplashScreen = ({ onFinish }: any) => {
   const buttonScale = useSharedValue(1);
   const [isPressed, setIsPressed] = useState(false);
-  const timeoutRef = useRef<any>(null);
+  const [showCoinsAnimation, setShowCoinsAnimation] = useState(false);
 
-  const navigation = useNavigation();
+  const interactionHandleRef =
+    useRef<ReturnType<typeof InteractionManager.runAfterInteractions> | null>(null);
 
   useEffect(() => {
     buttonScale.value = withRepeat(
@@ -34,21 +31,23 @@ const SplashScreen = ({ onFinish }: any) => {
       true
     );
 
+    // ✅ Delay heavy animation until interactions finish
+    interactionHandleRef.current = InteractionManager.runAfterInteractions(() => {
+      setShowCoinsAnimation(true);
+    });
+
     return () => {
       cancelAnimation(buttonScale);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      interactionHandleRef.current?.cancel?.();
     };
-  }, []);
+  }, [buttonScale]);
 
   const handlePress = () => {
-  if (isPressed) return;
+    if (isPressed) return;
 
-  setIsPressed(true);
-
-  setTimeout(() => {
+    setIsPressed(true);
     onFinish();
-  }, 300);
-};
+  };
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     transform: [{ scale: buttonScale.value }],
@@ -57,32 +56,36 @@ const SplashScreen = ({ onFinish }: any) => {
   return (
     <View style={styles.container}>
       <View style={styles.topSection}>
-  <Image
-    source={require('../../assets/images/splashScreen-2.png')}
-    style={styles.image}
-  />
+        <Image
+          source={require('../../assets/images/splashScreen-2.png')}
+          style={styles.image}
+        />
 
-  <LinearGradient
-    colors={['transparent', 'rgba(10,15,10,0.8)', '#0A0F0A']}
-    style={styles.gradientOverlay}
-  />
+        <LinearGradient
+          colors={['transparent', 'rgba(10,15,10,0.8)', '#0A0F0A']}
+          style={styles.gradientOverlay}
+        />
 
-  {/* ✅ Wrap Lottie inside container */}
-  <View style={styles.lottieContainer}>
-    <LottieView
-      source={require('../../assets/animations/Falling_coins.json')}
-      autoPlay
-      loop
-      style={styles.lottie}
-    />
-  </View>
-</View>
+        {/* ✅ Combined: container + conditional rendering */}
+        {showCoinsAnimation && (
+          <View style={styles.lottieContainer}>
+            <LottieView
+              source={require('../../assets/animations/Falling_coins.json')}
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
+          </View>
+        )}
+      </View>
 
       <SafeAreaView style={styles.bottomSection}>
         <Text style={styles.title}>
           Trusted{'\n'}& Secure{'\n'}Crypto Wallet
         </Text>
-        <Text style={styles.subtitle}>Manage all your exchange account is easy</Text>
+        <Text style={styles.subtitle}>
+          Manage all your exchange account is easy
+        </Text>
 
         <Pressable onPress={handlePress}>
           <Animated.View style={[styles.button, animatedButtonStyle]}>
