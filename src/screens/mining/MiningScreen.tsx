@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {
@@ -13,36 +13,14 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import SegmentedRing from '../../components/mining/SegmentedRing';
 import { COLORS } from '../../constants/COLORS';
 import styles from './mining.styles';
-import { useRoute } from '@react-navigation/native';
-import { useState, useEffect } from 'react';
 import { useMining } from '../../context/MiningContext';
-import { Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const MiningScreen = () => {
-  const route: any = useRoute();
-  const time = route?.params?.time || 1;
-
-  const [seconds, setSeconds] = useState(time * 3600);
-
   const { earned, secondsLeft, multiplier, setMultiplier } = useMining();
   const navigation = useNavigation();
   const multipliers = [1, 2, 4, 8, 10, 12];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSeconds(prev => {
-        if (prev <= 0) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600);

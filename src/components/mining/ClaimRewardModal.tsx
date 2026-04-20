@@ -1,30 +1,41 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
+import API from '../../services/api';
 
 const ClaimRewardModal = () => {
-  const { isMining, earned, secondsLeft, hours, multiplier, stopMining } = useMining();
-  const { addToWallet } = useWallet();
-
+  const { isMining, earned, secondsLeft, hours, multiplier, stopMining, miningData } = useMining();
+  const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
 
-  // ❌ show only when mining completed
-  if (isMining || !visible) return null;
+  useEffect(() => {
+    if (isMining) {
+      setVisible(true);
+    }
+  }, [isMining]);
 
-  const handleClaim = () => {
-    addToWallet(earned);   // 💰 add balance
-    setVisible(false);     // ❌ close modal
+  const isClaimAvailable = miningData?.status === 'idle' && earned > 0;
+
+  if (isMining || !visible || !isClaimAvailable) {
+    return null;
+  }
+
+  const handleClaim = async () => {
+    const response = await API.post('/mining/claim');
+    setBalanceFromServer(response.data?.balance ?? 0);
+    setVisible(false);
+
     setTimeout(() => {
-      stopMining();        // 🔥 reset mining AFTER close
+      void stopMining();
     }, 300);
   };
 
-  const formatTime = (sec:number)=>{
-    const h = Math.floor(sec/3600);
-    const m = Math.floor((sec%3600)/60);
-    const s = sec%60;
+  const formatTime = (sec: number) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
     return `${h}h ${m}m ${s}s`;
   };
 
@@ -48,7 +59,6 @@ const ClaimRewardModal = () => {
             borderColor: COLORS.glassBorder,
           }}
         >
-          {/* 🎉 Title */}
           <Text
             style={{
               color: COLORS.textPrimary,
@@ -57,10 +67,9 @@ const ClaimRewardModal = () => {
               marginBottom: 12,
             }}
           >
-            Mining Complete 🎉
+            Mining Complete
           </Text>
 
-          {/* 💰 Earned */}
           <Text
             style={{
               color: COLORS.primary,
@@ -72,20 +81,14 @@ const ClaimRewardModal = () => {
             {earned.toFixed(6)} APC
           </Text>
 
-          {/* 📊 Details */}
           <View style={{ marginTop: 10 }}>
-            <Text style={{ color: COLORS.textSecondary }}>
-              Duration: {hours}h
-            </Text>
-            <Text style={{ color: COLORS.textSecondary }}>
-              Multiplier: {multiplier}x
-            </Text>
+            <Text style={{ color: COLORS.textSecondary }}>Duration: {hours}h</Text>
+            <Text style={{ color: COLORS.textSecondary }}>Multiplier: {multiplier}x</Text>
             <Text style={{ color: COLORS.textSecondary }}>
               Remaining: {formatTime(secondsLeft)}
             </Text>
           </View>
 
-          {/* 🚀 CLAIM BUTTON */}
           <Pressable
             onPress={handleClaim}
             style={{

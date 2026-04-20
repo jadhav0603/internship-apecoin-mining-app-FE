@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import auth from '@react-native-firebase/auth';
+import API from '../services/api';
 
 type WalletType = {
   balance: number;
-  addToWallet: (amount: number) => void;
+  refreshBalance: () => Promise<void>;
+  setBalanceFromServer: (amount: number) => void;
 };
 
 const WalletContext = createContext<WalletType>({} as WalletType);
@@ -11,22 +13,34 @@ const WalletContext = createContext<WalletType>({} as WalletType);
 export const WalletProvider = ({ children }: any) => {
   const [balance, setBalance] = useState(0);
 
-  const addToWallet = async (amount: number) => {
-    const newBalance = balance + amount;
-    setBalance(newBalance);
-    await AsyncStorage.setItem('WALLET', JSON.stringify(newBalance));
+  const refreshBalance = async () => {
+    try {
+      const response = await API.get('/user/me');
+      setBalance(response.data?.usdBalance ?? 0);
+    } catch (error) {
+      console.error('[wallet] failed to load balance:', error);
+      setBalance(0);
+    }
+  };
+
+  const setBalanceFromServer = (amount: number) => {
+    setBalance(amount ?? 0);
   };
 
   useEffect(() => {
-    const load = async () => {
-      const saved = await AsyncStorage.getItem('WALLET');
-      if (saved) setBalance(JSON.parse(saved));
-    };
-    load();
+    const unsubscribe = auth().onAuthStateChanged(user => {
+      if (user) {
+        void refreshBalance();
+      } else {
+        setBalance(0);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
-    <WalletContext.Provider value={{ balance, addToWallet }}>
+    <WalletContext.Provider value={{ balance, refreshBalance, setBalanceFromServer }}>
       {children}
     </WalletContext.Provider>
   );

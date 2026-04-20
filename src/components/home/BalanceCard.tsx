@@ -52,9 +52,11 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';
 import { useMining } from '../../context/MiningContext';
+import { useWallet } from '../../context/WalletContext';
 
 const BalanceCard = () => {
   const { earned } = useMining();
+  const { balance } = useWallet();
 
   return (
     <View style={styles.container}>
@@ -89,7 +91,7 @@ const BalanceCard = () => {
           <View style={styles.metricContent}>
             <Text style={styles.metricLabel}>Liquid Balance</Text>
             <Text style={styles.metricValue}>
-              0.00000000
+              ${balance.toFixed(8)}
             </Text>
           </View>
         </View>
