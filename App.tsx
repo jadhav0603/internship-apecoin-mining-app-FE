@@ -8,6 +8,13 @@ import { UserProvider } from './src/context/UserContext';
 import { TimeModalProvider } from './src/context/TimeModal';
 import { MiningProvider } from './src/context/MiningContext';
 import { WalletProvider } from './src/context/WalletContext';
+import mobileAds from 'react-native-google-mobile-ads';
+
+mobileAds()
+  .initialize()
+  .then(adapterStatuses => {
+    console.log('Mobile Ads SDK initialized');
+  });
 
 function App(): React.JSX.Element {
   return (

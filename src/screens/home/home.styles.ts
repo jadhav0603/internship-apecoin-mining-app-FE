@@ -191,8 +191,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: FONTS.letterSpacing.wide,
   },
-
-
+  adContainer: {
+    alignItems: 'center',
+    marginTop:  10,
+    marginBottom: 10,
+    width: '100%',
+  },
 });
 
 export default styles;

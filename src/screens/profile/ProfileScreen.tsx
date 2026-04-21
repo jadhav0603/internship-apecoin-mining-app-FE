@@ -20,6 +20,8 @@ import {
   launchImageLibrary,
   type ImagePickerResponse,
 } from 'react-native-image-picker';
+import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 import AvatarWithGlow from '../../components/profile/AvatarWithGlow';
 import CoinsSummaryCard from '../../components/profile/CoinsSummaryCard';
@@ -48,6 +50,21 @@ const ProfileScreen = () => {
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const [username, setUsername] = useState(getUserDisplayName(user));
+
+  const { isLoaded: isInterstitialLoaded, load: loadInterstitial, show: showInterstitial } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_PROFILE,
+    { requestNonPersonalizedAdsOnly: true }
+  );
+
+  useEffect(() => {
+    loadInterstitial();
+  }, [loadInterstitial]);
+
+  useEffect(() => {
+    if (isInterstitialLoaded) {
+      showInterstitial();
+    }
+  }, [isInterstitialLoaded, showInterstitial]);
 
   useEffect(() => {
     setEmail(currentEmail => currentEmail || user?.email || '');
@@ -241,6 +258,12 @@ const ProfileScreen = () => {
         <CoinsSummaryCard />
 
         <View style={styles.menuContainer}>
+          <View style={styles.adWrapper}>
+            <BannerAd
+              unitId={AD_UNITS.BANNER_PROFILE}
+              size={BannerAdSize.BANNER}
+            />
+          </View>
           {menuItems.map((item, index) => (
             <Animated.View
               key={item.id}
@@ -332,6 +355,11 @@ const styles = StyleSheet.create({
     textAlign: 'center', marginTop: 4,
   },
   menuContainer: { marginHorizontal: 16, marginTop: 16 },
+  adWrapper: {
+    alignItems: 'center',
+    marginBottom: 12,
+    width: '100%',
+  },
 });
 
 export default ProfileScreen;
