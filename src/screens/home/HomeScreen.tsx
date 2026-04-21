@@ -1,6 +1,9 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
+import {
+  CompositeNavigationProp,
+  useNavigation,
+} from '@react-navigation/native';
 import {
   BottomTabNavigationProp,
   useBottomTabBarHeight,
@@ -8,43 +11,26 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import { COLORS } from '../../constants/COLORS';
-import MiningButton from '../../components/home/MiningButton';
-import Header from '../../components/home/Header';
+import MiningButton from '../../components/mining/MiningButton';
+import Menu from '../../components/home/Menu';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
+import BalanceCard from '../../components/home/BalanceCard';
+import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
+import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Home'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-const marketSignals = [
-  {
-    label: '24h Portfolio',
-    value: '+12.48%',
-    icon: 'trending-up',
-  },
-  {
-    label: 'Active Miners',
-    value: '128',
-    icon: 'lightning-bolt-outline',
-  },
-  {
-    label: 'Reward Cycle',
-    value: '03h 28m',
-    icon: 'timer-sand',
-  },
-];
-
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const tabBarHeight = useBottomTabBarHeight();
-
-  const handleOpenMining = () => {
-    navigation.navigate('Mining');
-  };
 
   return (
     <LinearGradient
@@ -55,65 +41,51 @@ const HomeScreen = () => {
       ]}
       start={{ x: 0.15, y: 0 }}
       end={{ x: 0.85, y: 1 }}
-      style={styles.background}>
+      style={styles.background}
+    >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.primaryGlow} />
         <View style={styles.secondaryGlow} />
 
-        <View style={styles.headerWrap}>
-          <Header />
-        </View>
+        <Menu />
+        <BalanceCard />
 
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent,
             { paddingBottom: tabBarHeight + 36 },
-          ]}>
-          <LinearGradient
-            colors={['rgba(38, 54, 14, 0.92)', 'rgba(13, 19, 9, 0.96)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroCard}>
-            <Text style={styles.badge}>APECOIN CONTROL CENTER</Text>
-            <Text style={styles.title}>Start mining with a cleaner, faster flow.</Text>
-            <Text style={styles.subtitle}>
-              Your home dashboard now sits between a fixed header and native tab
-              navigation, so every action feels anchored and stable.
-            </Text>
+          ]}
+        >
+          <View>
+            <View style={styles.adContainer}>
+                <BannerAd
+                  unitId={AD_UNITS.BANNER_HOME}
+                  size={BannerAdSize.BANNER}
+                />
+              </View>
+              <Text style={styles.title}>Launch the mining Dashboard</Text>
+              <Text style={styles.subtitle}>
+                The main CTA stays centered in the content area, with breathing
+                room above and below.
+              </Text>
 
-            <View style={styles.signalRow}>
-              {marketSignals.map(signal => (
-                <View key={signal.label} style={styles.signalCard}>
-                  <MaterialCommunityIcons
-                    name={signal.icon}
-                    size={18}
-                    color={COLORS.primary}
-                  />
-                  <Text style={styles.signalLabel}>{signal.label}</Text>
-                  <Text style={styles.signalValue}>{signal.value}</Text>
-                </View>
-              ))}
+              <View style={styles.buttonContainer}>
+                <MiningButton />
+              </View>
+
+              <MiningTimeSelectionPopup />
             </View>
-          </LinearGradient>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionEyebrow}>Quick Action</Text>
-            <Text style={styles.sectionTitle}>Launch the mining dashboard</Text>
-            <Text style={styles.sectionSubtitle}>
-              The main CTA stays centered in the content area, with breathing room
-              above and below.
-            </Text>
-          </View>
-
-          <MiningButton onPress={handleOpenMining} />
+          <ClaimRewardModal />
 
           <View style={styles.analyticsGrid}>
             <LinearGradient
               colors={['rgba(22, 33, 11, 0.94)', 'rgba(11, 16, 9, 0.98)']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.analyticsCard}>
+              style={styles.analyticsCard}
+            >
               <Text style={styles.analyticsLabel}>Portfolio Health</Text>
               <Text style={styles.analyticsValue}>Stable</Text>
               <Text style={styles.analyticsBody}>
@@ -125,7 +97,8 @@ const HomeScreen = () => {
               colors={['rgba(44, 60, 16, 0.9)', 'rgba(13, 19, 9, 0.96)']}
               start={{ x: 0.1, y: 0 }}
               end={{ x: 0.9, y: 1 }}
-              style={styles.analyticsCard}>
+              style={styles.analyticsCard}
+            >
               <Text style={styles.analyticsLabel}>Liquidity Window</Text>
               <Text style={styles.analyticsValue}>08:45 UTC</Text>
               <Text style={styles.analyticsBody}>

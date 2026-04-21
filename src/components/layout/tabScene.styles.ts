@@ -99,6 +99,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 23,
   },
+  footer: {
+    marginTop: 20,
+  },
 });
 
 export default styles;

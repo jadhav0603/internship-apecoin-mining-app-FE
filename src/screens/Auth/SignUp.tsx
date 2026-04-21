@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {
+  Alert,
   View,
   Text,
   StyleSheet,
@@ -15,10 +16,11 @@ import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {authService} from '../../services/authService';
+import {referralService} from '../../services/referralService';
 import {Colors} from '../../theme/colors';
 import {RootStackParamList} from '../../navigation/types';
 
-const MONKEY_IMG = require('../../assets/images/auth_bg.png');
+const MONKEY_IMG = require('../../assets/images/auth_bg.webp');
 const {height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 type Props = {
@@ -76,7 +78,22 @@ const SignUp: React.FC<Props> = ({navigation}) => {
     setLoading(true);
     try {
       await authService.signUp(email, password);
-      navigation.replace('MainTabs', {screen: 'Home'});
+
+      if (referral.trim()) {
+        try {
+          await referralService.applyReferral({
+            email,
+            referralEmail: referral.trim(),
+            source: 'signup',
+          });
+        } catch (referralError: any) {
+          Alert.alert(
+            'Referral',
+            referralError?.response?.data?.message ||
+              'Account created, but the referral email could not be applied.'
+          );
+        }
+      }
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         setErrors({email: 'That email address is already in use!'});
@@ -94,7 +111,6 @@ const SignUp: React.FC<Props> = ({navigation}) => {
     try {
       setLoading(true);
       await authService.googleSignIn();
-      navigation.replace('MainTabs', {screen: 'Home'});
     } catch (error: any) {
       setErrors({
         email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),
@@ -203,17 +219,17 @@ const SignUp: React.FC<Props> = ({navigation}) => {
 
           {/* ── Referral Code (optional) ── */}
           <Text style={[styles.label, styles.labelSpacing]}>
-            Referral code{' '}
+            Referral email{' '}
             <Text style={styles.optionalTag}>(optional)</Text>
           </Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Enter referral code"
+              placeholder="Enter referral email"
               placeholderTextColor="rgba(255,255,255,0.30)"
               value={referral}
               onChangeText={setReferral}
-              autoCapitalize="characters"
+              autoCapitalize="none"
               autoCorrect={false}
             />
           </View>
@@ -241,14 +257,15 @@ const SignUp: React.FC<Props> = ({navigation}) => {
           <TouchableOpacity
             style={styles.googleBtn}
             onPress={handleGoogle}
-            activeOpacity={0.8}>
+            activeOpacity={0.8}
+            disabled={loading}>
             <View style={styles.gLetterRow}>
-              <Text style={[styles.gLetter, {color: '#4285F4'}]}>G</Text>
-              <Text style={[styles.gLetter, {color: '#EA4335'}]}>o</Text>
-              <Text style={[styles.gLetter, {color: '#FBBC05'}]}>o</Text>
-              <Text style={[styles.gLetter, {color: '#4285F4'}]}>g</Text>
-              <Text style={[styles.gLetter, {color: '#34A853'}]}>l</Text>
-              <Text style={[styles.gLetter, {color: '#EA4335'}]}>e</Text>
+              <Text style={[styles.gLetter, styles.gBlue]}>G</Text>
+              <Text style={[styles.gLetter, styles.gRed]}>o</Text>
+              <Text style={[styles.gLetter, styles.gYellow]}>o</Text>
+              <Text style={[styles.gLetter, styles.gBlue]}>g</Text>
+              <Text style={[styles.gLetter, styles.gGreen]}>l</Text>
+              <Text style={[styles.gLetter, styles.gRed]}>e</Text>
             </View>
           </TouchableOpacity>
 
@@ -430,6 +447,18 @@ const styles = StyleSheet.create({
   gLetter: {
     fontSize: 17,
     fontWeight: '800',
+  },
+  gBlue: {
+    color: '#4285F4',
+  },
+  gRed: {
+    color: '#EA4335',
+  },
+  gYellow: {
+    color: '#FBBC05',
+  },
+  gGreen: {
+    color: '#34A853',
   },
 
   // ── Bottom link ──

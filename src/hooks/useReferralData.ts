@@ -1,0 +1,93 @@
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { authService } from '../services/authService';
+import {
+  referralService,
+  type ReferralHistoryItem,
+  type ReferralWeekDatum,
+} from '../services/referralService';
+
+type ReferralDataState = {
+  referredBy: string | null;
+  referralEarnings: number;
+  referralCount: number;
+  referralHistory: ReferralHistoryItem[];
+  weekData: ReferralWeekDatum[];
+  referralPercentage: number;
+  currency: string;
+  loading: boolean;
+  error: string | null;
+};
+
+const INITIAL_STATE: ReferralDataState = {
+  referredBy: null,
+  referralEarnings: 0,
+  referralCount: 0,
+  referralHistory: [],
+  weekData: [],
+  referralPercentage: 0,
+  currency: 'APE',
+  loading: true,
+  error: null,
+};
+
+export const useReferralData = () => {
+  const [state, setState] = useState<ReferralDataState>(INITIAL_STATE);
+  const refreshCount = useRef(0);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  const fetchData = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const user = await authService.waitForAuthRestore();
+      if (!user?.email) {
+        setState(prev => ({ ...prev, loading: false }));
+        return;
+      }
+
+      const data = await referralService.getStats(user.email);
+
+      setState({
+        referredBy: data.referredBy ?? null,
+        referralEarnings: data.referralEarnings ?? 0,
+        referralCount: data.referralCount ?? 0,
+        referralHistory: data.referralHistory ?? [],
+        weekData: data.weekData ?? [],
+        referralPercentage: data.referralPercentage ?? 0,
+        currency: data.currency ?? 'APE',
+        loading: false,
+        error: null,
+      });
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        (err?.message === 'Network Error'
+          ? 'Unable to reach the server. Check your connection.'
+          : 'Failed to load referral data.');
+
+      if (__DEV__) {
+        console.warn('[useReferralData] fetch failed:', message, err?.config?.url);
+      }
+
+      setState(prev => ({ ...prev, loading: false, error: message }));
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchData, refreshTick])
+  );
+
+  const refresh = useCallback(() => {
+    refreshCount.current += 1;
+    setRefreshTick(refreshCount.current);
+  }, []);
+
+  return {
+    ...state,
+    refresh,
+  };
+};

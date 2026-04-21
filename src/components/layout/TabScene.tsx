@@ -18,6 +18,7 @@ type TabSceneProps = {
   metrics: SceneMetric[];
   cardTitle: string;
   cardBody: string;
+  children?: React.ReactNode;
 };
 
 const TabScene = ({
@@ -27,6 +28,7 @@ const TabScene = ({
   metrics,
   cardTitle,
   cardBody,
+  children,
 }: TabSceneProps) => {
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -77,6 +79,8 @@ const TabScene = ({
             <Text style={styles.detailTitle}>{cardTitle}</Text>
             <Text style={styles.detailBody}>{cardBody}</Text>
           </LinearGradient>
+
+          {children ? <View style={styles.footer}>{children}</View> : null}
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
