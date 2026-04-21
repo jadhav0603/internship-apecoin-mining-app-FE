@@ -17,6 +17,8 @@ import { authService } from '../../services/authService';
 import ClaimPopupModal from '../../components/ClaimPopupModal';
 import SuccessOverlay from '../../components/SuccessOverlay';
 import RewardsGridSection from '../../components/RewardsGridSection';
+import { useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const { width } = Dimensions.get('window');
 
@@ -81,6 +83,20 @@ const DailyRewardsScreen = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [balance, setBalance] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_CLAIM,
+    { requestNonPersonalizedAdsOnly: true }
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (isClosed) {
+      load();
+    }
+  }, [isClosed, load]);
 
   const fetchRewards = useCallback(async () => {
     try {
@@ -146,6 +162,9 @@ const DailyRewardsScreen = () => {
   }, [isAvailable]);
 
   const handleClaim = async () => {
+    if (isLoaded) {
+      show();
+    }
     // 1. Close modal immediately
     setModalVisible(false);
 
@@ -197,7 +216,12 @@ const DailyRewardsScreen = () => {
   };
 
   const handleOpenModal = () => {
-    if (isAvailable) setModalVisible(true);
+    if (isAvailable) {
+      if (isLoaded) {
+        show();
+      }
+      setModalVisible(true);
+    }
   };
 
   const currentReward = rewards.find((r) => r.day === currentDay);
@@ -239,7 +263,7 @@ const DailyRewardsScreen = () => {
         </View> */}
 
         <Image
-          source={require('../../assets/images/daily_rewards.png')}
+          source={require('../../assets/images/daily_rewards.webp')}
           style={styles.headerImage}
           resizeMode="contain"
         />

@@ -46,24 +46,29 @@
 // export default BalanceCard
 
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 import styles from './BalanceCard.styles';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';
 import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
+import { useNavigation } from '@react-navigation/native';
 
 const BalanceCard = () => {
-  const { earned } = useMining();
+  const { earned, hours } = useMining();
   const { balance } = useWallet();
+  const navigation = useNavigation<any>();
 
   return (
     <View style={styles.container}>
       <View style={styles.metricsRow}>
         
         {/* 🔥 Mining Power (LIVE) */}
-        <View style={styles.metricCard}>
+        <Pressable 
+          style={styles.metricCard}
+          onPress={() => navigation.navigate('Mining', { time: hours || 1 })}
+        >
           <View style={styles.metricIconWrap}>
             <MaterialCommunityIcons
               name="flash-outline"
@@ -77,10 +82,13 @@ const BalanceCard = () => {
               {earned.toFixed(6)} APC
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         {/* 💰 Wallet (for now static / later dynamic) */}
-        <View style={styles.metricCard}>
+        <Pressable 
+          style={styles.metricCard}
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Wallet' })}
+        >
           <View style={styles.metricIconWrap}>
             <Ionicons
               name="wallet-outline"
@@ -94,7 +102,7 @@ const BalanceCard = () => {
               ${balance.toFixed(8)}
             </Text>
           </View>
-        </View>
+        </Pressable>
 
       </View>
     </View>

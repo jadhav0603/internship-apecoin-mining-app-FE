@@ -20,6 +20,8 @@ import styles from './home.styles';
 import BalanceCard from '../../components/home/BalanceCard';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Home'>,
@@ -55,11 +57,13 @@ const HomeScreen = () => {
             { paddingBottom: tabBarHeight + 36 },
           ]}
         >
-          <SafeAreaView style={styles.safeArea}>
-            <View style={styles.primaryGlow} />
-            <View style={styles.secondaryGlow} />
-
-            <View>
+          <View>
+            <View style={styles.adContainer}>
+                <BannerAd
+                  unitId={AD_UNITS.BANNER_HOME}
+                  size={BannerAdSize.BANNER}
+                />
+              </View>
               <Text style={styles.title}>Launch the mining Dashboard</Text>
               <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
@@ -72,7 +76,6 @@ const HomeScreen = () => {
 
               <MiningTimeSelectionPopup />
             </View>
-          </SafeAreaView>
 
           <ClaimRewardModal />
 

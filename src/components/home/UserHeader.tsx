@@ -1,11 +1,13 @@
 import React from 'react';
-import {View, Text, Image, StyleSheet} from 'react-native';
+import {View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
 import {getUserDisplayName, useUser} from '../../context/UserContext';
+import { useNavigation } from '@react-navigation/native';
 
 import styles from './UserHeader.styles';
 
 const UserHeader = () => {
   const {user} = useUser();
+  const navigation = useNavigation<any>();
 
   if (!user) {
     return <Text style={localStyles.loadingText}>Loading...</Text>;
@@ -15,12 +17,15 @@ const UserHeader = () => {
     <View >
       
       {/* LEFT */}
-      <View style={styles.left}>
+      <TouchableOpacity 
+        style={styles.left}
+        onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
+      >
         <Image
           source={
             user.photoURL
               ? {uri: user.photoURL}
-              : require('../../assets/images/auth_bg.png')
+              : require('../../assets/images/auth_bg.webp')
           }
           style={styles.avatar}
         />
@@ -36,7 +41,7 @@ const UserHeader = () => {
           <Text style={styles.email}>{user.email || 'No email available'}</Text>
         </View>
 
-      </View>
+      </TouchableOpacity>
 
 
       {/* Right */}

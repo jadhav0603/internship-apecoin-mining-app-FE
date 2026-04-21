@@ -17,7 +17,10 @@ import RevenueChart from '../../components/wallet/RevenueChart';
 import { THEME, formatAmount } from '../../components/wallet/theme';
 import { FONTS } from '../../constants/FONTS';
 import { useMiningWalletData } from '../../hooks/useMiningWalletData';
+import { useReferralData } from '../../hooks/useReferralData';
 import { useRewardsData } from '../../hooks/useRewardsData';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const WalletScreen = () => {
   const tabBarHeight = useBottomTabBarHeight();
@@ -25,13 +28,18 @@ const WalletScreen = () => {
 
   const { totalCollected, weekData, loading } = useRewardsData();
   const { miningTotal, miningHistory, loading: miningLoading } = useMiningWalletData();
+  const {
+    referralEarnings,
+    weekData: referralWeekData,
+    loading: referralLoading,
+  } = useReferralData();
 
-  const totalBalance = totalCollected + miningTotal;
-  const isBalanceLoading = loading || miningLoading;
+  const totalBalance = totalCollected + miningTotal + referralEarnings;
+  const isBalanceLoading = loading || miningLoading || referralLoading;
 
   return (
     <ImageBackground
-      source={require('../../assets/images/stone_bg.webp')}
+      source={require('../../assets/images/daily_reward_background.webp')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -89,49 +97,11 @@ const WalletScreen = () => {
               </Text>
             )}
           </View>
-
-          <View style={styles.breakdownRow}>
-            <View style={[styles.breakdownCard, styles.breakdownCardSpacing]}>
-              <View style={styles.breakdownHeader}>
-                <Ionicons name="gift-outline" size={16} color={THEME.textMuted} />
-                <Text style={styles.breakdownLabel}>Rewards</Text>
-              </View>
-
-              {loading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={THEME.neonGreen}
-                  style={styles.breakdownLoader}
-                />
-              ) : (
-                <Text style={styles.breakdownValue}>
-                  {formatAmount(totalCollected)}
-                  <Text style={styles.breakdownUnit}> APE</Text>
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.breakdownCard}>
-              <View style={styles.breakdownHeader}>
-                <Ionicons name="hardware-chip-outline" size={16} color={THEME.textMuted} />
-                <Text style={styles.breakdownLabel}>Mining</Text>
-              </View>
-
-              {miningLoading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={THEME.neonGreen}
-                  style={styles.breakdownLoader}
-                />
-              ) : (
-                <Text style={styles.breakdownValue}>
-                  {formatAmount(miningTotal)}
-                  <Text style={styles.breakdownUnit}> APE</Text>
-                </Text>
-              )}
-
-              {/* <Text style={styles.breakdownCaption}>Current mining balance</Text> */}
-            </View>
+          <View style={styles.adContainer}>
+            <BannerAd
+              unitId={AD_UNITS.BANNER_WALLET}
+              size={BannerAdSize.BANNER}
+            />
           </View>
 
           <RevenueChart
@@ -139,8 +109,11 @@ const WalletScreen = () => {
             totalCollected={totalCollected}
             miningHistory={miningHistory}
             miningTotal={miningTotal}
+            referralWeekData={referralWeekData}
+            referralEarnings={referralEarnings}
             loading={loading}
             miningLoading={miningLoading}
+            referralLoading={referralLoading}
           />
 
           <PendingPaidTabs />
@@ -284,14 +257,13 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontWeight: '600',
   },
-  breakdownCaption: {
-    marginTop: 8,
-    color: THEME.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
-  },
   breakdownLoader: {
     marginTop: 18,
+  },
+  adContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+    width: '100%',
   },
 });
 

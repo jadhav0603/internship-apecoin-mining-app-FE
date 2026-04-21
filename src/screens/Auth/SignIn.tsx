@@ -19,7 +19,7 @@ import {Colors} from '../../theme/colors';
 import {RootStackParamList} from '../../navigation/types';
 
 // Monkey avatar from assets
-const MONKEY_IMG = require('../../assets/images/auth_bg.png');
+const MONKEY_IMG = require('../../assets/images/auth_bg.webp');
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'SignIn'>;

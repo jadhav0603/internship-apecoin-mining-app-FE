@@ -4,11 +4,27 @@ import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
 import API from '../../services/api';
+import { useInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
   const { isMining, earned, secondsLeft, hours, multiplier, stopMining, miningData } = useMining();
   const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_CLAIM,
+    { requestNonPersonalizedAdsOnly: true }
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (isClosed) {
+      load();
+    }
+  }, [isClosed, load]);
 
   useEffect(() => {
     if (isMining) {
@@ -23,6 +39,9 @@ const ClaimRewardModal = () => {
   }
 
   const handleClaim = async () => {
+    if (isLoaded) {
+      show();
+    }
     const response = await API.post('/mining/claim');
     setBalanceFromServer(response.data?.balance ?? 0);
     setVisible(false);

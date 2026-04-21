@@ -3,14 +3,24 @@ import { getApp } from '@react-native-firebase/app';
 import { getAuth } from '@react-native-firebase/auth';
 import { API_CONFIG, getDevApiBaseUrls } from './config';
 
-const firebaseAuth = getAuth(getApp());
+// Lazy getter — avoids calling getApp()/getAuth() at module load time,
+// which would crash if Firebase hasn't initialized yet (causing the entire
+// module to be undefined and surfacing as "Cannot read property 'MiningProvider'
+// of undefined" in App.tsx).
+let _firebaseAuth: ReturnType<typeof getAuth> | null = null;
+const getFirebaseAuth = () => {
+  if (!_firebaseAuth) {
+    _firebaseAuth = getAuth(getApp());
+  }
+  return _firebaseAuth;
+};
 
 let cachedBearerToken: string | null = null;
 let cachedTokenExpiry = 0;
 let cachedTokenUserUid: string | null = null;
 
 const getAuthorizationHeader = async () => {
-  const user = firebaseAuth.currentUser;
+  const user = getFirebaseAuth().currentUser;
 
   if (!user) {
     cachedBearerToken = null;

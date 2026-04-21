@@ -57,7 +57,7 @@ const SplashScreen = ({ onFinish }: any) => {
     <View style={styles.container}>
       <View style={styles.topSection}>
         <Image
-          source={require('../../assets/images/splashScreen-2.png')}
+          source={require('../../assets/images/splashScreen-2.webp')}
           style={styles.image}
         />
 

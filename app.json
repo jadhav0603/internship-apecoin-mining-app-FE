@@ -1,4 +1,8 @@
 {
   "name": "ApeCoin",
-  "displayName": "ApeCoin"
+  "displayName": "ApeCoin",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3405960271734310~4220850606",
+    "ios_app_id": "ca-app-pub-3405960271734310~4220850606"
+  }
 }

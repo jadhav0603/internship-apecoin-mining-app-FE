@@ -1,13 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
-import { FONTS } from '../../constants/FONTS';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  COIN_BREAKDOWN,
+  ActivityIndicator,
+  Animated,
+  LayoutChangeEvent,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { FONTS } from '../../constants/FONTS';
+import { useMiningWalletData } from '../../hooks/useMiningWalletData';
+import { useReferralData } from '../../hooks/useReferralData';
+import { useRewardsData } from '../../hooks/useRewardsData';
+import {
   PROFILE_THEME,
-  TOTAL_COINS,
   formatAmount,
   formatCompactAmount,
 } from './profileTheme';
+
+type BreakdownItem = {
+  key: 'mining' | 'rewards' | 'referral';
+  label: string;
+  value: number;
+  ratio: number;
+  color: string;
+  loading: boolean;
+};
 
 const CoinsSummaryCard = () => {
   const [barWidth, setBarWidth] = useState(0);
@@ -15,20 +32,68 @@ const CoinsSummaryCard = () => {
   const rewardsAnim = useRef(new Animated.Value(0)).current;
   const referralAnim = useRef(new Animated.Value(0)).current;
 
+  const { miningTotal, loading: miningLoading } = useMiningWalletData();
+  const { totalCollected, loading: rewardsLoading } = useRewardsData();
+  const { referralEarnings, loading: referralLoading } = useReferralData();
+
+  const breakdown = useMemo<BreakdownItem[]>(() => {
+    const total = miningTotal + totalCollected + referralEarnings;
+
+    return [
+      {
+        key: 'mining',
+        label: 'Mining',
+        value: miningTotal,
+        ratio: total > 0 ? miningTotal / total : 0,
+        color: PROFILE_THEME.neonGreen,
+        loading: miningLoading,
+      },
+      {
+        key: 'rewards',
+        label: 'Rewards',
+        value: totalCollected,
+        ratio: total > 0 ? totalCollected / total : 0,
+        color: PROFILE_THEME.neonTeal,
+        loading: rewardsLoading,
+      },
+      {
+        key: 'referral',
+        label: 'Referral',
+        value: referralEarnings,
+        ratio: total > 0 ? referralEarnings / total : 0,
+        color: PROFILE_THEME.neonPurple,
+        loading: referralLoading,
+      },
+    ];
+  }, [
+    miningLoading,
+    miningTotal,
+    referralEarnings,
+    referralLoading,
+    rewardsLoading,
+    totalCollected,
+  ]);
+
+  const totalCoins = useMemo(
+    () => breakdown.reduce((sum, item) => sum + item.value, 0),
+    [breakdown]
+  );
+  const isLoading = miningLoading || rewardsLoading || referralLoading;
+
   useEffect(() => {
     const animation = Animated.stagger(100, [
       Animated.timing(miningAnim, {
-        toValue: COIN_BREAKDOWN[0].ratio,
+        toValue: breakdown[0]?.ratio ?? 0,
         duration: 600,
         useNativeDriver: false,
       }),
       Animated.timing(rewardsAnim, {
-        toValue: COIN_BREAKDOWN[1].ratio,
+        toValue: breakdown[1]?.ratio ?? 0,
         duration: 600,
         useNativeDriver: false,
       }),
       Animated.timing(referralAnim, {
-        toValue: COIN_BREAKDOWN[2].ratio,
+        toValue: breakdown[2]?.ratio ?? 0,
         duration: 600,
         useNativeDriver: false,
       }),
@@ -37,7 +102,7 @@ const CoinsSummaryCard = () => {
     animation.start();
 
     return () => animation.stop();
-  }, [miningAnim, referralAnim, rewardsAnim]);
+  }, [breakdown, miningAnim, referralAnim, rewardsAnim]);
 
   const handleBarLayout = (event: LayoutChangeEvent) => {
     setBarWidth(event.nativeEvent.layout.width);
@@ -46,10 +111,14 @@ const CoinsSummaryCard = () => {
   return (
     <View style={styles.card}>
       <Text style={styles.label}>Total Coins</Text>
-      <Text style={styles.amount}>
-        {formatAmount(TOTAL_COINS)}
-        <Text style={styles.amountUnit}> APC</Text>
-      </Text>
+      {isLoading ? (
+        <ActivityIndicator size="small" color={PROFILE_THEME.neonGreen} style={styles.loader} />
+      ) : (
+        <Text style={styles.amount}>
+          {formatAmount(totalCoins)}
+          <Text style={styles.amountUnit}> APE</Text>
+        </Text>
+      )}
 
       <View style={styles.progressBarContainer} onLayout={handleBarLayout}>
         <Animated.View
@@ -84,13 +153,17 @@ const CoinsSummaryCard = () => {
       </View>
 
       <View style={styles.legendRow}>
-        {COIN_BREAKDOWN.map(item => (
+        {breakdown.map(item => (
           <View key={item.key} style={styles.legendItem}>
             <View style={styles.legendLabelRow}>
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
               <Text style={styles.legendLabel}>{item.label}</Text>
             </View>
-            <Text style={styles.legendValue}>{formatCompactAmount(item.value)}</Text>
+            {item.loading ? (
+              <ActivityIndicator size="small" color={PROFILE_THEME.white} style={styles.legendLoader} />
+            ) : (
+              <Text style={styles.legendValue}>{formatCompactAmount(item.value)}</Text>
+            )}
           </View>
         ))}
       </View>
@@ -129,6 +202,10 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontFamily: FONTS.regular,
     fontWeight: '400',
+  },
+  loader: {
+    alignSelf: 'flex-start',
+    marginTop: 6,
   },
   progressBarContainer: {
     flexDirection: 'row',
@@ -177,6 +254,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontWeight: '800',
     marginTop: 6,
+  },
+  legendLoader: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
   },
 });
 
