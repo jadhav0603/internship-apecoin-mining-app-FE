@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "305778437662",
+    "project_id": "apecoin-2f012",
+    "storage_bucket": "apecoin-2f012.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:305778437662:android:787335cf9ec00f4583480f",
+        "android_client_info": {
+          "package_name": "com.apecoin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "305778437662-q8mklgso7bcd4uvmc2kn9c262291foub.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.apecoin",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "305778437662-la6356pofknniu4ee94m8mpl7dvevrbh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmphnTrgy5dhTP-8CyO2LamKm-_gc8tos"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "305778437662-la6356pofknniu4ee94m8mpl7dvevrbh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
