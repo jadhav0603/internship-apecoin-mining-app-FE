@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   ImageSourcePropType,
@@ -15,6 +16,11 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {
+  launchImageLibrary,
+  type ImagePickerResponse,
+} from 'react-native-image-picker';
+
 import AvatarWithGlow from '../../components/profile/AvatarWithGlow';
 import CoinsSummaryCard from '../../components/profile/CoinsSummaryCard';
 import MyAccountModal from '../../components/profile/MyAccountModal';
@@ -38,6 +44,7 @@ const ProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const [username, setUsername] = useState(getUserDisplayName(user));
@@ -56,29 +63,63 @@ const ProfileScreen = () => {
       navigation.goBack();
       return;
     }
-
     navigation.navigate('MainTabs', { screen: 'Home' });
   };
 
   const handleComingSoon = (label: string) => {
-    Alert.alert(label, 'Frontend-only placeholder');
+    Alert.alert(label, 'This feature is coming soon!');
   };
 
-  const openAccountModal = () => {
-    setIsAccountModalVisible(true);
-  };
+  const openAccountModal = () => setIsAccountModalVisible(true);
+  const closeAccountModal = () => setIsAccountModalVisible(false);
 
-  const closeAccountModal = () => {
-    setIsAccountModalVisible(false);
-  };
+  // ─── Gallery picker + upload ────────────────────────────────────────────────
+  const handleChangePhoto = useCallback(async () => {
+    try {
+      const result: ImagePickerResponse = await new Promise(resolve => {
+        launchImageLibrary(
+          {
+            mediaType: 'photo',
+            quality: 0.8,
+            maxWidth: 1024,
+            maxHeight: 1024,
+            includeBase64: false,
+          },
+          resolve
+        );
+      });
+
+      if (result.didCancel || result.errorCode) {
+        return;
+      }
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) {
+        return;
+      }
+
+      setIsUploadingPhoto(true);
+
+      const response = await userService.uploadProfileImage(
+        asset.uri,
+        asset.type ?? 'image/jpeg',
+        asset.fileName ?? 'avatar.jpg'
+      );
+
+      setAvatarUri(response.imageUrl);
+      Alert.alert('✓ Success', 'Profile photo updated!');
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ?? 'Failed to upload photo. Please try again.';
+      Alert.alert('Upload Failed', message);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }, []);
 
   const handleLogout = async () => {
-    if (isLoggingOut) {
-      return;
-    }
-
+    if (isLoggingOut) return;
     setIsLoggingOut(true);
-
     try {
       await authService.signOut();
     } catch {
@@ -89,87 +130,37 @@ const ProfileScreen = () => {
   };
 
   const confirmLogout = () => {
-    if (isLoggingOut) {
-      return;
-    }
-
+    if (isLoggingOut) return;
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Log Out',
         style: 'destructive',
-        onPress: () => {
-          handleLogout().catch(() => undefined);
-        },
+        onPress: () => handleLogout().catch(() => undefined),
       },
     ]);
   };
 
   const menuItems = useMemo(
     () => [
-      {
-        id: 'account',
-        label: 'My Account',
-        icon: 'person-outline' as const,
-        iconBg: '#1a3a1a',
-        active: true,
-      },
-      {
-        id: 'referral',
-        label: 'Refer and Earn',
-        icon: 'people-outline' as const,
-        iconBg: '#1a1a3a',
-        active: false,
-      },
-      {
-        id: 'leaderboard',
-        label: 'Leader Board',
-        icon: 'trophy-outline' as const,
-        iconBg: '#3a3114',
-        active: false,
-      },
-      {
-        id: 'progress',
-        label: 'My Progress',
-        icon: 'stats-chart-outline' as const,
-        iconBg: '#123033',
-        active: false,
-      },
-      {
-        id: 'about',
-        label: 'About Us',
-        icon: 'information-circle-outline' as const,
-        iconBg: '#321536',
-        active: false,
-      },
-      {
-        id: 'logout',
-        label: 'Log Out',
-        icon: 'log-out-outline' as const,
-        iconBg: PROFILE_THEME.dangerBg,
-        active: false,
-        tone: 'danger' as const,
-      },
+      { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
+      { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
+      { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
+      { id: 'progress', label: 'My Progress', icon: 'stats-chart-outline' as const, iconBg: '#123033', active: false },
+      { id: 'about', label: 'About Us', icon: 'information-circle-outline' as const, iconBg: '#321536', active: false },
+      { id: 'logout', label: 'Log Out', icon: 'log-out-outline' as const, iconBg: PROFILE_THEME.dangerBg, active: false, tone: 'danger' as const },
     ],
-    [],
+    []
   );
-  const menuAnimations = useRef(
-    menuItems.map(() => new Animated.Value(0)),
-  ).current;
+
+  const menuAnimations = useRef(menuItems.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     let isMounted = true;
-
     const fetchProfile = async () => {
       try {
         const profile = await userService.getProfileIdentity();
-        if (!isMounted) {
-          return;
-        }
-
+        if (!isMounted) return;
         const resolvedName = resolveProfileName(profile.username, profile.email);
         setUsername(resolvedName);
         setEmail(profile.email);
@@ -181,40 +172,28 @@ const ProfileScreen = () => {
           setAvatarUri(user?.photoURL ?? '');
         }
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
-
     fetchProfile();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [user]);
 
   useEffect(() => {
     const animation = Animated.stagger(
       80,
       menuAnimations.map(anim =>
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 350,
-          useNativeDriver: true,
-        }),
-      ),
+        Animated.timing(anim, { toValue: 1, duration: 350, useNativeDriver: true })
+      )
     );
-
     animation.start();
-
     return () => animation.stop();
   }, [menuAnimations]);
 
   const userHandle = useMemo(() => buildHandle(username), [username]);
   const avatarSource = useMemo<ImageSourcePropType | undefined>(
     () => (avatarUri ? { uri: avatarUri } : undefined),
-    [avatarUri],
+    [avatarUri]
   );
 
   return (
@@ -225,33 +204,18 @@ const ProfileScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          {
-            paddingTop: Math.max(insets.top + 10, 54),
-            paddingBottom: Math.max(100, tabBarHeight + 28),
-          },
+          { paddingTop: Math.max(insets.top + 10, 54), paddingBottom: Math.max(100, tabBarHeight + 28) },
         ]}
       >
         <View style={styles.topRow}>
           <View style={styles.navSide}>
             <Pressable style={styles.navCircle} onPress={handleBack}>
-              <Ionicons
-                name="chevron-back"
-                size={22}
-                color={PROFILE_THEME.backIcon}
-              />
+              <Ionicons name="chevron-back" size={22} color={PROFILE_THEME.backIcon} />
             </Pressable>
           </View>
-
           <View style={styles.navSideRight}>
-            <Pressable
-              style={styles.navCircle}
-              onPress={() => handleComingSoon('Settings')}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={22}
-                color={PROFILE_THEME.settingsIcon}
-              />
+            <Pressable style={styles.navCircle} onPress={() => handleComingSoon('Settings')}>
+              <Ionicons name="settings-outline" size={22} color={PROFILE_THEME.settingsIcon} />
             </Pressable>
           </View>
         </View>
@@ -260,11 +224,15 @@ const ProfileScreen = () => {
           <ProfileSkeleton />
         ) : (
           <>
-            <AvatarWithGlow
-              username={username}
-              source={avatarSource}
-              onPress={openAccountModal}
-            />
+            {/* Avatar with upload spinner overlay */}
+            <View style={styles.avatarWrapper}>
+              <AvatarWithGlow username={username} source={avatarSource} onPress={openAccountModal} />
+              {isUploadingPhoto && (
+                <View style={styles.uploadOverlay}>
+                  <ActivityIndicator color="#B6FF3B" size="large" />
+                </View>
+              )}
+            </View>
             <Text style={styles.userName}>{username}</Text>
             <Text style={styles.userHandle}>{userHandle}</Text>
           </>
@@ -278,14 +246,12 @@ const ProfileScreen = () => {
               key={item.id}
               style={{
                 opacity: menuAnimations[index],
-                transform: [
-                  {
-                    translateY: menuAnimations[index].interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [18, 0],
-                    }),
-                  },
-                ],
+                transform: [{
+                  translateY: menuAnimations[index].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [18, 0],
+                  }),
+                }],
               }}
             >
               <ProfileMenuItem
@@ -296,33 +262,16 @@ const ProfileScreen = () => {
                 tone={item.tone}
                 disabled={item.id === 'logout' && isLoggingOut}
                 onPress={() => {
-                  if (item.id === 'account') {
-                    openAccountModal();
-                    return;
-                  }
-
-                  if (item.id === 'logout') {
-                    confirmLogout();
-                    return;
-                  }
-
+                  if (item.id === 'account') { openAccountModal(); return; }
+                  if (item.id === 'logout') { confirmLogout(); return; }
                   if (item.id === 'referral') {
-                    navigation.navigate('ReferAndEarn', {
-                      email,
-                      username,
-                    });
+                    navigation.navigate('ReferAndEarn', { email, username });
                     return;
                   }
-
                   if (item.id === 'leaderboard') {
-                    navigation.navigate('Leaderboard', {
-                      email,
-                      username,
-                      avatarUri,
-                    });
+                    navigation.navigate('Leaderboard', { email, username, avatarUri });
                     return;
                   }
-
                   handleComingSoon(item.label);
                 }}
               />
@@ -338,24 +287,17 @@ const ProfileScreen = () => {
         avatarSource={avatarSource}
         isLoggingOut={isLoggingOut}
         onClose={closeAccountModal}
-        onLogout={() => {
-          handleLogout().catch(() => undefined);
-        }}
+        onLogout={() => handleLogout().catch(() => undefined)}
         onEditUsername={() => handleComingSoon('Edit Username')}
-        onChangePhoto={() => handleComingSoon('Change Photo')}
+        onChangePhoto={handleChangePhoto}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: PROFILE_THEME.bg,
-  },
-  scrollContent: {
-    paddingHorizontal: 0,
-  },
+  container: { flex: 1, backgroundColor: PROFILE_THEME.bg },
+  scrollContent: { paddingHorizontal: 0 },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -363,38 +305,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 10,
   },
-  navSide: {
-    alignItems: 'flex-start',
-  },
-  navSideRight: {
-    alignItems: 'flex-end',
-  },
+  navSide: { alignItems: 'flex-start' },
+  navSideRight: { alignItems: 'flex-end' },
   navCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: PROFILE_THEME.buttonBg,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  avatarWrapper: {
+    alignSelf: 'center',
+    position: 'relative',
+  },
+  uploadOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
   },
   userName: {
-    color: PROFILE_THEME.white,
-    fontSize: 22,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: 14,
+    color: PROFILE_THEME.white, fontSize: 22, fontWeight: '800',
+    textAlign: 'center', marginTop: 14,
   },
   userHandle: {
-    color: PROFILE_THEME.neonGreen,
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 4,
+    color: PROFILE_THEME.neonGreen, fontSize: 14, fontWeight: '500',
+    textAlign: 'center', marginTop: 4,
   },
-  menuContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
+  menuContainer: { marginHorizontal: 16, marginTop: 16 },
 });
 
 export default ProfileScreen;

@@ -20,7 +20,7 @@ const UserHeader = () => {
           source={
             user.photoURL
               ? {uri: user.photoURL}
-              : require('../../assets/images/auth_bg.png')
+              : require('../../assets/images/auth_bg.webp')
           }
           style={styles.avatar}
         />

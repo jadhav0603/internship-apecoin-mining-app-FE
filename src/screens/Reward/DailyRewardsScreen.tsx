@@ -239,7 +239,7 @@ const DailyRewardsScreen = () => {
         </View> */}
 
         <Image
-          source={require('../../assets/images/daily_rewards.png')}
+          source={require('../../assets/images/daily_rewards.webp')}
           style={styles.headerImage}
           resizeMode="contain"
         />

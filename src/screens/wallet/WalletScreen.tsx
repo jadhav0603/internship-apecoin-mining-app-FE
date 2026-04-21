@@ -17,6 +17,7 @@ import RevenueChart from '../../components/wallet/RevenueChart';
 import { THEME, formatAmount } from '../../components/wallet/theme';
 import { FONTS } from '../../constants/FONTS';
 import { useMiningWalletData } from '../../hooks/useMiningWalletData';
+import { useReferralData } from '../../hooks/useReferralData';
 import { useRewardsData } from '../../hooks/useRewardsData';
 
 const WalletScreen = () => {
@@ -25,13 +26,18 @@ const WalletScreen = () => {
 
   const { totalCollected, weekData, loading } = useRewardsData();
   const { miningTotal, miningHistory, loading: miningLoading } = useMiningWalletData();
+  const {
+    referralEarnings,
+    weekData: referralWeekData,
+    loading: referralLoading,
+  } = useReferralData();
 
-  const totalBalance = totalCollected + miningTotal;
-  const isBalanceLoading = loading || miningLoading;
+  const totalBalance = totalCollected + miningTotal + referralEarnings;
+  const isBalanceLoading = loading || miningLoading || referralLoading;
 
   return (
     <ImageBackground
-      source={require('../../assets/images/stone_bg.webp')}
+      source={require('../../assets/images/daily_reward_background.webp')}
       style={styles.background}
       resizeMode="cover"
     >
@@ -129,8 +135,6 @@ const WalletScreen = () => {
                   <Text style={styles.breakdownUnit}> APE</Text>
                 </Text>
               )}
-
-              {/* <Text style={styles.breakdownCaption}>Current mining balance</Text> */}
             </View>
           </View>
 
@@ -139,8 +143,11 @@ const WalletScreen = () => {
             totalCollected={totalCollected}
             miningHistory={miningHistory}
             miningTotal={miningTotal}
+            referralWeekData={referralWeekData}
+            referralEarnings={referralEarnings}
             loading={loading}
             miningLoading={miningLoading}
+            referralLoading={referralLoading}
           />
 
           <PendingPaidTabs />
@@ -283,12 +290,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONTS.medium,
     fontWeight: '600',
-  },
-  breakdownCaption: {
-    marginTop: 8,
-    color: THEME.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
   },
   breakdownLoader: {
     marginTop: 18,

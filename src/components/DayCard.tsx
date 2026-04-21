@@ -22,8 +22,8 @@ const DayCard: React.FC<DayCardProps> = ({ day, amount, state, onPress }) => {
   const isClaimed = state === 'claimed';
 
   const bgImage = isClaimable
-    ? require('../assets/images/card_bg_active.png')
-    : require('../assets/images/card_bg_locked.png');
+    ? require('../assets/images/card_bg_active.webp')
+    : require('../assets/images/card_bg_locked.webp');
 
   return (
     <TouchableOpacity
@@ -40,13 +40,13 @@ const DayCard: React.FC<DayCardProps> = ({ day, amount, state, onPress }) => {
       {/* COIN / LOCK */}
       {isLocked ? (
         <Image
-          source={require('../assets/images/lock_icon.png')}
+          source={require('../assets/images/lock_icon.webp')}
           style={styles.lockCoin}
           resizeMode="contain"
         />
       ) : (
         <Image
-          source={require('../assets/images/coin_stack.png')}
+          source={require('../assets/images/coin_stack.webp')}
           style={styles.coin}
           resizeMode="contain"
         />

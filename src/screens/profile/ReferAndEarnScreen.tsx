@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Clipboard,
   Pressable,
@@ -19,7 +20,9 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FONTS } from '../../constants/FONTS';
 import { getUserDisplayName, useUser } from '../../context/UserContext';
+import { useReferralData } from '../../hooks/useReferralData';
 import { RootStackParamList } from '../../navigation/types';
+import { referralService } from '../../services/referralService';
 
 type ReferAndEarnRouteProp = RouteProp<RootStackParamList, 'ReferAndEarn'>;
 type ReferAndEarnNavigationProp = NativeStackNavigationProp<
@@ -49,14 +52,24 @@ const ReferAndEarnScreen = () => {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const [redeemCode, setRedeemCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const {
+    referredBy,
+    referralEarnings,
+    referralCount,
+    referralPercentage,
+    loading,
+    refresh,
+  } = useReferralData();
 
   const fallbackUsername = getUserDisplayName(user);
   const resolvedEmail = route.params?.email || user?.email;
   const resolvedUsername = route.params?.username || fallbackUsername;
+  const hasAppliedReferral = Boolean(referredBy);
 
   const referralCode = useMemo(
     () => buildReferralCode(resolvedEmail, resolvedUsername),
-    [resolvedEmail, resolvedUsername],
+    [resolvedEmail, resolvedUsername]
   );
 
   const handleBack = () => {
@@ -83,13 +96,45 @@ const ReferAndEarnScreen = () => {
     }
   };
 
-  const handleClaim = () => {
-    if (!redeemCode.trim()) {
-      Alert.alert('Redeem Code', 'Please enter a referral code first.');
+  const handleClaim = async () => {
+    const referralEmail = redeemCode.trim().toLowerCase();
+
+    if (!referralEmail) {
+      Alert.alert('Redeem Code', 'Please enter a referral email first.');
       return;
     }
 
-    Alert.alert('Claim', 'Redeem flow is ready for backend integration.');
+    if (!resolvedEmail) {
+      Alert.alert('Redeem Code', 'Unable to resolve your account email right now.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await referralService.applyReferral({
+        email: resolvedEmail,
+        referralEmail,
+        source: 'profile',
+      });
+
+      setRedeemCode('');
+      refresh();
+
+      Alert.alert(
+        'Referral Applied',
+        response.referralRewardApplied
+          ? `Referral linked successfully. ${response.reward.toFixed(2)} APE was credited from current earnings.`
+          : 'Referral linked successfully. Future mining and reward activity will credit the referrer automatically.'
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Redeem Code',
+        error?.response?.data?.message || 'Unable to apply the referral right now.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -148,9 +193,29 @@ const ReferAndEarnScreen = () => {
             <Text style={styles.heroTitle}>Invite &amp; Earn Rewards!</Text>
             <Text style={styles.heroSubtitle}>
               Share your code with friends and earn{'\n'}
-              <Text style={styles.highlightText}>5% rewards</Text> for every successful
-              invite
+              <Text style={styles.highlightText}>{referralPercentage}% rewards</Text> for every
+              successful invite
             </Text>
+          </View>
+
+          <View style={styles.statsRow}>
+            <View style={[styles.statCard, styles.statCardSpacing]}>
+              <Text style={styles.statLabel}>Referral Earnings</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#B7FF31" />
+              ) : (
+                <Text style={styles.statValue}>{referralEarnings.toFixed(2)} APE</Text>
+              )}
+            </View>
+
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Successful Referrals</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#B7FF31" />
+              ) : (
+                <Text style={styles.statValue}>{referralCount}</Text>
+              )}
+            </View>
           </View>
 
           <View style={styles.card}>
@@ -186,29 +251,51 @@ const ReferAndEarnScreen = () => {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>REDEEM CODE</Text>
+            <Text style={styles.cardLabel}>REDEEM REFERRAL EMAIL</Text>
 
             <View style={styles.redeemRow}>
               <TextInput
-                style={styles.input}
-                placeholder="Enter referral code"
+                style={[
+                  styles.input,
+                  hasAppliedReferral && styles.inputDisabled,
+                ]}
+                placeholder={
+                  hasAppliedReferral ? 'Referral already applied' : 'Enter referral email'
+                }
                 placeholderTextColor="rgba(255,255,255,0.32)"
-                value={redeemCode}
+                value={hasAppliedReferral ? referredBy ?? '' : redeemCode}
                 onChangeText={setRedeemCode}
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={!hasAppliedReferral && !submitting}
               />
 
               <Pressable
-                onPress={handleClaim}
+                onPress={() => {
+                  handleClaim().catch(() => undefined);
+                }}
+                disabled={hasAppliedReferral || submitting}
                 style={({ pressed }) => [
                   styles.claimButton,
-                  pressed && styles.claimButtonPressed,
+                  (pressed || hasAppliedReferral || submitting) && styles.claimButtonPressed,
+                  (hasAppliedReferral || submitting) && styles.claimButtonDisabled,
                 ]}
               >
-                <Text style={styles.claimButtonText}>Claim</Text>
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#10140b" />
+                ) : (
+                  <Text style={styles.claimButtonText}>
+                    {hasAppliedReferral ? 'Applied' : 'Claim'}
+                  </Text>
+                )}
               </Pressable>
             </View>
+
+            <Text style={styles.helperText}>
+              {hasAppliedReferral
+                ? `This account is linked to ${referredBy}.`
+                : 'You can link your account to one referrer once. Rewards are calculated by the backend.'}
+            </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -275,7 +362,7 @@ const styles = StyleSheet.create({
   heroSection: {
     alignItems: 'center',
     marginTop: 28,
-    marginBottom: 36,
+    marginBottom: 26,
   },
   giftHalo: {
     width: 156,
@@ -321,6 +408,36 @@ const styles = StyleSheet.create({
     color: '#B7FF31',
     fontFamily: FONTS.bold,
     fontWeight: '700',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginBottom: 22,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(16, 22, 14, 0.78)',
+  },
+  statCardSpacing: {
+    marginRight: 12,
+  },
+  statLabel: {
+    color: 'rgba(255,255,255,0.58)',
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  statValue: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontFamily: FONTS.black,
+    fontWeight: '800',
   },
   card: {
     marginBottom: 22,
@@ -396,6 +513,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     marginRight: 14,
   },
+  inputDisabled: {
+    opacity: 0.7,
+  },
   claimButton: {
     height: 62,
     minWidth: 108,
@@ -412,11 +532,21 @@ const styles = StyleSheet.create({
   claimButtonPressed: {
     opacity: 0.92,
   },
+  claimButtonDisabled: {
+    shadowOpacity: 0,
+  },
   claimButtonText: {
     color: '#10140b',
     fontSize: 17,
     fontFamily: FONTS.bold,
     fontWeight: '700',
+  },
+  helperText: {
+    marginTop: 14,
+    color: 'rgba(255,255,255,0.48)',
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: FONTS.medium,
   },
 });
 

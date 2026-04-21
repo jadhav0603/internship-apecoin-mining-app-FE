@@ -81,7 +81,7 @@ const Menu = () => {
       >
         <View style={styles.drawer}>
           <ImageBackground
-            source={require('../../assets/images/drawer-bg2.png')}
+            source={require('../../assets/images/drawer-bg2.webp')}
             style={styles.menuBg}
             imageStyle={styles.menuBgImage}
           >

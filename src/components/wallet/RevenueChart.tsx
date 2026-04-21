@@ -10,6 +10,7 @@ import {
 import { FONTS } from '../../constants/FONTS';
 import type { MiningHistoryDatum } from '../../hooks/useMiningWalletData';
 import type { WeekDayDatum } from '../../hooks/useRewardsData';
+import type { ReferralWeekDatum } from '../../services/referralService';
 import NeonBorderCard from './NeonBorderCard';
 import { THEME, formatCompactValue } from './theme';
 
@@ -18,8 +19,11 @@ type RevenueChartProps = {
   totalCollected: number;
   miningHistory: MiningHistoryDatum[];
   miningTotal: number;
+  referralWeekData: ReferralWeekDatum[];
+  referralEarnings: number;
   loading: boolean;
   miningLoading: boolean;
+  referralLoading: boolean;
 };
 
 type RevenueKey = 'mining' | 'reward' | 'referral';
@@ -42,18 +46,6 @@ const BAR_WIDTH = 8;
 const BAR_GAP = 3;
 const COLUMN_GAP = 14;
 
-const REFERRAL_DATA: Record<string, number> = {
-  Mon: 30,
-  Tue: 40,
-  Wed: 35,
-  Thu: 45,
-  Fri: 38,
-  Sat: 42,
-  Sun: 28,
-};
-
-const REFERRAL_TOTAL = 1100;
-
 const BAR_CONFIG: Record<RevenueKey, { label: string; color: string; glowColor?: string }> = {
   mining: { label: 'Mining', color: THEME.barMining, glowColor: THEME.neonGreen },
   reward: { label: 'Reward', color: THEME.barReward, glowColor: '#F5F5F5' },
@@ -72,8 +64,11 @@ const RevenueChart = ({
   totalCollected,
   miningHistory,
   miningTotal,
+  referralWeekData,
+  referralEarnings,
   loading,
   miningLoading,
+  referralLoading,
 }: RevenueChartProps) => {
   const animatedBars = useRef<Record<string, Animated.Value>>({});
   const hasMountedAnimation = useRef(false);
@@ -81,16 +76,25 @@ const RevenueChart = ({
   const todayLabel = useMemo(getTodayUtcLabel, []);
 
   const combinedData: DayDatum[] = useMemo(() => {
-    const fallbackBaseData: BaseHistoryDatum[] = miningHistory.map(entry => ({
-      date: entry.date,
-      dayLabel: entry.dayLabel,
-      totalAmount: 0,
-    }));
-    const baseHistory = weekData.length > 0 ? weekData : fallbackBaseData;
-
-    if (baseHistory.length === 0) {
-      return [];
+    // We want to ensure we always have 7 days of data points for a consistent graph baseline.
+    // We prioritize using the dates provided by the miningHistory or weekData, but if those are empty,
+    // we use a generated last-7-days window.
+    
+    const now = new Date();
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const last7Days: BaseHistoryDatum[] = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - i));
+      const dateStr = d.toISOString().split('T')[0];
+      last7Days.push({
+        date: dateStr,
+        dayLabel: dayLabels[d.getUTCDay()],
+        totalAmount: 0
+      });
     }
+
+    const baseData = last7Days;
 
     const rewardByDate = new Map(
       weekData.map(entry => [entry.date, entry.totalAmount] as const)
@@ -98,21 +102,32 @@ const RevenueChart = ({
     const miningByDate = new Map(
       miningHistory.map(entry => [entry.date, entry.totalAmount] as const)
     );
-    const maxRewardAmount = Math.max(...weekData.map(d => d.totalAmount), 0.000001);
-    const maxMiningAmount = Math.max(...miningHistory.map(d => d.totalAmount), 0.000001);
+    const referralByDate = new Map(
+      referralWeekData.map(entry => [entry.date, entry.totalAmount] as const)
+    );
+    
+    // Find absolute maximum across all sources for relative scaling
+    const allAmounts = [
+      ...weekData.map(d => d.totalAmount),
+      ...miningHistory.map(d => d.totalAmount),
+      ...referralWeekData.map(d => d.totalAmount)
+    ];
+    const maxAmount = Math.max(...allAmounts, 1.0); // scale against at least 1 unit if they are all 0
 
-    return baseHistory.map(entry => {
+    return baseData.map(entry => {
       const rewardAmount = rewardByDate.get(entry.date) ?? 0;
       const miningAmount = miningByDate.get(entry.date) ?? 0;
+      const referralAmount = referralByDate.get(entry.date) ?? 0;
 
       return {
         day: entry.dayLabel,
-        mining: maxMiningAmount > 0 ? (miningAmount / maxMiningAmount) * 80 : 0,
-        reward: maxRewardAmount > 0 ? (rewardAmount / maxRewardAmount) * 80 : 0,
-        referral: REFERRAL_DATA[entry.dayLabel] ?? 0,
+        // Scale to 0-80% height for visual balance in the chart
+        mining: (miningAmount / maxAmount) * 80,
+        reward: (rewardAmount / maxAmount) * 80,
+        referral: (referralAmount / maxAmount) * 80,
       };
     });
-  }, [weekData, miningHistory]);
+  }, [weekData, miningHistory, referralWeekData]);
 
   combinedData.forEach(entry => {
     BAR_ORDER.forEach(key => {
@@ -162,7 +177,7 @@ const RevenueChart = ({
   const legendItems = [
     { key: 'mining', label: 'Mining', value: formatCompactValue(miningTotal), color: THEME.barMining },
     { key: 'reward', label: 'Reward', value: formatCompactValue(totalCollected), color: THEME.barReward },
-    { key: 'referral', label: 'Referral', value: formatCompactValue(REFERRAL_TOTAL), color: THEME.barReferral },
+    { key: 'referral', label: 'Referral', value: formatCompactValue(referralEarnings), color: THEME.barReferral },
   ] as const;
 
   return (
@@ -240,7 +255,8 @@ const RevenueChart = ({
               <View style={[styles.legendDot, { backgroundColor: item.color }]} />
               <Text style={styles.legendLabel}>{item.label}</Text>
               {(item.key === 'reward' && loading) ||
-              (item.key === 'mining' && miningLoading) ? (
+              (item.key === 'mining' && miningLoading) ||
+              (item.key === 'referral' && referralLoading) ? (
                 <ActivityIndicator size="small" color={THEME.white} style={styles.legendLoader} />
               ) : (
                 <Text style={styles.legendValue}>{item.value}</Text>

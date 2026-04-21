@@ -1,8 +1,9 @@
 import { NativeModules, Platform } from 'react-native';
 
 const DEV_PORT = 5000;
-// Update this to your development machine's LAN IP so physical devices can reach the API
-const DEV_LAN_HOST = '192.168.1.12';
+// Updated to current machine's LAN IP (192.168.1.101)
+// This IP must be reachable from physical devices on the same network
+const DEV_LAN_HOST = '192.168.1.101';
 const DEV_LAN_BASE_URL = `http://${DEV_LAN_HOST}:${DEV_PORT}/api`;
 
 const unique = (values: string[]) => [...new Set(values)];
@@ -16,7 +17,7 @@ const stripPort = (value?: string | null) => {
 };
 
 const isLoopbackHost = (host?: string | null) =>
-  host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+  !host || host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0' || host === '::1';
 
 const getNativeServerHost = (): string | null => {
   const serverHost = NativeModules?.PlatformConstants?.ServerHost as string | undefined;
@@ -30,39 +31,45 @@ const getMetroHost = (): string | null => {
   }
 
   try {
-    return stripPort(new URL(scriptUrl).hostname);
+    const parsed = new URL(scriptUrl);
+    return stripPort(parsed.hostname);
   } catch {
     return null;
   }
 };
 
 const getAndroidDevHost = () => {
-  const nativeServerHost = getNativeServerHost();
-  if (nativeServerHost && !isLoopbackHost(nativeServerHost)) {
-    return nativeServerHost;
-  }
-
+  // 1. Try to get the host from Metro (most reliable for dev machine's IP)
   const metroHost = getMetroHost();
   if (metroHost && !isLoopbackHost(metroHost)) {
     return metroHost;
   }
 
+  // 2. Try to get the host from native modules
+  const nativeServerHost = getNativeServerHost();
+  if (nativeServerHost && !isLoopbackHost(nativeServerHost)) {
+    return nativeServerHost;
+  }
+
+  // 3. Last resort fallback to the hardcoded LAN IP
   return DEV_LAN_HOST;
 };
 
 const resolveBaseUrl = () => {
-  if (__DEV__ && Platform.OS === 'android') {
-    const nativeServerHost = getNativeServerHost();
-    const metroHost = getMetroHost();
+  if (__DEV__) {
+    if (Platform.OS === 'android') {
+      const host = getAndroidDevHost();
 
-    if (isLoopbackHost(nativeServerHost) || isLoopbackHost(metroHost)) {
-      return `http://10.0.2.2:${DEV_PORT}/api`;
+      // For Android emulators, if we are still hitting loopback, use 10.0.2.2 
+      // which points to the host machine.
+      if (isLoopbackHost(host)) {
+        return `http://10.0.2.2:${DEV_PORT}/api`;
+      }
+
+      return `http://${host}:${DEV_PORT}/api`;
     }
 
-    return `http://${getAndroidDevHost()}:${DEV_PORT}/api`;
-  }
-
-  if (__DEV__) {
+    // Default for iOS / Web development
     return `http://127.0.0.1:${DEV_PORT}/api`;
   }
 
@@ -103,7 +110,7 @@ export const getDevApiBaseUrls = () => {
 export const API_CONFIG = {
   BASE_URL: resolveBaseUrl(),
   DEV_LAN_BASE_URL,
-  TIMEOUT: 10000,
+  TIMEOUT: 15000, // Slightly longer timeout for network stability
 };
 
 export const FIREBASE_CONFIG = {

@@ -6,6 +6,9 @@ export type AppUser = {
   displayName?: string;
   photoURL?: string;
   plan?: string;
+  referredBy?: string | null;
+  referralEarnings?: number;
+  referralCount?: number;
 };
 
 type UserContextValue = {
