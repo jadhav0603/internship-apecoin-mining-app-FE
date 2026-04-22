@@ -30,6 +30,10 @@ const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const tabBarHeight = useBottomTabBarHeight();
 
+  const handleOpenMining = () => {
+    navigation.navigate('Mining', { time: 1 });
+  };
+
   return (
     <LinearGradient
       colors={[
@@ -67,7 +71,7 @@ const HomeScreen = () => {
               </Text>
 
               <View style={styles.buttonContainer}>
-                <MiningButton />
+                <MiningButton onPress={handleOpenMining} />
               </View>
 
               <MiningTimeSelectionPopup />

@@ -5,6 +5,8 @@ import auth from '@react-native-firebase/auth';
 import API from '../services/api';
 import { API_CONFIG } from '../api/config';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 export interface MiningData {
   email: string;
   multiplier: number;
@@ -31,63 +33,69 @@ type MiningContextType = {
   earned: number;
   miningData: MiningData | null;
   startMining: (h: number) => Promise<void>;
-  stopMining: () => Promise<void>;
+  stopMining: () => void;
   setMultiplier: (m: number) => Promise<void>;
 };
 
-const MINING_STORAGE_KEY = 'MINING_DATA';
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const getSocketUrl = () => API_CONFIG.BASE_URL.replace(/\/api$/, '');
 
+/**
+ * Given miningStartTime + selectedHour from MongoDB, calculate:
+ * - how many seconds are remaining
+ * - how many coins were already earned
+ *
+ * Example:
+ *   miningStartTime=5am, selectedHour=2, now=6am
+ *   → elapsed=3600s, total=7200s, remaining=3600s  (shows 1 hour left) ✅
+ *
+ *   miningStartTime=4am, selectedHour=2, now=6am
+ *   → elapsed=7200s, remaining=0  (mining complete) ✅
+ */
 const deriveStateFromDB = (data: MiningData) => {
   if (data.status !== 'mining' || !data.miningStartTime) {
-    return {
-      remaining: 0,
-      earnedCoins: data.status === 'idle' ? data.currentMiningPoints ?? 0 : 0,
-      isComplete: true,
-    };
+    return { remaining: 0, earnedCoins: 0, isComplete: true };
   }
 
   const totalSeconds = (data.selectedHour ?? 1) * 3600;
-  const rawElapsed = Math.floor(
+  const elapsed = Math.floor(
     (Date.now() - new Date(data.miningStartTime).getTime()) / 1000
   );
-  const elapsed = Math.max(0, Math.min(rawElapsed, totalSeconds));
-  const remaining = Math.max(0, Math.min(totalSeconds, totalSeconds - rawElapsed));
+  const remaining = totalSeconds - elapsed;
 
   const RATE_VALUE = (data.baseDollarValue ?? 0.002) / (data.dollarToBonkRate ?? 0.00000604);
   const bonkPerSecond = (RATE_VALUE * (data.multiplier ?? 1)) / 3600;
-  const earnedCoins = elapsed * bonkPerSecond;
+  const earnedCoins = Math.min(elapsed, totalSeconds) * bonkPerSecond;
 
   return {
-    remaining,
+    remaining: Math.max(0, remaining),
     earnedCoins,
     isComplete: remaining <= 0,
   };
 };
 
+// ─── Context ──────────────────────────────────────────────────────────────────
+
 const MiningContext = createContext<MiningContextType>({} as MiningContextType);
 
 export const MiningProvider = ({ children }: any) => {
-  const [isMining, setIsMining] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(0);
-  const [hours, setHours] = useState(1);
+  const [isMining, setIsMining]          = useState(false);
+  const [secondsLeft, setSecondsLeft]    = useState(0);
+  const [hours, setHours]                = useState(1);
   const [multiplier, setMultiplierState] = useState(1);
-  const [earned, setEarned] = useState(0);
-  const [miningData, setMiningData] = useState<MiningData | null>(null);
+  const [earned, setEarned]              = useState(0);
+  const [miningData, setMiningData]      = useState<MiningData | null>(null);
 
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef     = useRef<Socket | null>(null);
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
-  const isCompletingRef = useRef(false);
 
-  useEffect(() => {
-    multiplierRef.current = multiplier;
-  }, [multiplier]);
+  useEffect(() => { multiplierRef.current = multiplier; }, [multiplier]);
+  useEffect(() => { miningDataRef.current = miningData; }, [miningData]);
 
-  useEffect(() => {
-    miningDataRef.current = miningData;
-  }, [miningData]);
-
+  // ─── Apply DB data to all local state ─────────────────────────────────────
+  // Single function used by: socket updates, app-open fetch, startMining response
   const applyMiningData = (data: MiningData) => {
     setMiningData(data);
     setMultiplierState(data.multiplier ?? 1);
@@ -97,9 +105,8 @@ export const MiningProvider = ({ children }: any) => {
 
     if (!isComplete) {
       setIsMining(true);
-      setSecondsLeft(remaining);
+      setSecondsLeft(remaining);  // ← always recalculated from miningStartTime
       setEarned(earnedCoins);
-      isCompletingRef.current = false;
     } else {
       setIsMining(false);
       setSecondsLeft(0);
@@ -107,36 +114,20 @@ export const MiningProvider = ({ children }: any) => {
     }
   };
 
-  const completeMiningSession = async () => {
-    if (isCompletingRef.current) {
-      return;
-    }
-
-    isCompletingRef.current = true;
-
-    try {
-      const response = await API.post('/mining/complete');
-      if (response.data?.mining) {
-        applyMiningData(response.data.mining);
-      }
-      await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-    } catch (err) {
-      console.error('[mining] failed to complete mining:', err);
-    }
-  };
-
+  // ─── Socket.IO — connects once Firebase confirms the user is logged in ─────
+  // Using onAuthStateChanged fixes the "need to reload" problem:
+  // auth().currentUser is null on first render — onAuthStateChanged waits for it
   useEffect(() => {
     let socket: Socket | null = null;
 
     const unsubscribeAuth = auth().onAuthStateChanged(firebaseUser => {
+      // Clean up any existing socket when auth state changes
       if (socket) {
         socket.disconnect();
         socket = null;
       }
 
-      if (!firebaseUser?.email) {
-        return;
-      }
+      if (!firebaseUser?.email) return;
 
       const email = firebaseUser.email;
 
@@ -148,10 +139,12 @@ export const MiningProvider = ({ children }: any) => {
       socketRef.current = socket;
 
       socket.on('connect', () => {
-        console.log('[socket.io] connected, joining room for', email);
+        console.log('[socket.io] connected → joining room for', email);
         socket!.emit('join_mining_room', email);
       });
 
+      // 🔴 Fires instantly when you change anything in MongoDB Compass/Atlas
+      // No app reload needed — this pushes the update directly to the frontend
       socket.on('mining_update', (data: MiningData) => {
         console.log('[socket.io] mining_update received, miningStartTime:', data.miningStartTime);
         applyMiningData(data);
@@ -161,51 +154,37 @@ export const MiningProvider = ({ children }: any) => {
     });
 
     return () => {
-      unsubscribeAuth();
-      socket?.disconnect();
+      unsubscribeAuth();    // stop listening to Firebase auth
+      socket?.disconnect(); // close socket on unmount
     };
   }, []);
 
+  // ─── App open: fetch latest mining state from backend ─────────────────────
   useEffect(() => {
     const fetchStatus = async () => {
       try {
         const response = await API.get('/mining/status');
         if (response.data?.mining) {
-          const restoredMining = response.data.mining;
-          console.log('[mining] restored from backend:', restoredMining.miningStartTime);
-          applyMiningData(restoredMining);
-
-          const { isComplete } = deriveStateFromDB(restoredMining);
-          if (isComplete) {
-            await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-          } else {
-            await AsyncStorage.setItem(
-              MINING_STORAGE_KEY,
-              JSON.stringify({
-                startTime: new Date(restoredMining.miningStartTime).getTime(),
-                duration: (restoredMining.selectedHour ?? 1) * 3600,
-                multiplier: restoredMining.multiplier ?? 1,
-                earned: 0,
-              })
-            );
-          }
+          console.log('[mining] restored from backend:', response.data.mining.miningStartTime);
+          applyMiningData(response.data.mining);
+          await AsyncStorage.setItem('MINING_DATA', JSON.stringify({
+            startTime: new Date(response.data.mining.miningStartTime).getTime(),
+            duration: (response.data.mining.selectedHour ?? 1) * 3600,
+            multiplier: response.data.mining.multiplier ?? 1,
+            earned: 0,
+          }));
         }
       } catch {
-        const saved = await AsyncStorage.getItem(MINING_STORAGE_KEY);
-        if (!saved) {
-          return;
-        }
-
+        // Backend unreachable — fall back to AsyncStorage
+        const saved = await AsyncStorage.getItem('MINING_DATA');
+        if (!saved) return;
         const data = JSON.parse(saved);
         const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
         const remaining = data.duration - elapsed;
-
         if (remaining > 0) {
           setIsMining(true);
           setSecondsLeft(remaining);
           setMultiplierState(data.multiplier ?? 1);
-        } else {
-          await AsyncStorage.removeItem(MINING_STORAGE_KEY);
         }
       }
     };
@@ -213,23 +192,20 @@ export const MiningProvider = ({ children }: any) => {
     fetchStatus();
   }, []);
 
+  // ─── Start Mining ─────────────────────────────────────────────────────────
   const startMining = async (h: number) => {
     const totalSeconds = h * 3600;
     setIsMining(true);
     setHours(h);
     setSecondsLeft(totalSeconds);
     setEarned(0);
-    isCompletingRef.current = false;
 
-    await AsyncStorage.setItem(
-      MINING_STORAGE_KEY,
-      JSON.stringify({
-        startTime: Date.now(),
-        duration: totalSeconds,
-        multiplier: 1,
-        earned: 0,
-      })
-    );
+    await AsyncStorage.setItem('MINING_DATA', JSON.stringify({
+      startTime: Date.now(),
+      duration: totalSeconds,
+      multiplier: 1,
+      earned: 0,
+    }));
 
     try {
       const response = await API.post('/mining/start', {
@@ -246,82 +222,54 @@ export const MiningProvider = ({ children }: any) => {
     }
   };
 
+  // ─── Stop Mining ──────────────────────────────────────────────────────────
   const stopMining = async () => {
     setIsMining(false);
     setSecondsLeft(0);
-    setEarned(0);
-    setMultiplierState(1);
-    setMiningData(prev =>
-      prev
-        ? {
-            ...prev,
-            status: 'claimed',
-            currentMiningPoints: 0,
-          }
-        : prev
-    );
-    await AsyncStorage.removeItem(MINING_STORAGE_KEY);
+    await AsyncStorage.removeItem('MINING_DATA');
   };
 
   const setMultiplier = async (m: number) => {
-    if (!isMining) {
-      return;
-    }
-
-    setMultiplierState(m);
+    if (!isMining) return;              // only track during active session
+    setMultiplierState(m);              // update UI immediately
 
     try {
       const response = await API.post('/mining/multiplier', { multiplier: m });
       if (response.data?.mining) {
-        setMiningData(response.data.mining);
+        setMiningData(response.data.mining);  // sync full doc (with new history)
       }
       console.log('[mining] multiplier updated to', m);
-    } catch (err: any) {
-      if (err?.response?.data?.mining) {
-        applyMiningData(err.response.data.mining);
-      }
+    } catch (err) {
       console.error('[mining] failed to update multiplier:', err);
     }
   };
 
+  // ─── Timer engine ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!isMining) {
-      return;
-    }
+    if (!isMining) return;
 
     const interval = setInterval(() => {
       setSecondsLeft(prev => {
-        if (prev <= 1) {
-          void completeMiningSession();
-          return 0;
-        }
+        if (prev <= 1) { stopMining(); return 0; }
         return prev - 1;
       });
 
-      const d = miningDataRef.current;
+      const d    = miningDataRef.current;
       const base = d?.baseDollarValue ?? 0.002;
       const rate = d?.dollarToBonkRate ?? 0.00000604;
-      const m = multiplierRef.current;
-      setEarned(prev => prev + ((base / rate) * m) / 3600);
+      const m    = multiplierRef.current;
+      setEarned(prev => prev + ((base / rate) * m / 3600));
     }, 1000);
 
     return () => clearInterval(interval);
   }, [isMining]);
 
+  // ─── Provider ─────────────────────────────────────────────────────────────
   return (
-    <MiningContext.Provider
-      value={{
-        isMining,
-        secondsLeft,
-        hours,
-        multiplier,
-        earned,
-        miningData,
-        startMining,
-        stopMining,
-        setMultiplier,
-      }}
-    >
+    <MiningContext.Provider value={{
+      isMining, secondsLeft, hours, multiplier, earned, miningData,
+      startMining, stopMining, setMultiplier,
+    }}>
       {children}
     </MiningContext.Provider>
   );
@@ -329,8 +277,6 @@ export const MiningProvider = ({ children }: any) => {
 
 export const useMining = () => {
   const ctx = useContext(MiningContext);
-  if (!ctx) {
-    throw new Error('useMining must be used inside MiningProvider');
-  }
+  if (!ctx) throw new Error('useMining must be used inside MiningProvider');
   return ctx;
 };
