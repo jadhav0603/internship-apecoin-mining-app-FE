@@ -15,6 +15,9 @@ import SplashScreen from '../screens/splash/SplashScreen';
 import MiningScreen from '../screens/mining/MiningScreen';
 import LeaderboardScreen from '../screens/profile/LeaderboardScreen';
 import ReferAndEarnScreen from '../screens/profile/ReferAndEarnScreen';
+import ReportIssueScreen from '../screens/profile/ReportIssueScreen';
+import TicketListScreen from '../screens/profile/TicketListScreen';
+import TicketDetailScreen from '../screens/profile/TicketDetailScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
 
@@ -134,6 +137,9 @@ const AppNavigator = () => {
           <>
             <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
             <Stack.Screen name="Mining" component={MiningScreen} />
+            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+            <Stack.Screen name="TicketList" component={TicketListScreen} />
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Stack.Screen name="ReferAndEarn" component={ReferAndEarnScreen} />
           </>

@@ -174,6 +174,7 @@ const ProfileScreen = () => {
   const menuItems = useMemo(
     () => [
       { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
+      { id: 'report_issue', label: 'Report & Issues', icon: 'alert-circle-outline' as const, iconBg: '#2a3517', active: false },
       { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
       { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
       { id: 'logout', label: 'Log Out', icon: 'log-out-outline' as const, iconBg: PROFILE_THEME.dangerBg, active: false, tone: 'danger' as const },
@@ -296,6 +297,10 @@ const ProfileScreen = () => {
                   if (item.id === 'logout') { confirmLogout(); return; }
                   if (item.id === 'referral') {
                     navigation.navigate('ReferAndEarn', { email, username });
+                    return;
+                  }
+                  if (item.id === 'report_issue') {
+                    navigation.navigate('ReportIssue');
                     return;
                   }
                   if (item.id === 'leaderboard') {
