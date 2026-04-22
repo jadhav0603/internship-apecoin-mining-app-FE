@@ -184,9 +184,6 @@ const RevenueChart = ({
     <NeonBorderCard style={styles.chartCard}>
       <View style={styles.headerRow}>
         <Text style={styles.cardTitle}>Revenue Overview</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>This Week</Text>
-        </View>
       </View>
 
       <View style={styles.chartWrap}>
