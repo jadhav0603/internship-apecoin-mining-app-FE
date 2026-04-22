@@ -1,0 +1,542 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  LayoutChangeEvent,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { COLORS } from '../../constants/COLORS';
+import { FONTS } from '../../constants/FONTS';
+
+export type MultiLineChartFilter = 'all' | 'reward' | 'mining' | 'referral';
+
+export type MultiLineChartData = {
+  labels: string[];
+  rewardEarning: number[];
+  miningEarning: number[];
+  referralEarning: number[];
+};
+
+type MultiLineChartProps = {
+  data: MultiLineChartData;
+  filter?: MultiLineChartFilter;
+  activeIndex?: number;
+  height?: number;
+  valueText?: string;
+};
+
+type SeriesKey = 'reward' | 'mining' | 'referral';
+
+type ChartPoint = {
+  x: number;
+  y: number;
+  value: number;
+  label: string;
+};
+
+type SeriesConfig = {
+  key: SeriesKey;
+  values: number[];
+  color: string;
+};
+
+const DEFAULT_HEIGHT = 210;
+const DEFAULT_WIDTH = 360;
+const BADGE_WIDTH = 92;
+const BADGE_HEIGHT = 38;
+const LABEL_TRACK_HEIGHT = 54;
+const Y_TOP = 18;
+const Y_BOTTOM_PADDING = 28;
+const X_SIDE_PADDING = 12;
+const Y_AXIS_GUTTER = 28;
+const AXIS_COLOR = 'rgba(255,255,255,0.14)';
+const Y_AXIS_STEPS = [2, 1, 0, -1] as const;
+const Y_AXIS_MIN = -1;
+const Y_AXIS_MAX = 2;
+
+const SERIES_COLORS: Record<SeriesKey, string> = {
+  reward: '#3B82F6',
+  mining: '#8B5CF6',
+  referral: '#22C55E',
+};
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+const formatValue = (value: number) =>
+  `+${value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const getVisibleKeys = (filter: MultiLineChartFilter): SeriesKey[] => {
+  if (filter === 'all') {
+    return ['reward', 'mining', 'referral'];
+  }
+
+  return [filter];
+};
+
+const buildSmoothPath = (points: ChartPoint[]) => {
+  if (!points.length) {
+    return '';
+  }
+
+  if (points.length === 1) {
+    return `M ${points[0].x} ${points[0].y}`;
+  }
+
+  let path = `M ${points[0].x} ${points[0].y}`;
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    const controlX = (current.x + next.x) / 2;
+
+    path += ` C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`;
+  }
+
+  return path;
+};
+
+const buildAreaPath = (points: ChartPoint[], bottomY: number) => {
+  if (!points.length) {
+    return '';
+  }
+
+  const first = points[0];
+  const last = points[points.length - 1];
+
+  return `${buildSmoothPath(points)} L ${last.x} ${bottomY} L ${first.x} ${bottomY} Z`;
+};
+
+const MultiLineChart = ({
+  data,
+  filter = 'all',
+  activeIndex = 3,
+  height = DEFAULT_HEIGHT,
+  valueText,
+}: MultiLineChartProps) => {
+  const [layoutWidth, setLayoutWidth] = useState(DEFAULT_WIDTH);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const riseAnim = useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    fadeAnim.setValue(0);
+    riseAnim.setValue(12);
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 340,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(riseAnim, {
+        toValue: 0,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, riseAnim, filter, data]);
+
+  const safeActiveIndex = clamp(activeIndex, 0, Math.max(data.labels.length - 1, 0));
+  const chartWidth = Math.max(layoutWidth - 28, 240);
+  const chartHeight = height;
+  const chartBottom = chartHeight - Y_BOTTOM_PADDING;
+  const chartDrawableHeight = chartBottom - Y_TOP;
+  const plotLeft = Y_AXIS_GUTTER + X_SIDE_PADDING;
+  const plotRight = chartWidth - X_SIDE_PADDING;
+  const plotWidth = Math.max(plotRight - plotLeft, 120);
+
+  const visibleKeys = getVisibleKeys(filter);
+
+  const visibleSeries = useMemo<SeriesConfig[]>(
+    () =>
+      visibleKeys.map(key => ({
+        key,
+        values:
+          key === 'reward'
+            ? data.rewardEarning
+            : key === 'mining'
+              ? data.miningEarning
+              : data.referralEarning,
+        color: SERIES_COLORS[key],
+      })),
+    [data.miningEarning, data.referralEarning, data.rewardEarning, visibleKeys]
+  );
+
+  const maxVisibleValue = useMemo(() => {
+    const values = visibleSeries.flatMap(series => series.values);
+    return Math.max(...values, 1);
+  }, [visibleSeries]);
+
+  const pointSets = useMemo(() => {
+    const centerX = plotLeft + plotWidth / 2;
+    const leftX = plotLeft;
+    const rightX = plotRight;
+    const leftCount = safeActiveIndex;
+    const rightCount = data.labels.length - safeActiveIndex - 1;
+
+    return visibleSeries.map(series => ({
+      ...series,
+      points: data.labels.map((label, index) => {
+        let x = centerX;
+
+        if (index < safeActiveIndex) {
+          const ratio = leftCount <= 0 ? 0 : index / leftCount;
+          x = leftX + ratio * (centerX - leftX);
+        } else if (index > safeActiveIndex) {
+          const step = index - safeActiveIndex;
+          const ratio = rightCount <= 0 ? 0 : step / rightCount;
+          x = centerX + ratio * (rightX - centerX);
+        }
+
+        const scaledValue =
+          ((series.values[index] ?? 0) / maxVisibleValue) * Y_AXIS_MAX;
+        const normalized =
+          (scaledValue - Y_AXIS_MIN) / (Y_AXIS_MAX - Y_AXIS_MIN);
+        const y = chartBottom - normalized * chartDrawableHeight;
+
+        return {
+          x,
+          y,
+          value: series.values[index] ?? 0,
+          label,
+        };
+      }),
+    }));
+  }, [
+    chartBottom,
+    chartDrawableHeight,
+    data.labels,
+    maxVisibleValue,
+    plotLeft,
+    plotRight,
+    plotWidth,
+    safeActiveIndex,
+    visibleSeries,
+  ]);
+
+  const axisGuideLines = useMemo(
+    () =>
+      Y_AXIS_STEPS.map(step => ({
+        label: step.toString(),
+        y:
+          chartBottom -
+          ((step - Y_AXIS_MIN) / (Y_AXIS_MAX - Y_AXIS_MIN)) *
+            chartDrawableHeight,
+      })),
+    [chartBottom, chartDrawableHeight]
+  );
+
+  const anchorSeries = useMemo(() => {
+    if (!pointSets.length) {
+      return null;
+    }
+
+    return pointSets.reduce((best, current) => {
+      const bestValue = best.points[safeActiveIndex]?.value ?? 0;
+      const currentValue = current.points[safeActiveIndex]?.value ?? 0;
+
+      return currentValue >= bestValue ? current : best;
+    });
+  }, [pointSets, safeActiveIndex]);
+
+  const activePoint = anchorSeries?.points[safeActiveIndex] ?? null;
+
+  const defaultValueText = useMemo(() => {
+    const activeTotal = visibleSeries.reduce(
+      (sum, series) => sum + (series.values[safeActiveIndex] ?? 0),
+      0
+    );
+
+    return formatValue(activeTotal);
+  }, [safeActiveIndex, visibleSeries]);
+
+  const badgeText = valueText ?? defaultValueText;
+
+  const badgeLeft = activePoint
+    ? clamp(
+        activePoint.x - BADGE_WIDTH / 2 + 14,
+        14,
+        chartWidth - BADGE_WIDTH + 14
+      )
+    : 0;
+  const badgeTop = activePoint ? Math.max(activePoint.y - 58, 2) : 0;
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setLayoutWidth(event.nativeEvent.layout.width);
+  };
+
+  return (
+    <View
+      style={[styles.card, { height: chartHeight + LABEL_TRACK_HEIGHT }]}
+      onLayout={handleLayout}
+    >
+      <Animated.View
+        style={[
+          styles.innerWrap,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: riseAnim }],
+          },
+        ]}
+      >
+        <View style={[styles.chartViewport, { height: chartHeight }]}>
+          {activePoint ? (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.valueBadge,
+                {
+                  left: badgeLeft,
+                  top: badgeTop,
+                },
+              ]}
+            >
+              <Text style={styles.valueBadgeText}>{badgeText}</Text>
+            </View>
+          ) : null}
+
+          <Svg width={chartWidth} height={chartHeight}>
+            <Defs>
+              {pointSets.map(series => (
+                <LinearGradient
+                  key={`gradient-${series.key}`}
+                  id={`gradient-${series.key}`}
+                  x1="0%"
+                  y1="0%"
+                  x2="0%"
+                  y2="100%"
+                >
+                  <Stop offset="0%" stopColor={series.color} stopOpacity="0.2" />
+                  <Stop offset="100%" stopColor={series.color} stopOpacity="0" />
+                </LinearGradient>
+              ))}
+            </Defs>
+
+            {axisGuideLines.map(line => (
+              <Path
+                key={`guide-${line.label}`}
+                d={`M ${plotLeft} ${line.y} L ${plotRight} ${line.y}`}
+                stroke={AXIS_COLOR}
+                strokeWidth={1}
+                fill="none"
+              />
+            ))}
+
+            <Path
+              d={`M ${plotLeft} ${Y_TOP} L ${plotLeft} ${chartBottom}`}
+              stroke={AXIS_COLOR}
+              strokeWidth={1}
+              fill="none"
+            />
+            <Path
+              d={`M ${plotLeft} ${chartBottom} L ${plotRight} ${chartBottom}`}
+              stroke={AXIS_COLOR}
+              strokeWidth={1}
+              fill="none"
+            />
+
+            {pointSets.map(series => (
+              <Path
+                key={`area-${series.key}`}
+                d={buildAreaPath(series.points, chartBottom)}
+                fill={`url(#gradient-${series.key})`}
+                opacity={filter === 'all' ? 0.05 : 0.16}
+              />
+            ))}
+
+            {pointSets.map(series => (
+              <Path
+                key={`ghost-${series.key}`}
+                d={buildSmoothPath(
+                  series.points.map(point => ({
+                    ...point,
+                    y: point.y + 1.5,
+                  }))
+                )}
+                stroke={series.color}
+                strokeOpacity={0.14}
+                strokeWidth={7}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {pointSets.map(series => (
+              <Path
+                key={`line-${series.key}`}
+                d={buildSmoothPath(series.points)}
+                stroke={series.color}
+                strokeWidth={3.5}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {activePoint && anchorSeries ? (
+              <>
+                <Circle
+                  cx={activePoint.x}
+                  cy={activePoint.y}
+                  r={11}
+                  fill={anchorSeries.color}
+                  opacity={0.18}
+                />
+                <Circle
+                  cx={activePoint.x}
+                  cy={activePoint.y}
+                  r={6.5}
+                  fill="#FFFFFF"
+                  stroke={anchorSeries.color}
+                  strokeWidth={2.4}
+                />
+                <Circle
+                  cx={activePoint.x}
+                  cy={activePoint.y}
+                  r={2.8}
+                  fill={anchorSeries.color}
+                />
+              </>
+            ) : null}
+          </Svg>
+
+          <View pointerEvents="none" style={styles.yAxisLabels}>
+            {axisGuideLines.map(line => (
+              <Text
+                key={`axis-label-${line.label}`}
+                style={[
+                  styles.yAxisLabel,
+                  {
+                    top: line.y - 9,
+                  },
+                ]}
+              >
+                {line.label}
+              </Text>
+            ))}
+          </View>
+        </View>
+
+        <View style={[styles.monthsRow, { paddingLeft: plotLeft - 8, paddingRight: 10 }]}>
+          {data.labels.map((label, index) => {
+            const isActive = index === safeActiveIndex;
+
+            return (
+              <View key={`${label}-${index}`} style={styles.monthCell}>
+                {isActive ? <View style={styles.activeMonthBackground} /> : null}
+                <Text style={[styles.monthLabel, isActive && styles.monthLabelActive]}>
+                  {label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </Animated.View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    width: '100%',
+    backgroundColor: COLORS.card,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
+    overflow: 'hidden',
+  },
+  innerWrap: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  chartViewport: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  yAxisLabels: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: Y_AXIS_GUTTER,
+  },
+  yAxisLabel: {
+    position: 'absolute',
+    left: 0,
+    width: Y_AXIS_GUTTER - 6,
+    textAlign: 'right',
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontFamily: FONTS.medium,
+  },
+  valueBadge: {
+    position: 'absolute',
+    width: BADGE_WIDTH,
+    height: BADGE_HEIGHT,
+    borderRadius: 14,
+    backgroundColor: COLORS.backgroundOlive,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+    shadowColor: COLORS.primaryDark,
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
+  },
+  valueBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+  },
+  monthsRow: {
+    height: LABEL_TRACK_HEIGHT,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: -6,
+  },
+  monthCell: {
+    flex: 1,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  activeMonthBackground: {
+    position: 'absolute',
+    bottom: 0,
+    width: 38,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(166, 255, 0, 0.14)',
+  },
+  monthLabel: {
+    color: COLORS.textMuted,
+    fontSize: 11,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  monthLabelActive: {
+    color: COLORS.textPrimary,
+  },
+});
+
+export default MultiLineChart;
