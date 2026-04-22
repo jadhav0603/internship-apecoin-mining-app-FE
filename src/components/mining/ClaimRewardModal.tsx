@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { Modal, Pressable, Text, View, Animated, StyleSheet } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
@@ -47,6 +48,23 @@ const ClaimRewardModal = () => {
     (miningData?.canClaim ?? false) &&
     (miningData?.status === 'idle' || miningData?.status === 'mining');
 
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 4000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   if (isMining || !visible || !isClaimAvailable) {
     return null;
   }
@@ -89,14 +107,41 @@ const ClaimRewardModal = () => {
         <View
           style={{
             width: 300,
-            backgroundColor: COLORS.backgroundLight,
-            borderRadius: 24,
-            padding: 20,
-            borderWidth: 1,
-            borderColor: COLORS.glassBorder,
+            borderRadius: 26,
+            overflow: 'hidden',
+            padding: 2, // border thickness
+            backgroundColor: '#0a1a0a',
           }}
         >
-          <Text
+          <Animated.View
+            style={[
+              {
+                position: 'absolute',
+                width: '150%',
+                height: '150%',
+                top: '-25%',
+                left: '-25%',
+              },
+              { transform: [{ rotate: spin }] },
+            ]}
+          >
+            <LinearGradient
+              colors={['#39FF14', '#0a1a0a', '#FF1493', '#0a1a0a']}
+              locations={[0, 0.25, 0.5, 0.75]}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          </Animated.View>
+
+          <View
+            style={{
+              backgroundColor: COLORS.backgroundLight,
+              borderRadius: 24,
+              padding: 20,
+            }}
+          >
+            <Text
             style={{
               color: COLORS.textPrimary,
               fontSize: 18,
@@ -145,6 +190,7 @@ const ClaimRewardModal = () => {
               CLAIM REWARD
             </Text>
           </Pressable>
+        </View>
         </View>
       </View>
     </Modal>

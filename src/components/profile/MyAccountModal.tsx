@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { BlurView } from '@react-native-community/blur';
+import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
 import { PROFILE_THEME, getInitial } from './profileTheme';
@@ -49,6 +50,22 @@ const MyAccountModal = ({
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(22)).current;
   const scaleAnim = useRef(new Animated.Value(0.96)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 4000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   useEffect(() => {
     if (visible) {
@@ -109,15 +126,26 @@ const MyAccountModal = ({
 
         <Animated.View
           style={[
-            styles.card,
+            styles.shadowContainer,
             {
               opacity: opacityAnim,
               transform: [{ translateY: translateYAnim }, { scale: scaleAnim }],
             },
           ]}
         >
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>My Account</Text>
+          <View style={styles.cardWrapper}>
+            <Animated.View style={[styles.rotatingGradient, { transform: [{ rotate: spin }] }]}>
+              <LinearGradient
+                colors={['#39FF14', '#10160e', '#53ff14ff', '#10160e']}
+                locations={[0, 0.25, 0.5, 0.75]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+            </Animated.View>
+            <View style={styles.cardInner}>
+              <View style={styles.headerRow}>
+                <Text style={styles.title}>My Profile</Text>
 
             <Pressable onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="rgba(255,255,255,0.45)" />
@@ -203,24 +231,8 @@ const MyAccountModal = ({
             </View>
           </View>
 
-          <Pressable
-            onPress={onLogout}
-            disabled={isLoggingOut}
-            style={({ pressed }) => [
-              styles.logoutButton,
-              pressed && !isLoggingOut ? styles.logoutButtonPressed : null,
-              isLoggingOut ? styles.logoutButtonDisabled : null,
-            ]}
-          >
-            {isLoggingOut ? (
-              <ActivityIndicator color={PROFILE_THEME.danger} size="small" />
-            ) : (
-              <>
-                <Ionicons name="log-out-outline" size={24} color={PROFILE_THEME.danger} />
-                <Text style={styles.logoutText}>Log Out</Text>
-              </>
-            )}
-          </Pressable>
+            </View>
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -235,21 +247,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  card: {
+  shadowContainer: {
     width: '100%',
     maxWidth: 380,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(170,255,0,0.42)',
-    backgroundColor: 'rgba(16, 22, 14, 0.96)',
-    paddingHorizontal: 28,
-    paddingTop: 28,
-    paddingBottom: 26,
     shadowColor: PROFILE_THEME.neonGreen,
     shadowOpacity: 0.18,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 10 },
     elevation: 12,
+  },
+  cardWrapper: {
+    width: '100%',
+    borderRadius: 32,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2, // Gradient border thickness
+    backgroundColor: '#10160e',
+  },
+  rotatingGradient: {
+    position: 'absolute',
+    width: '150%',
+    height: '150%',
+  },
+  cardInner: {
+    width: '100%',
+    borderRadius: 30, // matches wrapper radius - padding
+    backgroundColor: 'rgba(16, 22, 14, 0.98)',
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 26,
   },
   headerRow: {
     flexDirection: 'row',

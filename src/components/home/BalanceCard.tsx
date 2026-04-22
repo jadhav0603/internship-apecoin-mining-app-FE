@@ -45,8 +45,9 @@
 
 // export default BalanceCard
 
-import React from 'react';
-import { Text, View, Pressable } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Text, View, Pressable, Animated, StyleSheet } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import styles from './BalanceCard.styles';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -60,9 +61,37 @@ const BalanceCard = () => {
   const { balance } = useWallet();
   const navigation = useNavigation<any>();
 
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 4000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinAnim]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <View style={styles.container}>
-      <View style={styles.metricsRow}>
+    <View style={styles.shadowContainer}>
+      <View style={styles.cardWrapper}>
+        <Animated.View style={[styles.rotatingGradient, { transform: [{ rotate: spin }] }]}>
+          <LinearGradient
+            colors={['#39FF14', '#090e07', '#14ff62ff', '#090e07']}
+            locations={[0, 0.25, 0.5, 0.75]}
+           start={{ x: 0, y: 0 }}
+end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </Animated.View>
+        <View style={styles.container}>
+          <View style={styles.metricsRow}>
         
         {/* 🔥 Mining Power (LIVE) */}
         <Pressable 
@@ -105,6 +134,8 @@ const BalanceCard = () => {
         </Pressable>
 
       </View>
+    </View>
+    </View>
     </View>
   );
 };

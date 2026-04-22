@@ -9,79 +9,14 @@ import {
 import { FONTS } from '../../constants/FONTS';
 import TransactionItem, { WalletTransaction } from './TransactionItem';
 import { THEME } from './theme';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type WalletTab = 'pending' | 'paid';
 
-const PENDING_ITEMS: WalletTransaction[] = [
-  {
-    id: '1',
-    type: 'Mining Reward',
-    amount: '+245.00 APC',
-    date: 'Today, 11:30 AM',
-    status: 'pending',
-  },
-  {
-    id: '2',
-    type: 'Referral Bonus',
-    amount: '+50.00 APC',
-    date: 'Today, 09:15 AM',
-    status: 'pending',
-  },
-  {
-    id: '3',
-    type: 'Daily Reward',
-    amount: '+100.00 APC',
-    date: 'Yesterday, 11:59 PM',
-    status: 'pending',
-  },
-  {
-    id: '4',
-    type: 'Mining Reward',
-    amount: '+310.00 APC',
-    date: 'Yesterday, 06:00 PM',
-    status: 'pending',
-  },
-];
+const PENDING_ITEMS: WalletTransaction[] = [];
+const PAID_ITEMS: WalletTransaction[] = [];
 
-const PAID_ITEMS: WalletTransaction[] = [
-  {
-    id: '1',
-    type: 'Mining Reward',
-    amount: '+800.00 APC',
-    date: 'Apr 14, 2025',
-    status: 'paid',
-  },
-  {
-    id: '2',
-    type: 'Referral Bonus',
-    amount: '+200.00 APC',
-    date: 'Apr 13, 2025',
-    status: 'paid',
-  },
-  {
-    id: '3',
-    type: 'Daily Reward',
-    amount: '+150.00 APC',
-    date: 'Apr 12, 2025',
-    status: 'paid',
-  },
-  {
-    id: '4',
-    type: 'Mining Reward',
-    amount: '+1200.00 APC',
-    date: 'Apr 10, 2025',
-    status: 'paid',
-  },
-  {
-    id: '5',
-    type: 'Referral Bonus',
-    amount: '+300.00 APC',
-    date: 'Apr 08, 2025',
-    status: 'paid',
-  },
-];
-
-const MAX_TRANSACTION_COUNT = Math.max(PENDING_ITEMS.length, PAID_ITEMS.length);
+const MAX_TRANSACTION_COUNT = Math.max(PENDING_ITEMS.length, PAID_ITEMS.length, 1);
 
 const PendingPaidTabs = () => {
   const [activeTab, setActiveTab] = useState<WalletTab>('pending');
@@ -186,17 +121,24 @@ const PendingPaidTabs = () => {
       </View>
 
       <Animated.View style={[styles.listContainer, { opacity: contentOpacity }]}>
-        {activeItems.map((item, index) => (
-          <Animated.View
-            key={`${activeTab}-${item.id}`}
-            style={{
-              opacity: itemOpacities[index],
-              transform: [{ translateY: slideAnims[index] }],
-            }}
-          >
-            <TransactionItem item={item} />
-          </Animated.View>
-        ))}
+        {activeItems.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={48} color={THEME.borderMuted} />
+            <Text style={styles.emptyText}>No {activeTab} transactions found.</Text>
+          </View>
+        ) : (
+          activeItems.map((item, index) => (
+            <Animated.View
+              key={`${activeTab}-${item.id}`}
+              style={{
+                opacity: itemOpacities[index],
+                transform: [{ translateY: slideAnims[index] }],
+              }}
+            >
+              <TransactionItem item={item} />
+            </Animated.View>
+          ))
+        )}
       </Animated.View>
     </View>
   );
@@ -246,6 +188,17 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     marginTop: 6,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: THEME.textMuted,
+    fontSize: 15,
+    fontFamily: FONTS.medium,
+    marginTop: 12,
   },
 });
 
