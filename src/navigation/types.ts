@@ -14,6 +14,11 @@ export type RootStackParamList = {
   SignUp: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
   Mining: { time: number };
+  ReportIssue: undefined;
+  TicketList: undefined;
+  TicketDetail: {
+    ticketId: string;
+  };
   Leaderboard: {
     username?: string;
     email?: string;
