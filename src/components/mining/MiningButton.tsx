@@ -8,10 +8,6 @@ import SegmentedRing from './SegmentedRing';
 import styles from './miningButton.styles';
 import { useTimeModal } from '../../context/TimeModal';
 import { useMining } from '../../context/MiningContext';
-import { useInterstitialAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
-import { useEffect } from 'react';
-
 type MiningButtonProps = {
   onPress?: () => void;
 };
@@ -20,20 +16,6 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
   const navigation = useNavigation<any>();
   const { setShowModal } = useTimeModal();
   const { isMining, hours } = useMining();
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_MINING,
-    { requestNonPersonalizedAdsOnly: true }
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    if (isClosed) {
-      load();
-    }
-  }, [isClosed, load]);
 
   const handleOpen = () => {
     if (onPress) {
@@ -46,9 +28,6 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
       return;
     }
 
-    if (isLoaded) {
-      show();
-    }
     setShowModal(true);
   };
 

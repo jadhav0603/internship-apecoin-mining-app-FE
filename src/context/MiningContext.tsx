@@ -20,6 +20,11 @@ export interface MiningData {
   currentMiningPoints: number;
   isPaidPlan: boolean;
   adsWatchedCount: number;
+  apeDollarValue?: number;
+  remainingSeconds?: number;
+  sessionEndTime?: string | null;
+  canClaim?: boolean;
+  shouldShowClaimPopup?: boolean;
   [key: string]: any;
 }
 
@@ -30,19 +35,31 @@ type MiningContextType = {
   multiplier: number;
   earned: number;
   miningData: MiningData | null;
+  multipliers: number[];
+  showClaimPopup: boolean;
   startMining: (h: number) => Promise<void>;
   stopMining: () => Promise<void>;
   setMultiplier: (m: number) => Promise<void>;
+  dismissClaimPopup: () => void;
 };
 
 const MINING_STORAGE_KEY = 'MINING_DATA';
 const getSocketUrl = () => API_CONFIG.BASE_URL.replace(/\/api$/, '');
 
 const deriveStateFromDB = (data: MiningData) => {
+  if (typeof data.remainingSeconds === 'number') {
+    return {
+      remaining: Math.max(0, data.remainingSeconds),
+      earnedCoins: data.currentMiningPoints ?? 0,
+      isComplete:
+        data.remainingSeconds <= 0 || data.status !== 'mining' || !data.isActive,
+    };
+  }
+
   if (data.status !== 'mining' || !data.miningStartTime) {
     return {
       remaining: 0,
-      earnedCoins: data.status === 'idle' ? data.currentMiningPoints ?? 0 : 0,
+      earnedCoins: data.currentMiningPoints ?? 0,
       isComplete: true,
     };
   }
@@ -51,16 +68,11 @@ const deriveStateFromDB = (data: MiningData) => {
   const rawElapsed = Math.floor(
     (Date.now() - new Date(data.miningStartTime).getTime()) / 1000
   );
-  const elapsed = Math.max(0, Math.min(rawElapsed, totalSeconds));
-  const remaining = Math.max(0, Math.min(totalSeconds, totalSeconds - rawElapsed));
-
-  const RATE_VALUE = (data.baseDollarValue ?? 0.002) / (data.dollarToBonkRate ?? 0.00000604);
-  const bonkPerSecond = (RATE_VALUE * (data.multiplier ?? 1)) / 3600;
-  const earnedCoins = elapsed * bonkPerSecond;
+  const remaining = Math.max(0, totalSeconds - rawElapsed);
 
   return {
     remaining,
-    earnedCoins,
+    earnedCoins: data.currentMiningPoints ?? 0,
     isComplete: remaining <= 0,
   };
 };
@@ -74,11 +86,12 @@ export const MiningProvider = ({ children }: any) => {
   const [multiplier, setMultiplierState] = useState(1);
   const [earned, setEarned] = useState(0);
   const [miningData, setMiningData] = useState<MiningData | null>(null);
+  const [multipliers, setMultipliers] = useState<number[]>([1, 2, 4, 8, 10, 12]);
+  const [showClaimPopup, setShowClaimPopup] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
-  const isCompletingRef = useRef(false);
 
   useEffect(() => {
     multiplierRef.current = multiplier;
@@ -88,40 +101,33 @@ export const MiningProvider = ({ children }: any) => {
     miningDataRef.current = miningData;
   }, [miningData]);
 
-  const applyMiningData = (data: MiningData) => {
-    setMiningData(data);
-    setMultiplierState(data.multiplier ?? 1);
-    setHours(data.selectedHour ?? 1);
+  const applyMiningData = (data: MiningData, stats?: any) => {
+    const updatedData = { 
+      ...data, 
+      ...(stats || {}),
+      apeDollarValue: stats?.apeDollarValue ?? data.apeDollarValue ?? 0.1 
+    };
 
-    const { remaining, earnedCoins, isComplete } = deriveStateFromDB(data);
+    if (stats?.miningMultipliers) {
+      setMultipliers(stats.miningMultipliers);
+    }
+
+    setMiningData(updatedData);
+    setMultiplierState(updatedData.multiplier ?? 1);
+    setHours(updatedData.selectedHour ?? 1);
+
+    const { remaining, earnedCoins, isComplete } = deriveStateFromDB(updatedData);
 
     if (!isComplete) {
       setIsMining(true);
       setSecondsLeft(remaining);
       setEarned(earnedCoins);
-      isCompletingRef.current = false;
+      setShowClaimPopup(false);
     } else {
       setIsMining(false);
       setSecondsLeft(0);
       setEarned(earnedCoins);
-    }
-  };
-
-  const completeMiningSession = async () => {
-    if (isCompletingRef.current) {
-      return;
-    }
-
-    isCompletingRef.current = true;
-
-    try {
-      const response = await API.post('/mining/complete');
-      if (response.data?.mining) {
-        applyMiningData(response.data.mining);
-      }
-      await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-    } catch (err) {
-      console.error('[mining] failed to complete mining:', err);
+      setShowClaimPopup(Boolean(updatedData.shouldShowClaimPopup));
     }
   };
 
@@ -171,9 +177,12 @@ export const MiningProvider = ({ children }: any) => {
       try {
         const response = await API.get('/mining/status');
         if (response.data?.mining) {
-          const restoredMining = response.data.mining;
+          const restoredMining = {
+            ...response.data.mining,
+            ...(response.data.stats ?? {}),
+          };
           console.log('[mining] restored from backend:', restoredMining.miningStartTime);
-          applyMiningData(restoredMining);
+          applyMiningData(restoredMining, response.data.stats);
 
           const { isComplete } = deriveStateFromDB(restoredMining);
           if (isComplete) {
@@ -219,7 +228,7 @@ export const MiningProvider = ({ children }: any) => {
     setHours(h);
     setSecondsLeft(totalSeconds);
     setEarned(0);
-    isCompletingRef.current = false;
+    setShowClaimPopup(false);
 
     await AsyncStorage.setItem(
       MINING_STORAGE_KEY,
@@ -239,12 +248,42 @@ export const MiningProvider = ({ children }: any) => {
       });
       console.log('[mining] saved to backend:', response.data?.mining?._id);
       if (response.data?.mining) {
-        applyMiningData(response.data.mining);
+        applyMiningData(
+          {
+            ...response.data.mining,
+            ...(response.data.stats ?? {}),
+          },
+          response.data.stats
+        );
       }
     } catch (err) {
       console.error('[mining] failed to save to backend:', err);
     }
   };
+
+  // ✅ 2-SECOND POLLING
+  useEffect(() => {
+    if (!isMining) return;
+
+    const poll = setInterval(async () => {
+      try {
+        const response = await API.get('/mining/status');
+        if (response.data?.mining) {
+          applyMiningData(
+            {
+              ...response.data.mining,
+              ...(response.data.stats ?? {}),
+            },
+            response.data.stats
+          );
+        }
+      } catch (e) {
+        console.error('[mining] poll failed', e);
+      }
+    }, 2000);
+
+    return () => clearInterval(poll);
+  }, [isMining]);
 
   const stopMining = async () => {
     setIsMining(false);
@@ -257,9 +296,12 @@ export const MiningProvider = ({ children }: any) => {
             ...prev,
             status: 'claimed',
             currentMiningPoints: 0,
+            canClaim: false,
+            shouldShowClaimPopup: false,
           }
         : prev
     );
+    setShowClaimPopup(false);
     await AsyncStorage.removeItem(MINING_STORAGE_KEY);
   };
 
@@ -273,12 +315,24 @@ export const MiningProvider = ({ children }: any) => {
     try {
       const response = await API.post('/mining/multiplier', { multiplier: m });
       if (response.data?.mining) {
-        setMiningData(response.data.mining);
+        applyMiningData(
+          {
+            ...response.data.mining,
+            ...(response.data.stats ?? {}),
+          },
+          response.data.apeDollarValue
+        );
       }
       console.log('[mining] multiplier updated to', m);
     } catch (err: any) {
       if (err?.response?.data?.mining) {
-        applyMiningData(err.response.data.mining);
+        applyMiningData(
+          {
+            ...err.response.data.mining,
+            ...(err.response.data.stats ?? {}),
+          },
+          err.response.data.apeDollarValue
+        );
       }
       console.error('[mining] failed to update multiplier:', err);
     }
@@ -292,7 +346,6 @@ export const MiningProvider = ({ children }: any) => {
     const interval = setInterval(() => {
       setSecondsLeft(prev => {
         if (prev <= 1) {
-          void completeMiningSession();
           return 0;
         }
         return prev - 1;
@@ -300,9 +353,13 @@ export const MiningProvider = ({ children }: any) => {
 
       const d = miningDataRef.current;
       const base = d?.baseDollarValue ?? 0.002;
-      const rate = d?.dollarToBonkRate ?? 0.00000604;
+      const apeValue = d?.apeDollarValue ?? 0.1;
       const m = multiplierRef.current;
-      setEarned(prev => prev + ((base / rate) * m) / 3600);
+      
+      const apePerHour = (base / apeValue) * m;
+      const apePerSecond = apePerHour / 3600;
+
+      setEarned(prev => prev + apePerSecond);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -317,9 +374,12 @@ export const MiningProvider = ({ children }: any) => {
         multiplier,
         earned,
         miningData,
+        multipliers,
+        showClaimPopup,
         startMining,
         stopMining,
         setMultiplier,
+        dismissClaimPopup: () => setShowClaimPopup(false),
       }}
     >
       {children}

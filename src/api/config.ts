@@ -3,7 +3,7 @@ import { NativeModules, Platform } from 'react-native';
 const DEV_PORT = 5000;
 // Updated to current machine's LAN IP (192.168.1.101)
 // This IP must be reachable from physical devices on the same network
-const DEV_LAN_HOST = '192.168.1.101';
+const DEV_LAN_HOST = '192.168.1.71';
 const DEV_LAN_BASE_URL = `http://${DEV_LAN_HOST}:${DEV_PORT}/api`;
 
 const unique = (values: string[]) => [...new Set(values)];

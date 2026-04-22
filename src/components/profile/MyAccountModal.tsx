@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { BlurView } from '@react-native-community/blur';
@@ -24,6 +25,8 @@ type MyAccountModalProps = {
   onClose: () => void;
   onLogout: () => void;
   onEditUsername?: () => void;
+  onSaveUsername?: (newUsername: string) => Promise<void>;
+  isUpdatingUsername?: boolean;
   onChangePhoto?: () => void;
 };
 
@@ -36,11 +39,23 @@ const MyAccountModal = ({
   onClose,
   onLogout,
   onEditUsername,
+  onSaveUsername,
+  isUpdatingUsername = false,
   onChangePhoto,
 }: MyAccountModalProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempUsername, setTempUsername] = useState(username);
+
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateYAnim = useRef(new Animated.Value(22)).current;
   const scaleAnim = useRef(new Animated.Value(0.96)).current;
+
+  useEffect(() => {
+    if (visible) {
+      setTempUsername(username);
+      setIsEditing(false);
+    }
+  }, [visible, username]);
 
   useEffect(() => {
     if (!visible) {
@@ -130,17 +145,51 @@ const MyAccountModal = ({
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>Username</Text>
 
-            <Pressable
-              onPress={onEditUsername}
-              disabled={!onEditUsername}
-              style={({ pressed }) => [
-                styles.fieldBox,
-                pressed && onEditUsername ? styles.fieldBoxPressed : null,
-              ]}
-            >
-              <Text style={styles.fieldValue}>{username}</Text>
-              <Ionicons name="create-outline" size={22} color={PROFILE_THEME.neonGreen} />
-            </Pressable>
+            {isEditing ? (
+              <View style={[styles.fieldBox, styles.editBox]}>
+                <TextInput
+                  style={styles.fieldValue}
+                  value={tempUsername}
+                  onChangeText={setTempUsername}
+                  autoFocus
+                  placeholder="New username"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  selectionColor={PROFILE_THEME.neonGreen}
+                />
+                <View style={styles.editActions}>
+                  {isUpdatingUsername ? (
+                    <ActivityIndicator color={PROFILE_THEME.neonGreen} size="small" />
+                  ) : (
+                    <>
+                      <Pressable
+                        onPress={() => {
+                          if (onSaveUsername) {
+                            onSaveUsername(tempUsername).then(() => setIsEditing(false));
+                          }
+                        }}
+                        style={styles.actionIcon}
+                      >
+                        <Ionicons name="checkmark-circle-outline" size={28} color={PROFILE_THEME.neonGreen} />
+                      </Pressable>
+                      <Pressable onPress={() => setIsEditing(false)} style={styles.actionIcon}>
+                        <Ionicons name="close-circle-outline" size={28} color="#ff5c5c" />
+                      </Pressable>
+                    </>
+                  )}
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => setIsEditing(true)}
+                style={({ pressed }) => [
+                  styles.fieldBox,
+                  pressed ? styles.fieldBoxPressed : null,
+                ]}
+              >
+                <Text style={styles.fieldValue}>{username}</Text>
+                <Ionicons name="create-outline" size={22} color={PROFILE_THEME.neonGreen} />
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.fieldGroup}>
@@ -339,6 +388,17 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontWeight: '700',
     marginLeft: 10,
+  },
+  editBox: {
+    borderColor: 'rgba(170,255,0,0.4)',
+    backgroundColor: '#1c281a',
+  },
+  editActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionIcon: {
+    marginLeft: 12,
   },
 });
 

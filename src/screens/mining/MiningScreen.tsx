@@ -18,9 +18,8 @@ import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const MiningScreen = () => {
-  const { earned, secondsLeft, multiplier, setMultiplier } = useMining();
+  const { earned, secondsLeft, multiplier, multipliers, setMultiplier } = useMining();
   const navigation = useNavigation();
-  const multipliers = [1, 2, 4, 8, 10, 12];
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600);

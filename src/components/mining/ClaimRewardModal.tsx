@@ -8,7 +8,17 @@ import { useInterstitialAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
-  const { isMining, earned, secondsLeft, hours, multiplier, stopMining, miningData } = useMining();
+  const {
+    isMining,
+    earned,
+    secondsLeft,
+    hours,
+    multiplier,
+    stopMining,
+    miningData,
+    showClaimPopup,
+    dismissClaimPopup,
+  } = useMining();
   const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
   const { isLoaded, isClosed, load, show } = useInterstitialAd(
@@ -32,23 +42,31 @@ const ClaimRewardModal = () => {
     }
   }, [isMining]);
 
-  const isClaimAvailable = miningData?.status === 'idle' && earned > 0;
+  const isClaimAvailable =
+    showClaimPopup &&
+    (miningData?.canClaim ?? false) &&
+    (miningData?.status === 'idle' || miningData?.status === 'mining');
 
   if (isMining || !visible || !isClaimAvailable) {
     return null;
   }
 
   const handleClaim = async () => {
-    if (isLoaded) {
-      show();
-    }
-    const response = await API.post('/mining/claim');
-    setBalanceFromServer(response.data?.balance ?? 0);
-    setVisible(false);
+    try {
+      if (isLoaded) {
+        show();
+      }
+      const response = await API.post('/mining/claim');
+      setBalanceFromServer(response.data?.balance ?? 0);
+      setVisible(false);
 
-    setTimeout(() => {
-      void stopMining();
-    }, 300);
+      setTimeout(() => {
+        void stopMining();
+        dismissClaimPopup();
+      }, 300);
+    } catch (err) {
+      console.error('[mining] claim failed:', err);
+    }
   };
 
   const formatTime = (sec: number) => {
