@@ -66,7 +66,7 @@ const WalletScreen = () => {
 
             <Pressable style={styles.bellButton}>
               <Ionicons
-                name="notifications-outline"
+                name="wallet-outline"
                 size={22}
                 color={THEME.white}
               />

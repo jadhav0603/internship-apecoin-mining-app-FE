@@ -104,7 +104,7 @@ export const useMiningWalletData = () => {
 
       const intervalId = setInterval(() => {
         loadMiningData(false).catch(() => undefined);
-      }, 600000);
+      }, 2000);
 
       return () => {
         isActive = false;

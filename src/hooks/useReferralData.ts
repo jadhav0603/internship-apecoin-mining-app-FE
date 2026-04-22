@@ -36,8 +36,10 @@ export const useReferralData = () => {
   const refreshCount = useRef(0);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  const fetchData = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
+  const fetchData = useCallback(async (showLoader: boolean = true) => {
+    if (showLoader) {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+    }
 
     try {
       const user = await authService.waitForAuthRestore();
@@ -76,7 +78,24 @@ export const useReferralData = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      let isActive = true;
+
+      const load = async (showLoader: boolean) => {
+        await fetchData(showLoader);
+      };
+
+      load(true);
+
+      const intervalId = setInterval(() => {
+        if (isActive) {
+          load(false);
+        }
+      }, 2000);
+
+      return () => {
+        isActive = false;
+        clearInterval(intervalId);
+      };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchData, refreshTick])
   );
