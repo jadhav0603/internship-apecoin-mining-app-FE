@@ -47,9 +47,26 @@ const ProfileScreen = () => {
   const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const [username, setUsername] = useState(getUserDisplayName(user));
+
+  const handleUpdateUsername = async (newName: string) => {
+    if (!newName.trim() || newName === username) return;
+
+    setIsUpdatingUsername(true);
+    try {
+      await userService.updateProfile(newName.trim());
+      setUsername(newName.trim());
+      Alert.alert('✓ Success', 'Username updated!');
+    } catch (err: any) {
+      const message = err?.response?.data?.message ?? 'Failed to update username.';
+      Alert.alert('Update Failed', message);
+    } finally {
+      setIsUpdatingUsername(false);
+    }
+  };
 
   const { isLoaded: isInterstitialLoaded, load: loadInterstitial, show: showInterstitial } = useInterstitialAd(
     AD_UNITS.INTERSTITIAL_PROFILE,
@@ -163,8 +180,6 @@ const ProfileScreen = () => {
       { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
       { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
       { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
-      { id: 'progress', label: 'My Progress', icon: 'stats-chart-outline' as const, iconBg: '#123033', active: false },
-      { id: 'about', label: 'About Us', icon: 'information-circle-outline' as const, iconBg: '#321536', active: false },
       { id: 'logout', label: 'Log Out', icon: 'log-out-outline' as const, iconBg: PROFILE_THEME.dangerBg, active: false, tone: 'danger' as const },
     ],
     []
@@ -230,11 +245,7 @@ const ProfileScreen = () => {
               <Ionicons name="chevron-back" size={22} color={PROFILE_THEME.backIcon} />
             </Pressable>
           </View>
-          <View style={styles.navSideRight}>
-            <Pressable style={styles.navCircle} onPress={() => handleComingSoon('Settings')}>
-              <Ionicons name="settings-outline" size={22} color={PROFILE_THEME.settingsIcon} />
-            </Pressable>
-          </View>
+          <View style={styles.navSideRight} />
         </View>
 
         {isLoading ? (
@@ -311,7 +322,8 @@ const ProfileScreen = () => {
         isLoggingOut={isLoggingOut}
         onClose={closeAccountModal}
         onLogout={() => handleLogout().catch(() => undefined)}
-        onEditUsername={() => handleComingSoon('Edit Username')}
+        onSaveUsername={handleUpdateUsername}
+        isUpdatingUsername={isUpdatingUsername}
         onChangePhoto={handleChangePhoto}
       />
     </View>
@@ -340,7 +352,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   uploadOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.55)',
     borderRadius: 60,
     justifyContent: 'center',

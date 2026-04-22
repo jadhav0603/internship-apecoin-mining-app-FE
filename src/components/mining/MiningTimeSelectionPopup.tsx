@@ -8,10 +8,6 @@ import Svg, { Circle } from 'react-native-svg';
 import styles from './miningTimeSelectionPopup.styles';
 import { COLORS } from '../../constants/COLORS';
 import { useMining } from '../../context/MiningContext';
-import { useInterstitialAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
-import { useEffect } from 'react';
-
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -33,20 +29,6 @@ const MiningTimeSelectionPopup = () => {
   const { showModal, setShowModal } = useTimeModal();
   const { startMining } = useMining();
   const [hours, setHours] = useState(1);
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_MINING,
-    { requestNonPersonalizedAdsOnly: true }
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    if (isClosed) {
-      load();
-    }
-  }, [isClosed, load]);
 
   const increase = () => {
     if (hours < 12) setHours(hours + 1);
@@ -127,9 +109,6 @@ const MiningTimeSelectionPopup = () => {
           <TouchableOpacity
             style={styles.confirmBtn}
             onPress={() => {
-              if (isLoaded) {
-                show();
-              }
               setShowModal(false);
               startMining(hours);
               navigation.navigate('Mining', { time: hours });

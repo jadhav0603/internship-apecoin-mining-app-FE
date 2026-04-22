@@ -90,4 +90,9 @@ export const userService = {
     );
     return res.data;
   },
+
+  updateProfile: async (name: string): Promise<BackendUser> => {
+    const res = await API.put<BackendUser>('/user/update-profile', { name });
+    return res.data;
+  },
 };
