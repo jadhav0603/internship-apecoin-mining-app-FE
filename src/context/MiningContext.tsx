@@ -277,8 +277,12 @@ export const MiningProvider = ({ children }: any) => {
             response.data.stats
           );
         }
-      } catch (e) {
-        console.error('[mining] poll failed', e);
+      } catch (e: any) {
+        if (e?.response?.status === 401) {
+          setIsMining(false); // Stop polling if unauthorized (logged out)
+        } else if (__DEV__) {
+          console.warn('[mining] poll failed', e.message);
+        }
       }
     }, 2000);
 

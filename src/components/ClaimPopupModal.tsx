@@ -118,10 +118,11 @@ const ClaimPopupModal: React.FC<ClaimPopupModalProps> = ({
           <View style={styles.borderContainer}>
             <Animated.View style={[styles.rotatingGlow, { transform: [{ rotate }] }]}>
               <LinearGradient
-                colors={['#32ec12ff', '#00ffcc', '#0fdb53ff', '#18de1fff', '#39FF14']}
-                style={{ flex: 1 }}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+                colors={['#070f06ff', '#0a1a0a', '#14ffe4ff', '#0a1a0a']}
+                locations={[0, 0.25, 0.5, 0.75]}
+                style={{ flex: 12 }}
+                start={{ x: 1, y: 2}}
+                end={{ x: 2, y: 1 }}
               />
             </Animated.View>
 

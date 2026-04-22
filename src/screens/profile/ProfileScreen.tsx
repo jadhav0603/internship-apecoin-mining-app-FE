@@ -25,6 +25,7 @@ import { AD_UNITS } from '../../constants/AD_UNITS';
 
 import AvatarWithGlow from '../../components/profile/AvatarWithGlow';
 import CoinsSummaryCard from '../../components/profile/CoinsSummaryCard';
+import ConfirmModal from '../../components/ConfirmModal';
 import MyAccountModal from '../../components/profile/MyAccountModal';
 import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
 import ProfileSkeleton from '../../components/profile/ProfileSkeleton';
@@ -45,6 +46,7 @@ const ProfileScreen = () => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
@@ -154,6 +156,7 @@ const ProfileScreen = () => {
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
+    setIsLogoutModalVisible(false);
     try {
       await authService.signOut();
     } catch {
@@ -165,14 +168,7 @@ const ProfileScreen = () => {
 
   const confirmLogout = () => {
     if (isLoggingOut) return;
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: () => handleLogout().catch(() => undefined),
-      },
-    ]);
+    setIsLogoutModalVisible(true);
   };
 
   const menuItems = useMemo(
@@ -321,10 +317,24 @@ const ProfileScreen = () => {
         avatarSource={avatarSource}
         isLoggingOut={isLoggingOut}
         onClose={closeAccountModal}
-        onLogout={() => handleLogout().catch(() => undefined)}
+        onLogout={() => {
+          closeAccountModal();
+          confirmLogout();
+        }}
         onSaveUsername={handleUpdateUsername}
         isUpdatingUsername={isUpdatingUsername}
         onChangePhoto={handleChangePhoto}
+      />
+
+      <ConfirmModal
+        visible={isLogoutModalVisible}
+        title="Log Out"
+        message="Are you sure you want to log out?"
+        confirmText="Log Out"
+        cancelText="Cancel"
+        tone="danger"
+        onConfirm={handleLogout}
+        onCancel={() => setIsLogoutModalVisible(false)}
       />
     </View>
   );

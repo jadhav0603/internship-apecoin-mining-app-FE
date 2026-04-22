@@ -6,14 +6,33 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 
 
 const styles = StyleSheet.create({
-container: {
+  shadowContainer: {
+    marginHorizontal: 5,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  cardWrapper: {
     borderRadius: 26,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    backgroundColor: 'rgba(9, 14, 7, 0.78)',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2, // border thickness
+    backgroundColor: '#449d21ff',
+  },
+  rotatingGradient: {
+    position: 'absolute',
+    width: '150%',
+    height: '150%',
+  },
+  container: {
+    width: '100%',
+    borderRadius: 24, // 26 - 2
+    backgroundColor: 'rgba(9, 14, 7, 0.96)',
     padding: 8,
     gap: 18,
-    marginHorizontal:5,
   },
    metricsRow: {
     flexDirection: 'row',
