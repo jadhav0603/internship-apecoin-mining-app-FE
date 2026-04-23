@@ -19,6 +19,7 @@ import { COLORS } from '../../constants/COLORS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { authService } from '../../services/authService';
 import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
+import MyProfileModal from '../../components/profile/MyProfileModal';
 import ConfirmModal from '../../components/ConfirmModal';
 
 const MenuItem = ({ icon, title, onPress, isLast = false, color = COLORS.textPrimary }: any) => (
@@ -42,6 +43,7 @@ const ProfileScreen = () => {
   const { user } = useUser();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [myProfileVisible, setMyProfileVisible] = useState(false);
 
   const username = getUserDisplayName(user);
   const email = user?.email ?? '';
@@ -114,7 +116,7 @@ const ProfileScreen = () => {
             <MenuItem 
               icon="stats-chart-outline" 
               title="My Progress" 
-              color="#39FF14"
+              color="#c8ff14ff"
               onPress={() => navigation.navigate('MyProgress')}
             />
             <MenuItem 
@@ -126,8 +128,8 @@ const ProfileScreen = () => {
             <MenuItem 
               icon="person-outline" 
               title="My Profile" 
-              color="#A6FF00"
-              onPress={() => navigation.navigate('ProfileDetails')}
+              color="#299422ff"
+              onPress={() => setMyProfileVisible(true)}
             />
             <MenuItem 
               icon="trophy-outline" 
@@ -184,6 +186,11 @@ const ProfileScreen = () => {
         }}
       />
 
+      <MyProfileModal
+        visible={myProfileVisible}
+        onClose={() => setMyProfileVisible(false)}
+      />
+
       <ConfirmModal
         visible={logoutVisible}
         title="Logout"
@@ -230,7 +237,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 70,
     backgroundColor: 'rgba(57, 255, 20, 0.1)',
-    shadowColor: '#39FF14',
+    shadowColor: '#20321dff',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 15,
