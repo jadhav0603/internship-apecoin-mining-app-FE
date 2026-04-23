@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  Animated,
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -13,73 +13,34 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 type WalletTab = 'pending' | 'paid';
 
-const PENDING_ITEMS: WalletTransaction[] = [];
-const PAID_ITEMS: WalletTransaction[] = [];
+type PendingPaidTabsProps = {
+  pendingItems: WalletTransaction[];
+  paidItems: WalletTransaction[];
+  loading?: boolean;
+  error?: string | null;
+  onRecordPress?: (item: WalletTransaction) => void;
+};
 
-const MAX_TRANSACTION_COUNT = Math.max(PENDING_ITEMS.length, PAID_ITEMS.length, 1);
-
-const PendingPaidTabs = () => {
+const PendingPaidTabs = ({
+  pendingItems,
+  paidItems,
+  loading = false,
+  error = null,
+  onRecordPress,
+}: PendingPaidTabsProps) => {
   const [activeTab, setActiveTab] = useState<WalletTab>('pending');
-  const contentOpacity = useRef(new Animated.Value(1)).current;
-  const slideAnims = useRef(
-    Array.from({ length: MAX_TRANSACTION_COUNT }, () => new Animated.Value(22)),
-  ).current;
-  const itemOpacities = useRef(
-    Array.from({ length: MAX_TRANSACTION_COUNT }, () => new Animated.Value(0)),
-  ).current;
 
   const activeItems = useMemo(
-    () => (activeTab === 'pending' ? PENDING_ITEMS : PAID_ITEMS),
-    [activeTab],
+    () => (activeTab === 'pending' ? pendingItems : paidItems),
+    [activeTab, paidItems, pendingItems],
   );
-
-  useEffect(() => {
-    slideAnims.forEach((anim, index) => {
-      anim.setValue(index < activeItems.length ? 18 : 0);
-    });
-    itemOpacities.forEach((anim, index) => {
-      anim.setValue(index < activeItems.length ? 0 : 1);
-    });
-    contentOpacity.setValue(0);
-
-    const fadeIn = Animated.timing(contentOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    });
-    const staggeredCards = Animated.stagger(
-      70,
-      activeItems.map((_, index) =>
-        Animated.parallel([
-          Animated.timing(slideAnims[index], {
-            toValue: 0,
-            duration: 340,
-            useNativeDriver: true,
-          }),
-          Animated.timing(itemOpacities[index], {
-            toValue: 1,
-            duration: 260,
-            useNativeDriver: true,
-          }),
-        ]),
-      ),
-    );
-
-    Animated.parallel([fadeIn, staggeredCards]).start();
-  }, [activeItems, contentOpacity, itemOpacities, slideAnims]);
 
   const handleTabPress = (nextTab: WalletTab) => {
     if (nextTab === activeTab) {
       return;
     }
 
-    Animated.timing(contentOpacity, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: true,
-    }).start(() => {
-      setActiveTab(nextTab);
-    });
+    setActiveTab(nextTab);
   };
 
   return (
@@ -120,26 +81,30 @@ const PendingPaidTabs = () => {
         </Pressable>
       </View>
 
-      <Animated.View style={[styles.listContainer, { opacity: contentOpacity }]}>
-        {activeItems.length === 0 ? (
+      <View style={styles.listContainer}>
+        {loading ? (
+          <View style={styles.stateContainer}>
+            <ActivityIndicator size="small" color={THEME.neonGreen} />
+            <Text style={styles.stateText}>Loading transactions...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.stateContainer}>
+            <Ionicons name="alert-circle-outline" size={32} color={THEME.gold} />
+            <Text style={styles.stateText}>{error}</Text>
+          </View>
+        ) : activeItems.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="document-text-outline" size={48} color={THEME.borderMuted} />
             <Text style={styles.emptyText}>No {activeTab} transactions found.</Text>
           </View>
         ) : (
-          activeItems.map((item, index) => (
-            <Animated.View
-              key={`${activeTab}-${item.id}`}
-              style={{
-                opacity: itemOpacities[index],
-                transform: [{ translateY: slideAnims[index] }],
-              }}
-            >
-              <TransactionItem item={item} />
-            </Animated.View>
+          activeItems.map(item => (
+            <View key={`${activeTab}-${item.id}`}>
+              <TransactionItem item={item} onPress={onRecordPress} />
+            </View>
           ))
         )}
-      </Animated.View>
+      </View>
     </View>
   );
 };
@@ -188,6 +153,20 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     marginTop: 6,
+  },
+  stateContainer: {
+    paddingVertical: 36,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stateText: {
+    marginTop: 12,
+    color: THEME.textMuted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    fontFamily: FONTS.medium,
   },
   emptyContainer: {
     paddingVertical: 40,

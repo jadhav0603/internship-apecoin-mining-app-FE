@@ -54,7 +54,7 @@ const ACTIVE_MONTH_INDEX = 3;
 const formatAmount = (amount: number) =>
   amount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 3,
   });
 
 const formatTransactionAmount = (amount: number) =>

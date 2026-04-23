@@ -1,19 +1,24 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FONTS } from '../../constants/FONTS';
 import { THEME } from './theme';
 
 export type WalletTransaction = {
   id: string;
-  type: 'Mining Reward' | 'Referral Bonus' | 'Daily Reward';
+  type: 'Mining Reward' | 'Referral Bonus' | 'Daily Reward' | 'Withdraw Request';
   amount: string;
+  amountValue?: number;
   date: string;
   status: 'pending' | 'paid';
+  miningEarnings?: number;
+  referralEarnings?: number;
+  dailyRewards?: number;
 };
 
 type TransactionItemProps = {
   item: WalletTransaction;
+  onPress?: (item: WalletTransaction) => void;
 };
 
 const TRANSACTION_META: Record<
@@ -39,14 +44,22 @@ const TRANSACTION_META: Record<
     iconColor: THEME.gold,
     iconBackground: 'rgba(255, 215, 0, 0.14)',
   },
+  'Withdraw Request': {
+    icon: 'cash-fast',
+    iconColor: THEME.neonGreen,
+    iconBackground: 'rgba(170, 255, 0, 0.12)',
+  },
 };
 
-const TransactionItem = ({ item }: TransactionItemProps) => {
+const TransactionItem = ({ item, onPress }: TransactionItemProps) => {
   const meta = TRANSACTION_META[item.type];
   const isPending = item.status === 'pending';
 
   return (
-    <View style={styles.transactionCard}>
+    <Pressable
+      style={styles.transactionCard}
+      onPress={() => onPress?.(item)}
+    >
       <View style={styles.leftContent}>
         <View style={[styles.txIcon, { backgroundColor: meta.iconBackground }]}>
           <MaterialCommunityIcons
@@ -70,7 +83,7 @@ const TransactionItem = ({ item }: TransactionItemProps) => {
           </Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
