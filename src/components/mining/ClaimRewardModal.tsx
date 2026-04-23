@@ -126,7 +126,7 @@ const ClaimRewardModal = () => {
             ]}
           >
             <LinearGradient
-              colors={['#39FF14', '#0a1a0a', '#FF1493', '#0a1a0a']}
+              colors={['#39FF14', '#0a1a0a', '#14ff37ff', '#0a1a0a']}
               locations={[0, 0.25, 0.5, 0.75]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
