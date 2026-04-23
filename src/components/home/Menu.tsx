@@ -8,6 +8,8 @@ import {
   ImageBackground,
   ScrollView,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -16,10 +18,14 @@ import styles from './Menu.styles';
 import { COLORS } from '../../constants/COLORS';
 import { authService } from '../../services/authService';
 import UserHeader from './UserHeader';
+import type { RootStackParamList } from '../../navigation/types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+type MenuNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 const Menu = () => {
+  const navigation = useNavigation<MenuNavigationProp>();
   const [menuOpen, setMenuOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
@@ -47,6 +53,27 @@ const Menu = () => {
       console.log("Logout error", err);
     }
   };
+
+  const handleTransactionHistory = () => {
+    toggleMenu();
+    navigation.navigate('TransactionHistory');
+  };
+
+  const menuItems: Array<{
+    label: string;
+    onPress?: () => void;
+  }> = [
+    {
+      label: 'Transaction History',
+      onPress: handleTransactionHistory,
+    },
+    { label: 'Other App' },
+    { label: 'Report' },
+    { label: 'FAQ' },
+    { label: 'Terms & Conditions' },
+    { label: 'Connect Us' },
+    { label: 'Delete Account' },
+  ];
 
   return (
     <>
@@ -97,17 +124,14 @@ const Menu = () => {
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                {[
-                  "Leader Dashboard",
-                  "Other App",
-                  "Report",
-                  "FAQ",
-                  "Terms & Conditions",
-                  "Connect Us",
-                  "Delete Account",
-                ].map((item, index) => (
-                  <TouchableOpacity key={index} style={styles.menuItemBox}>
-                    <Text style={styles.menuItem}>{item}</Text>
+                {menuItems.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.menuItemBox}
+                    onPress={item.onPress}
+                    disabled={!item.onPress}
+                  >
+                    <Text style={styles.menuItem}>{item.label}</Text>
                   </TouchableOpacity>
                 ))}
 
