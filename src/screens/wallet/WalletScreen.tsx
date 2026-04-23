@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import {
+  useNavigation,
+  type NavigationProp,
+  type ParamListBase,
+} from '@react-navigation/native';
 import {
   ActivityIndicator,
+  Alert,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -13,29 +19,106 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
+import WithdrawDetailsSheet from '../../components/wallet/WithdrawDetailsSheet';
 import RevenueChart from '../../components/wallet/RevenueChart';
+import type { WalletTransaction } from '../../components/wallet/TransactionItem';
+import WithdrawSuccessModal from '../../components/wallet/WithdrawSuccessModal';
 import { THEME, formatAmount } from '../../components/wallet/theme';
 import { FONTS } from '../../constants/FONTS';
-import { useMiningWalletData } from '../../hooks/useMiningWalletData';
-import { useReferralData } from '../../hooks/useReferralData';
-import { useRewardsData } from '../../hooks/useRewardsData';
+import { useLiquidBalance } from '../../hooks/useLiquidBalance';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
+import type { RootStackParamList } from '../../navigation/types';
+import { useUser } from '../../context/UserContext';
+import {
+  withdrawService,
+  type WithdrawRecord,
+} from '../../services/withdrawService';
 
 const WalletScreen = () => {
   const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
-
-  const { totalCollected, weekData, loading } = useRewardsData();
-  const { miningTotal, miningHistory, loading: miningLoading } = useMiningWalletData();
+  const navigation =
+    useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
+  const { user } = useUser();
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
+    useState(false);
+  const [selectedWithdrawRecord, setSelectedWithdrawRecord] =
+    useState<WalletTransaction | null>(null);
   const {
+    totalCollected,
+    weekData,
+    miningTotal,
+    miningHistory,
     referralEarnings,
-    weekData: referralWeekData,
-    loading: referralLoading,
-  } = useReferralData();
+    referralWeekData,
+    pendingRecords,
+    paidRecords,
+    liquidBalance,
+    loading: isBalanceLoading,
+    withdrawLoading: withdrawDataLoading,
+    error: withdrawDataError,
+    refreshWithdrawRecords,
+  } = useLiquidBalance();
+  const displayBalance = liquidBalance;
+  const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
 
-  const totalBalance = totalCollected + miningTotal + referralEarnings;
-  const isBalanceLoading = loading || miningLoading || referralLoading;
+  const mapWithdrawRecordToTransaction = (
+    item: WithdrawRecord,
+  ): WalletTransaction => ({
+    id: item._id || item.id || `${item.userId}-${item.withdrawalDate}`,
+    type: 'Withdraw Request',
+    amount: `${formatAmount(item.amount)} APE`,
+    amountValue: item.amount,
+    date: new Date(item.withdrawalDate).toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }),
+    status: item.status,
+    miningEarnings: item.miningEarnings ?? 0,
+    referralEarnings: item.referralEarnings ?? 0,
+    dailyRewards: item.dailyRewards ?? 0,
+  });
+
+  const pendingWithdrawItems = pendingRecords.map(mapWithdrawRecordToTransaction);
+  const paidWithdrawItems = paidRecords.map(mapWithdrawRecordToTransaction);
+
+  const handleWithdrawPress = async () => {
+    if (isWithdrawDisabled) {
+      return;
+    }
+
+    if (!user?.uid || !user?.email) {
+      Alert.alert(
+        'Unable to continue',
+        'User details are missing for this withdrawal request.',
+      );
+      return;
+    }
+
+    try {
+      setWithdrawLoading(true);
+
+      await withdrawService.requestWithdraw({
+        userId: user.uid,
+        email: user.email,
+        amount: displayBalance,
+      });
+
+      await refreshWithdrawRecords();
+      setShowWithdrawSuccessModal(true);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        'Failed to submit withdrawal request.';
+
+      Alert.alert('Request Failed', message);
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -43,7 +126,11 @@ const WalletScreen = () => {
       style={styles.background}
       resizeMode="cover"
     >
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
       <View style={styles.overlay} />
       <View style={styles.topGlow} />
       <View style={styles.bottomGlow} />
@@ -64,13 +151,19 @@ const WalletScreen = () => {
           >
             <Text style={styles.walletTitle}>Wallet</Text>
 
-            <Pressable style={styles.bellButton}>
-              <Ionicons
-                name="wallet-outline"
-                size={22}
-                color={THEME.white}
-              />
+            <Pressable
+              style={styles.bellButton}
+              onPress={() => navigation.navigate('TransactionHistory')}
+            >
+              <Ionicons name="receipt-outline" size={22} color={THEME.white} />
             </Pressable>
+          </View>
+
+          <View style={styles.adContainer}>
+            <BannerAd
+              unitId={AD_UNITS.BANNER_WALLET}
+              size={BannerAdSize.BANNER}
+            />
           </View>
 
           <View style={styles.totalSection}>
@@ -92,17 +185,26 @@ const WalletScreen = () => {
               />
             ) : (
               <Text style={styles.totalAmount}>
-                {formatAmount(totalBalance)}
+                {formatAmount(displayBalance)}
                 <Text style={styles.apcLabel}> APE</Text>
               </Text>
             )}
           </View>
-          <View style={styles.adContainer}>
-            <BannerAd
-              unitId={AD_UNITS.BANNER_WALLET}
-              size={BannerAdSize.BANNER}
-            />
-          </View>
+
+          <Pressable
+            style={[
+              styles.withdrawButton,
+              isWithdrawDisabled && styles.withdrawButtonDisabled,
+            ]}
+            onPress={handleWithdrawPress}
+            disabled={isWithdrawDisabled}
+          >
+            {withdrawLoading ? (
+              <ActivityIndicator size="small" color={THEME.bg} />
+            ) : (
+              <Text style={styles.withdrawButtonText}>Withdraw</Text>
+            )}
+          </Pressable>
 
           <RevenueChart
             weekData={weekData}
@@ -111,14 +213,30 @@ const WalletScreen = () => {
             miningTotal={miningTotal}
             referralWeekData={referralWeekData}
             referralEarnings={referralEarnings}
-            loading={loading}
-            miningLoading={miningLoading}
-            referralLoading={referralLoading}
+            loading={isBalanceLoading}
+            miningLoading={isBalanceLoading}
+            referralLoading={isBalanceLoading}
           />
 
-          <PendingPaidTabs />
+          <PendingPaidTabs
+            pendingItems={pendingWithdrawItems}
+            paidItems={paidWithdrawItems}
+            loading={withdrawDataLoading}
+            error={withdrawDataError}
+            onRecordPress={setSelectedWithdrawRecord}
+          />
         </ScrollView>
       </View>
+
+      <WithdrawSuccessModal
+        visible={showWithdrawSuccessModal}
+        onClose={() => setShowWithdrawSuccessModal(false)}
+      />
+      <WithdrawDetailsSheet
+        visible={selectedWithdrawRecord !== null}
+        record={selectedWithdrawRecord}
+        onClose={() => setSelectedWithdrawRecord(null)}
+      />
     </ImageBackground>
   );
 };
@@ -264,6 +382,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 16,
     width: '100%',
+  },
+  withdrawButton: {
+    marginTop: 12,
+    marginHorizontal: 20,
+    minHeight: 52,
+    borderRadius: 14,
+    backgroundColor: THEME.neonGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  withdrawButtonDisabled: {
+    opacity: 0.7,
+  },
+  withdrawButtonText: {
+    color: THEME.bg,
+    fontSize: 16,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
   },
 });
 
