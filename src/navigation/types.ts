@@ -29,4 +29,8 @@ export type RootStackParamList = {
     email?: string;
     username?: string;
   } | undefined;
+  MyProgress: undefined;
+  ProfileDetails: undefined;
+  ReportIssue: undefined;
+  AboutUs: undefined;
 };

@@ -9,6 +9,7 @@ import {
   signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  updateProfile as firebaseUpdateProfile,
 } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import apiClient from '../api/apiClient';
@@ -234,5 +235,23 @@ export const authService = {
    */
   async signOut() {
     return signOutFromProviders();
+  },
+
+  /**
+   * Update the current user's profile information
+   */
+  async updateProfile(updates: { displayName?: string; photoURL?: string }) {
+    const user = firebaseAuth.currentUser;
+    if (!user) {
+      throw new Error('No user signed in');
+    }
+
+    await firebaseUpdateProfile(user, updates);
+    
+    // Force a token refresh and sync with backend to ensure MongoDB is updated too
+    const idToken = await getIdToken(user, true);
+    await syncWithBackendRequest(idToken);
+    
+    return user;
   },
 };

@@ -5,8 +5,8 @@ import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
 import API from '../../services/api';
-import { useInterstitialAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+// import { useInterstitialAd } from 'react-native-google-mobile-ads';
+// import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
   const {
@@ -22,20 +22,20 @@ const ClaimRewardModal = () => {
   } = useMining();
   const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_CLAIM,
-    { requestNonPersonalizedAdsOnly: true }
-  );
+  // const { isLoaded, isClosed, load, show } = useInterstitialAd(
+  //   AD_UNITS.INTERSTITIAL_CLAIM,
+  //   { requestNonPersonalizedAdsOnly: true }
+  // );
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // useEffect(() => {
+  //   load();
+  // }, [load]);
 
-  useEffect(() => {
-    if (isClosed) {
-      load();
-    }
-  }, [isClosed, load]);
+  // useEffect(() => {
+  //   if (isClosed) {
+  //     load();
+  //   }
+  // }, [isClosed, load]);
 
   useEffect(() => {
     if (isMining) {
@@ -71,9 +71,9 @@ const ClaimRewardModal = () => {
 
   const handleClaim = async () => {
     try {
-      if (isLoaded) {
-        show();
-      }
+      // if (isLoaded) {
+      //   show();
+      // }
       const response = await API.post('/mining/claim');
       setBalanceFromServer(response.data?.balance ?? 0);
       setVisible(false);
@@ -126,7 +126,7 @@ const ClaimRewardModal = () => {
             ]}
           >
             <LinearGradient
-              colors={['#39FF14', '#0a1a0a', '#FF1493', '#0a1a0a']}
+              colors={['#39FF14', '#0a1a0a', '#14ff37ff', '#0a1a0a']}
               locations={[0, 0.25, 0.5, 0.75]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}

@@ -1,120 +1,169 @@
-import React, { useState } from 'react';
-import { Text, View, Modal, TouchableOpacity } from 'react-native';
-import { useTimeModal } from '../../context/TimeModal';
-
+import React, { useMemo, useState } from 'react';
+import { Modal, Text, TouchableOpacity, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Svg, { Circle } from 'react-native-svg';
-
-import styles from './miningTimeSelectionPopup.styles';
-import { COLORS } from '../../constants/COLORS';
-import { useMining } from '../../context/MiningContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import styles from './miningTimeSelectionPopup.styles';
+import { useTimeModal } from '../../context/TimeModal';
+import { useMining } from '../../context/MiningContext';
 import { RootStackParamList } from '../../navigation/types';
 
-// ✅ Typed navigation (from Testing branch)
 type MiningPopupNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'Mining'
 >;
 
-const SIZE = 200;
-const RADIUS = 80;
-const STROKE = 10;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+type DurationOption = {
+  hours: number;
+  label: string;
+  unlocked: boolean;
+};
+
+const DURATION_OPTIONS: DurationOption[] = [
+  { hours: 1, label: '1 hr', unlocked: true },
+  { hours: 2, label: '2 hr', unlocked: false },
+  { hours: 4, label: '4 hr', unlocked: false },
+  { hours: 8, label: '8 hr', unlocked: false },
+  { hours: 12, label: '12 hr', unlocked: false },
+];
 
 const MiningTimeSelectionPopup = () => {
   const navigation = useNavigation<MiningPopupNavigationProp>();
-
   const { showModal, setShowModal } = useTimeModal();
   const { startMining } = useMining();
-  const [hours, setHours] = useState(1);
+  const [selectedHours, setSelectedHours] = useState(1);
 
-  const increase = () => {
-    if (hours < 12) setHours(hours + 1);
+  const activeIndex = useMemo(
+    () => DURATION_OPTIONS.findIndex(option => option.hours === selectedHours),
+    [selectedHours],
+  );
+
+  const handleClose = () => {
+    setShowModal(false);
+    setSelectedHours(1);
   };
 
-  const decrease = () => {
-    if (hours > 1) setHours(hours - 1);
+  const handleConfirm = async () => {
+    setShowModal(false);
+    await startMining(selectedHours);
+    navigation.navigate('Mining', { time: selectedHours });
   };
-
-  // progress (1 → 12)
-  const progress = hours / 12;
-  const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
 
   return (
     <Modal visible={showModal} transparent animationType="fade">
       <View style={styles.overlay}>
         <LinearGradient
-          colors={[COLORS.backgroundLight, COLORS.backgroundDeep]}
+          colors={['#21361A', '#111A0F', '#091008']}
+          start={{ x: 0.12, y: 0 }}
+          end={{ x: 0.88, y: 1 }}
           style={styles.modalBox}
         >
-          {/* ❌ Close */}
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={() => setShowModal(false)}
-          >
-            <Text style={styles.closeText}>✕</Text>
+          <View style={styles.glowOrb} />
+
+          <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
+            <Ionicons name="close" size={20} color="#DDE7D5" />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Select Duration</Text>
+          <Text style={styles.title}>Select Mining Duration</Text>
 
-          {/* 🔥 Circular Dial */}
-          <View style={styles.circleWrapper}>
-            <Svg width={SIZE} height={SIZE}>
-              {/* Track */}
-              <Circle
-                cx={SIZE / 2}
-                cy={SIZE / 2}
-                r={RADIUS}
-                stroke={COLORS.ringTrack}
-                strokeWidth={STROKE}
-                fill="none"
-              />
+          <View style={styles.descriptionRow}>
+            <Text style={styles.descriptionIcon}>⛏</Text>
+            <Text style={styles.description}>
+              Boost your mining session by selecting a longer duration. More
+              time means greater rewards!
+            </Text>
+          </View>
 
-              {/* Progress */}
-              <Circle
-                cx={SIZE / 2}
-                cy={SIZE / 2}
-                r={RADIUS}
-                stroke={COLORS.primary}
-                strokeWidth={STROKE}
-                fill="none"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                rotation="-90"
-                origin={`${SIZE / 2}, ${SIZE / 2}`}
-              />
-            </Svg>
+          <View style={styles.selectorSection}>
+            <View style={styles.optionRow}>
+              {DURATION_OPTIONS.map((option, index) => {
+                const isActive = option.hours === selectedHours;
+                const isLocked = !option.unlocked;
+                const leftConnectorActive = index > 0 && index <= activeIndex;
+                const rightConnectorActive =
+                  index < DURATION_OPTIONS.length - 1 && index < activeIndex;
 
-            {/* Center Time */}
-            <View style={styles.center}>
-              <Text style={styles.timeText}>{hours}h</Text>
+                return (
+                  <View key={option.hours} style={styles.optionItem}>
+                    <View style={styles.optionVisualRow}>
+                      {index > 0 ? (
+                        <View
+                          style={[
+                            styles.connectorSegment,
+                            leftConnectorActive && styles.connectorSegmentActive,
+                          ]}
+                        />
+                      ) : (
+                        <View style={styles.connectorSpacer} />
+                      )}
+
+                      <TouchableOpacity
+                        activeOpacity={option.unlocked ? 0.85 : 1}
+                        disabled={isLocked}
+                        style={styles.optionWrap}
+                        onPress={() => setSelectedHours(option.hours)}
+                      >
+                        <LinearGradient
+                          colors={
+                            isActive
+                              ? ['#8DFF59', '#59D11F']
+                              : ['rgba(45, 56, 43, 0.92)', 'rgba(26, 34, 24, 0.96)']
+                          }
+                          start={{ x: 0.15, y: 0 }}
+                          end={{ x: 0.85, y: 1 }}
+                          style={[
+                            styles.optionCircle,
+                            isActive && styles.optionCircleActive,
+                            isLocked && styles.optionCircleLocked,
+                          ]}
+                        >
+                          {isLocked ? (
+                            <Text style={styles.lockIcon}>🔓</Text>
+                          ) : null}
+                        </LinearGradient>
+                        <Text
+                          style={[
+                            styles.optionLabel,
+                            isActive && styles.optionLabelActive,
+                            isLocked && styles.optionLabelLocked,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {index < DURATION_OPTIONS.length - 1 ? (
+                        <View
+                          style={[
+                            styles.connectorSegment,
+                            rightConnectorActive && styles.connectorSegmentActive,
+                          ]}
+                        />
+                      ) : (
+                        <View style={styles.connectorSpacer} />
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
           </View>
 
-          {/* 🔽 Controls */}
-          <View style={styles.controls}>
-            <TouchableOpacity onPress={decrease} style={styles.btn}>
-              <Text style={styles.btnText}>-</Text>
-            </TouchableOpacity>
+          <Text style={styles.note}>
+            *Some options available for Premium or higher levels.*
+          </Text>
 
-            <TouchableOpacity onPress={increase} style={styles.btn}>
-              <Text style={styles.btnText}>+</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* 🚀 Confirm */}
-          <TouchableOpacity
-            style={styles.confirmBtn}
-            onPress={() => {
-              setShowModal(false);
-              startMining(hours);
-              navigation.navigate('Mining', { time: hours });
-            }}
-          >
-            <Text style={styles.confirmText}>START MINING</Text>
+          <TouchableOpacity activeOpacity={0.9} onPress={handleConfirm}>
+            <LinearGradient
+              colors={['#FFB24A', '#FF7C1F']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.confirmBtn}
+            >
+              <Text style={styles.confirmText}>Confirm</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </LinearGradient>
       </View>

@@ -17,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import LottieView from 'lottie-react-native';
 import { FONTS } from '../../constants/FONTS';
 import { getUserDisplayName, useUser } from '../../context/UserContext';
 import { useReferralData } from '../../hooks/useReferralData';
@@ -73,11 +73,6 @@ const ReferAndEarnScreen = () => {
   );
 
   const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-
     navigation.navigate('MainTabs', { screen: 'Profile' });
   };
 
@@ -147,9 +142,6 @@ const ReferAndEarnScreen = () => {
       <StatusBar backgroundColor="#10150c" barStyle="light-content" />
 
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.primaryGlow} />
-        <View style={styles.secondaryGlow} />
-
         <ScrollView
           showsVerticalScrollIndicator={false}
           bounces={false}
@@ -172,22 +164,17 @@ const ReferAndEarnScreen = () => {
 
             <Text style={styles.headerTitle}>Refer &amp; Earn</Text>
 
-            <Pressable
-              onPress={() => Alert.alert('Settings', 'Referral settings coming soon.')}
-              style={({ pressed }) => [
-                styles.iconButton,
-                pressed && styles.iconButtonPressed,
-              ]}
-            >
-              <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
-            </Pressable>
+            <View style={{ width: 54 }} />
           </View>
 
           <View style={styles.heroSection}>
             <View style={styles.giftHalo}>
-              <View style={styles.giftCircle}>
-                <MaterialCommunityIcons name="gift-outline" size={56} color="#B7FF31" />
-              </View>
+              <LottieView
+                source={require('../../assets/animations/reward_first_page_animation.json')}
+                autoPlay
+                loop
+                style={styles.lottieIcon}
+              />
             </View>
 
             <Text style={styles.heroTitle}>Invite &amp; Earn Rewards!</Text>
@@ -250,6 +237,8 @@ const ReferAndEarnScreen = () => {
             </View>
           </View>
 
+          <View style={styles.divider} />
+
           <View style={styles.card}>
             <Text style={styles.cardLabel}>REDEEM REFERRAL EMAIL</Text>
 
@@ -291,11 +280,11 @@ const ReferAndEarnScreen = () => {
               </Pressable>
             </View>
 
-            <Text style={styles.helperText}>
+            {/* <Text style={styles.helperText}>
               {hasAppliedReferral
                 ? `This account is linked to ${referredBy}.`
                 : 'You can link your account to one referrer once. Rewards are calculated by the backend.'}
-            </Text>
+            </Text> */}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -365,26 +354,15 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
   giftHalo: {
-    width: 156,
-    height: 156,
-    borderRadius: 78,
+    width: 260,
+    height: 260,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#B7FF31',
-    shadowOpacity: 0.32,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 12,
   },
-  giftCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(183,255,49,0.42)',
-    backgroundColor: 'rgba(183,255,49,0.06)',
+  lottieIcon: {
+    width: 320,
+    height: 320,
+    marginTop:-240
   },
   heroTitle: {
     color: '#FFFFFF',
@@ -393,7 +371,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: FONTS.black,
     fontWeight: '800',
-    marginTop: 26,
+    marginTop: -130,
   },
   heroSubtitle: {
     color: 'rgba(255,255,255,0.6)',
@@ -439,59 +417,65 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.black,
     fontWeight: '800',
   },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: 10,
+    marginBottom: 24,
+  },
   card: {
-    marginBottom: 22,
-    borderRadius: 24,
-    paddingHorizontal: 22,
-    paddingVertical: 24,
+    marginBottom: 16,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(16, 22, 14, 0.78)',
     shadowColor: '#000000',
-    shadowOpacity: 0.24,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 10,
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   cardLabel: {
     color: 'rgba(255,255,255,0.58)',
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: FONTS.bold,
     fontWeight: '700',
     letterSpacing: 1,
-    marginBottom: 18,
+    marginBottom: 14,
   },
   referralCodeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    paddingLeft: 20,
-    paddingRight: 12,
-    paddingVertical: 14,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingVertical: 10,
   },
   referralCodeText: {
     flex: 1,
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 15,
     fontFamily: FONTS.bold,
     fontWeight: '700',
-    marginRight: 12,
+    marginRight: 10,
   },
   actionButtonsRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   actionButton: {
-    width: 52,
-    height: 48,
-    borderRadius: 14,
+    width: 44,
+    height: 40,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.06)',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   actionButtonPressed: {
     opacity: 0.88,
@@ -502,32 +486,32 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 62,
-    borderRadius: 18,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(255,255,255,0.05)',
     color: '#FFFFFF',
-    paddingHorizontal: 22,
-    fontSize: 16,
+    paddingHorizontal: 16,
+    fontSize: 14,
     fontFamily: FONTS.medium,
-    marginRight: 14,
+    marginRight: 10,
   },
   inputDisabled: {
     opacity: 0.7,
   },
   claimButton: {
-    height: 62,
-    minWidth: 108,
-    borderRadius: 18,
+    height: 52,
+    minWidth: 90,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#B7FF31',
     shadowColor: '#B7FF31',
-    shadowOpacity: 0.32,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   claimButtonPressed: {
     opacity: 0.92,
@@ -537,7 +521,7 @@ const styles = StyleSheet.create({
   },
   claimButtonText: {
     color: '#10140b',
-    fontSize: 17,
+    fontSize: 15,
     fontFamily: FONTS.bold,
     fontWeight: '700',
   },
