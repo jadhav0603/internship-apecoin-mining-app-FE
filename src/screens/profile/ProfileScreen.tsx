@@ -1,387 +1,298 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  ImageSourcePropType,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
   View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {
-  launchImageLibrary,
-  type ImagePickerResponse,
-} from 'react-native-image-picker';
-import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
-
-import AvatarWithGlow from '../../components/profile/AvatarWithGlow';
-import CoinsSummaryCard from '../../components/profile/CoinsSummaryCard';
-import ConfirmModal from '../../components/ConfirmModal';
-import MyAccountModal from '../../components/profile/MyAccountModal';
-import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
-import ProfileSkeleton from '../../components/profile/ProfileSkeleton';
-import {
-  PROFILE_THEME,
-  buildHandle,
-  resolveProfileName,
-} from '../../components/profile/profileTheme';
-import { getUserDisplayName, useUser } from '../../context/UserContext';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { COLORS } from '../../constants/COLORS';
+import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { authService } from '../../services/authService';
-import { userService } from '../../services/userService';
+import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
+import ConfirmModal from '../../components/ConfirmModal';
+
+const MenuItem = ({ icon, title, onPress, isLast = false, color = COLORS.textPrimary }: any) => (
+  <TouchableOpacity 
+    style={[styles.menuItem, isLast && styles.lastMenuItem]} 
+    onPress={onPress}
+    activeOpacity={0.7}
+  >
+    <View style={styles.menuItemLeft}>
+      <View style={[styles.iconWrapper, { backgroundColor: color + '15' }]}>
+        <Ionicons name={icon} size={22} color={color} />
+      </View>
+      <Text style={[styles.menuItemTitle, { color }]}>{title}</Text>
+    </View>
+    <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
+  </TouchableOpacity>
+);
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
   const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAccountModalVisible, setIsAccountModalVisible] = useState(false);
-  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
-  const [email, setEmail] = useState(user?.email ?? '');
-  const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
-  const [username, setUsername] = useState(getUserDisplayName(user));
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [logoutVisible, setLogoutVisible] = useState(false);
 
-  const handleUpdateUsername = async (newName: string) => {
-    if (!newName.trim() || newName === username) return;
-
-    setIsUpdatingUsername(true);
-    try {
-      await userService.updateProfile(newName.trim());
-      setUsername(newName.trim());
-      Alert.alert('✓ Success', 'Username updated!');
-    } catch (err: any) {
-      const message = err?.response?.data?.message ?? 'Failed to update username.';
-      Alert.alert('Update Failed', message);
-    } finally {
-      setIsUpdatingUsername(false);
-    }
-  };
-
-  const { isLoaded: isInterstitialLoaded, load: loadInterstitial, show: showInterstitial } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_PROFILE,
-    { requestNonPersonalizedAdsOnly: true }
-  );
-
-  useEffect(() => {
-    loadInterstitial();
-  }, [loadInterstitial]);
-
-  useEffect(() => {
-    if (isInterstitialLoaded) {
-      showInterstitial();
-    }
-  }, [isInterstitialLoaded, showInterstitial]);
-
-  useEffect(() => {
-    setEmail(currentEmail => currentEmail || user?.email || '');
-    setAvatarUri(currentAvatar => currentAvatar || user?.photoURL || '');
-    setUsername(currentName => {
-      const nextName = getUserDisplayName(user);
-      return currentName === 'User' || !currentName ? nextName : currentName;
-    });
-  }, [user]);
-
-  const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.navigate('MainTabs', { screen: 'Home' });
-  };
-
-  const handleComingSoon = (label: string) => {
-    Alert.alert(label, 'This feature is coming soon!');
-  };
-
-  const openAccountModal = () => setIsAccountModalVisible(true);
-  const closeAccountModal = () => setIsAccountModalVisible(false);
-
-  // ─── Gallery picker + upload ────────────────────────────────────────────────
-  const handleChangePhoto = useCallback(async () => {
-    try {
-      const result: ImagePickerResponse = await new Promise(resolve => {
-        launchImageLibrary(
-          {
-            mediaType: 'photo',
-            quality: 0.8,
-            maxWidth: 1024,
-            maxHeight: 1024,
-            includeBase64: false,
-          },
-          resolve
-        );
-      });
-
-      if (result.didCancel || result.errorCode) {
-        return;
-      }
-
-      const asset = result.assets?.[0];
-      if (!asset?.uri) {
-        return;
-      }
-
-      setIsUploadingPhoto(true);
-
-      const response = await userService.uploadProfileImage(
-        asset.uri,
-        asset.type ?? 'image/jpeg',
-        asset.fileName ?? 'avatar.jpg'
-      );
-
-      setAvatarUri(response.imageUrl);
-      Alert.alert('✓ Success', 'Profile photo updated!');
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ?? 'Failed to upload photo. Please try again.';
-      Alert.alert('Upload Failed', message);
-    } finally {
-      setIsUploadingPhoto(false);
-    }
-  }, []);
+  const username = getUserDisplayName(user);
+  const email = user?.email ?? '';
+  const avatarUri = user?.photoURL ?? '';
 
   const handleLogout = async () => {
-    if (isLoggingOut) return;
-    setIsLoggingOut(true);
-    setIsLogoutModalVisible(false);
+    setLogoutVisible(false);
     try {
       await authService.signOut();
-    } catch {
-      Alert.alert('Log Out', 'Unable to log out right now. Please try again.');
-    } finally {
-      setIsLoggingOut(false);
+    } catch (err) {
+      console.error('Logout failed', err);
     }
   };
 
-  const confirmLogout = () => {
-    if (isLoggingOut) return;
-    setIsLogoutModalVisible(true);
-  };
-
-  const menuItems = useMemo(
-    () => [
-      { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
-      { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
-      { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
-      { id: 'logout', label: 'Log Out', icon: 'log-out-outline' as const, iconBg: PROFILE_THEME.dangerBg, active: false, tone: 'danger' as const },
-    ],
-    []
-  );
-
-  const menuAnimations = useRef(menuItems.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchProfile = async () => {
-      try {
-        const profile = await userService.getProfileIdentity();
-        if (!isMounted) return;
-        const resolvedName = resolveProfileName(profile.username, profile.email);
-        setUsername(resolvedName);
-        setEmail(profile.email);
-        setAvatarUri(profile.photoURL ?? '');
-      } catch {
-        if (isMounted) {
-          setUsername(getUserDisplayName(user));
-          setEmail(user?.email ?? '');
-          setAvatarUri(user?.photoURL ?? '');
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    fetchProfile();
-    return () => { isMounted = false; };
-  }, [user]);
-
-  useEffect(() => {
-    const animation = Animated.stagger(
-      80,
-      menuAnimations.map(anim =>
-        Animated.timing(anim, { toValue: 1, duration: 350, useNativeDriver: true })
-      )
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [menuAnimations]);
-
-  const userHandle = useMemo(() => buildHandle(username), [username]);
-  const avatarSource = useMemo<ImageSourcePropType | undefined>(
-    () => (avatarUri ? { uri: avatarUri } : undefined),
-    [avatarUri]
-  );
-
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor={PROFILE_THEME.bg} barStyle="light-content" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <LinearGradient
+        colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientMid, COLORS.backgroundGradientEnd]}
+        style={StyleSheet.absoluteFill}
+      />
 
-      <ScrollView
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} 
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => setSettingsVisible(true)}
+        >
+          <Ionicons name="settings-outline" size={24} color={COLORS.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: Math.max(insets.top + 10, 54), paddingBottom: Math.max(100, tabBarHeight + 28) },
-        ]}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.topRow}>
-          <View style={styles.navSide}>
-            <Pressable style={styles.navCircle} onPress={handleBack}>
-              <Ionicons name="chevron-back" size={22} color={PROFILE_THEME.backIcon} />
-            </Pressable>
+        {/* Profile Info */}
+        <View style={styles.profileSection}>
+          <View style={styles.avatarGlow}>
+            <View style={styles.avatarBorder}>
+              <Image 
+                source={avatarUri ? { uri: avatarUri } : require('../../assets/images/splashScreen-1.webp')} 
+                style={styles.avatar}
+              />
+            </View>
           </View>
-          <View style={styles.navSideRight} />
+          <Text style={styles.userName}>{username}</Text>
+          <Text style={styles.userEmail}>{email}</Text>
+          
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => navigation.navigate('ProfileDetails')}
+          >
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
         </View>
 
-        {isLoading ? (
-          <ProfileSkeleton />
-        ) : (
-          <>
-            {/* Avatar with upload spinner overlay */}
-            <View style={styles.avatarWrapper}>
-              <AvatarWithGlow username={username} source={avatarSource} onPress={openAccountModal} />
-              {isUploadingPhoto && (
-                <View style={styles.uploadOverlay}>
-                  <ActivityIndicator color="#B6FF3B" size="large" />
-                </View>
-              )}
-            </View>
-            <Text style={styles.userName}>{username}</Text>
-            <Text style={styles.userHandle}>{userHandle}</Text>
-          </>
-        )}
-
-        <CoinsSummaryCard />
-
-        <View style={styles.menuContainer}>
-          <View style={styles.adWrapper}>
-            <BannerAd
-              unitId={AD_UNITS.BANNER_PROFILE}
-              size={BannerAdSize.BANNER}
+        {/* Main Menu */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>MAIN MENU</Text>
+          <View style={styles.menuCard}>
+            <MenuItem 
+              icon="stats-chart-outline" 
+              title="My Progress" 
+              color="#39FF14"
+              onPress={() => navigation.navigate('MyProgress')}
+            />
+            <MenuItem 
+              icon="people-outline" 
+              title="Refer and Earn" 
+              color="#14ffe4"
+              onPress={() => navigation.navigate('ReferAndEarn')}
+            />
+            <MenuItem 
+              icon="person-outline" 
+              title="My Profile" 
+              color="#A6FF00"
+              onPress={() => navigation.navigate('ProfileDetails')}
+            />
+            <MenuItem 
+              icon="trophy-outline" 
+              title="Leaderboard" 
+              color="#FFD700"
+              isLast
+              onPress={() => navigation.navigate('Leaderboard')}
             />
           </View>
-          {menuItems.map((item, index) => (
-            <Animated.View
-              key={item.id}
-              style={{
-                opacity: menuAnimations[index],
-                transform: [{
-                  translateY: menuAnimations[index].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [18, 0],
-                  }),
-                }],
-              }}
-            >
-              <ProfileMenuItem
-                label={item.label}
-                icon={item.icon}
-                iconBg={item.iconBg}
-                active={item.active}
-                tone={item.tone}
-                disabled={item.id === 'logout' && isLoggingOut}
-                onPress={() => {
-                  if (item.id === 'account') { openAccountModal(); return; }
-                  if (item.id === 'logout') { confirmLogout(); return; }
-                  if (item.id === 'referral') {
-                    navigation.navigate('ReferAndEarn', { email, username });
-                    return;
-                  }
-                  if (item.id === 'leaderboard') {
-                    navigation.navigate('Leaderboard', { email, username, avatarUri });
-                    return;
-                  }
-                  handleComingSoon(item.label);
-                }}
-              />
-            </Animated.View>
-          ))}
         </View>
+
+        {/* Support */}
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>SUPPORT</Text>
+          <View style={styles.menuCard}>
+            <MenuItem 
+              icon="bug-outline" 
+              title="Report Issue" 
+              onPress={() => navigation.navigate('ReportIssue')}
+            />
+            <MenuItem 
+              icon="information-circle-outline" 
+              title="About Us" 
+              onPress={() => navigation.navigate('AboutUs')}
+            />
+            <MenuItem 
+              icon="log-out-outline" 
+              title="Logout" 
+              color="#FF4B4B"
+              isLast
+              onPress={() => setLogoutVisible(true)}
+            />
+          </View>
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      <MyAccountModal
-        visible={isAccountModalVisible}
-        username={username}
-        email={email}
-        avatarSource={avatarSource}
-        isLoggingOut={isLoggingOut}
-        onClose={closeAccountModal}
-        onLogout={() => {
-          closeAccountModal();
-          confirmLogout();
+      {/* Modals */}
+      <ProfileSettingsModal 
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        onAboutUs={() => {
+          setSettingsVisible(false);
+          navigation.navigate('AboutUs');
         }}
-        onSaveUsername={handleUpdateUsername}
-        isUpdatingUsername={isUpdatingUsername}
-        onChangePhoto={handleChangePhoto}
+        onReportIssue={() => {
+          setSettingsVisible(false);
+          navigation.navigate('ReportIssue');
+        }}
+        onLogout={() => {
+          setSettingsVisible(false);
+          setLogoutVisible(true);
+        }}
       />
 
       <ConfirmModal
-        visible={isLogoutModalVisible}
-        title="Log Out"
-        message="Are you sure you want to log out?"
-        confirmText="Log Out"
+        visible={logoutVisible}
+        title="Logout"
+        message="Are you sure you want to logout of your account?"
+        confirmText="Logout"
         cancelText="Cancel"
         tone="danger"
         onConfirm={handleLogout}
-        onCancel={() => setIsLogoutModalVisible(false)}
+        onCancel={() => setLogoutVisible(false)}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: PROFILE_THEME.bg },
-  scrollContent: { paddingHorizontal: 0 },
-  topRow: {
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingVertical: 15,
   },
-  navSide: { alignItems: 'flex-start' },
-  navSideRight: { alignItems: 'flex-end' },
-  navCircle: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: PROFILE_THEME.buttonBg,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  avatarWrapper: {
-    alignSelf: 'center',
-    position: 'relative',
-  },
-  uploadOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 60,
+  headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
+  settingsButton: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
   },
-  userName: {
-    color: PROFILE_THEME.white, fontSize: 22, fontWeight: '800',
-    textAlign: 'center', marginTop: 14,
-  },
-  userHandle: {
-    color: PROFILE_THEME.neonGreen, fontSize: 14, fontWeight: '500',
-    textAlign: 'center', marginTop: 4,
-  },
-  menuContainer: { marginHorizontal: 16, marginTop: 16 },
-  adWrapper: {
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
-    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
   },
+  scrollContent: { paddingTop: 20 },
+  profileSection: { alignItems: 'center', marginBottom: 40 },
+  avatarGlow: {
+    padding: 8,
+    borderRadius: 70,
+    backgroundColor: 'rgba(57, 255, 20, 0.1)',
+    shadowColor: '#39FF14',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  avatarBorder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#39FF14',
+    padding: 3,
+  },
+  avatar: { width: '100%', height: '100%', borderRadius: 50 },
+  userName: { color: COLORS.textPrimary, fontSize: 24, fontWeight: '800', marginTop: 20 },
+  userEmail: { color: COLORS.textMuted, fontSize: 14, marginTop: 4 },
+  editButton: {
+    marginTop: 20,
+    paddingHorizontal: 25,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(57, 255, 20, 0.4)',
+    backgroundColor: 'rgba(57, 255, 20, 0.05)',
+  },
+  editButtonText: { color: '#0de8fcff', fontSize: 14, fontWeight: '700' },
+  section: { paddingHorizontal: 20, marginBottom: 25,marginTop:-5 },
+  sectionLabel: { 
+    color: COLORS.textMuted, 
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    marginBottom: 15, 
+    marginLeft: 5,
+    letterSpacing: 1,
+  },
+  menuCard: {
+    backgroundColor: 'rgba(18, 26, 18, 0.6)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  lastMenuItem: { borderBottomWidth: 0 },
+  menuItemLeft: { flexDirection: 'row', alignItems: 'center' },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  menuItemTitle: { fontSize: 16, fontWeight: '600' },
 });
 
 export default ProfileScreen;

@@ -73,12 +73,7 @@ const ReferAndEarnScreen = () => {
   );
 
   const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-
-    navigation.navigate('MainTabs', { screen: 'Profile' });
+    navigation.navigate('MainTabs', { screen: 'Home' });
   };
 
   const handleCopy = () => {

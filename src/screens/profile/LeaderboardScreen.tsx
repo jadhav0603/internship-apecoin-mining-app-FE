@@ -170,7 +170,7 @@ const LeaderboardScreen = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <LinearGradient colors={['#0A1208', '#000000']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientMid, COLORS.backgroundGradientEnd]} style={StyleSheet.absoluteFill} />
 
       {/* Decorative glows */}
       <View style={[styles.glow, { top: '8%', left: '-12%', backgroundColor: 'rgba(182,255,59,0.08)' }]} />
@@ -179,7 +179,10 @@ const LeaderboardScreen = () => {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Pressable 
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} 
+            style={styles.backButton}
+          >
             <Ionicons name="chevron-back" size={24} color="#FFF" />
           </Pressable>
           <Text style={styles.headerTitle}>Top Miners</Text>

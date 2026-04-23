@@ -76,15 +76,15 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
           </SegmentedRing>
         </View>
 
-        <Text style={styles.eyebrow}>MINING ENTRY</Text>
+        {/* <Text style={styles.eyebrow}>MINING ENTRY</Text> */}
         <Text style={styles.title}>
-          {isMining ? 'Mining Session Active' : 'Start Generating Assets'}
-        </Text>
-        <Text style={styles.subtitle}>
-          {isMining
-            ? 'Tap to open the current mining session. New mining starts after countdown ends.'
-            : 'Tap to launch the neon time-storage dashboard.'}
-        </Text>
+  {isMining ? 'Mining Cycle Live' : 'Activate Asset Engine'}
+</Text>
+       <Text style={styles.subtitle}>
+  {isMining
+    ? 'Session in progress. Next cycle available soon.'
+    : 'Begin mining and track your assets from the dashboard.'}
+</Text>
       </LinearGradient>
     </Pressable>
   );
