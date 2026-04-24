@@ -1,5 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  Easing,
+  cancelAnimation,
+  withSequence,
+  withDelay,
+  runOnJS,
+} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +27,87 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
   const navigation = useNavigation<any>();
   const { setShowModal } = useTimeModal();
   const { isMining, hours } = useMining();
+
+  const rotation = useSharedValue(0);
+  const iconSwitch = useSharedValue(0); // 0 = start icon, 1 = end icon
+  const glow = useSharedValue(1);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const startAnimation = () => {
+      if (!isActive) return;
+
+      // 1. Rotate 360 degrees
+      rotation.value = withTiming(360, {
+        duration: 3000,
+        easing: Easing.inOut(Easing.quad),
+      }, (finished) => {
+        if (finished && isActive) {
+          // 2. Stop and Switch icon to end
+          iconSwitch.value = withSequence(
+  withTiming(1, { duration: 400 }),          // show hourglass-end
+  withDelay(1200, withTiming(0, { duration: 400 }, (f2) => {
+    if (f2 && isActive) {
+      rotation.value = 0;
+      runOnJS(startAnimation)();
+    }
+  }))
+);
+        }
+      });
+    };
+
+    if (isMining) {
+      startAnimation();
+      glow.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 1500 }),
+          withTiming(1, { duration: 1500 })
+        ),
+        -1,
+        true
+      );
+    } else {
+      isActive = false;
+      cancelAnimation(rotation);
+      cancelAnimation(iconSwitch);
+      cancelAnimation(glow);
+      rotation.value = 0;
+      iconSwitch.value = 0;
+      glow.value = 1;
+    }
+
+    return () => {
+      isActive = false;
+    };
+  }, [isMining, rotation, iconSwitch, glow]);
+
+  const animatedIconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { rotate: `${rotation.value}deg` },
+        { scale: 1 + (0.1 * (1 - iconSwitch.value) * (glow.value - 1)) }
+      ],
+      opacity: 1 - iconSwitch.value,
+      position: 'absolute',
+    };
+  });
+
+  const animatedEndIconStyle = useAnimatedStyle(() => {
+    return {
+      opacity: iconSwitch.value,
+      transform: [
+        { scale: 0.8 + 0.2 * iconSwitch.value }
+      ],
+      position: 'absolute',
+    };
+  });
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: (glow.value - 1) * 0.5 * (1 - iconSwitch.value),
+    transform: [{ scale: glow.value * 1.5 }],
+  }));
 
   const handleOpen = () => {
     if (onPress) {
@@ -66,12 +158,34 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
               end={{ x: 0.9, y: 1 }}
               style={styles.innerCore}
             >
-              <FontAwesome5
-                name={isMining ? 'hourglass-start' : 'play'}
-                size={18}
-                color={COLORS.textPrimary}
-                style={styles.playIcon}
-              />
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                {isMining && <Animated.View style={[styles.cardGlow, glowStyle, { backgroundColor: COLORS.primary, width: 40, height: 40, borderRadius: 20 }]} />}
+                
+                <Animated.View style={animatedIconStyle}>
+                  <FontAwesome5
+                    name="hourglass-start"
+                    size={18}
+                    color={COLORS.textPrimary}
+                  />
+                </Animated.View>
+
+                <Animated.View style={animatedEndIconStyle}>
+                  <FontAwesome5
+                    name="hourglass-end"
+                    size={18}
+                    color={COLORS.primary}
+                  />
+                </Animated.View>
+
+                {!isMining && (
+                   <FontAwesome5
+                    name="play"
+                    size={18}
+                    color={COLORS.textPrimary}
+                    style={styles.playIcon}
+                  />
+                )}
+              </View>
             </LinearGradient>
           </SegmentedRing>
         </View>
@@ -82,7 +196,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 </Text>
        <Text style={styles.subtitle}>
   {isMining
-    ? 'View your active mining session and performance details.'
+    ? 'Tap to View your active mining session and performance details.'
     : 'Begin mining and track your assets from the dashboard.'}
 </Text>
       </LinearGradient>
