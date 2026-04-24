@@ -264,19 +264,23 @@ const TransactionHistoryScreen = () => {
 
         <Text style={styles.headerTitle}>My Transactions</Text>
 
-        {user?.photoURL ? (
-          <Image
-            source={{ uri: user.photoURL }}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarInitial}>
-              {getUserDisplayName(user).charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <Pressable
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
+        >
+          {user?.photoURL ? (
+            <Image
+              source={{ uri: user.photoURL }}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitial}>
+                {getUserDisplayName(user).charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       <MultiLineChart
