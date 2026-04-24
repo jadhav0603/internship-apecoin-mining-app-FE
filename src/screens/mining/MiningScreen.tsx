@@ -118,7 +118,7 @@ const MiningScreen = () => {
           </View>
 
           {/* <Text style={styles.rateText}>0.02083 Kryptons/hour</Text> */}
-          <Text style={styles.amountText}>${earned.toFixed(6)}</Text>
+          <Text style={styles.amountText}>{earned.toFixed(6)} APE</Text>
 
           <View style={styles.ringSection}>
             <SegmentedRing

@@ -29,8 +29,21 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
   const { isMining, hours } = useMining();
 
   const rotation = useSharedValue(0);
+  const borderRotation = useSharedValue(0);
   const iconSwitch = useSharedValue(0); // 0 = start icon, 1 = end icon
   const glow = useSharedValue(1);
+
+  useEffect(() => {
+    // Border rotation animation
+    borderRotation.value = withRepeat(
+      withTiming(360, {
+        duration: 6000,
+        easing: Easing.linear,
+      }),
+      -1,
+      false
+    );
+  }, [borderRotation]);
 
   useEffect(() => {
     let isActive = true;
@@ -109,6 +122,10 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
     transform: [{ scale: glow.value * 1.5 }],
   }));
 
+  const animatedBorderStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${borderRotation.value}deg` }],
+  }));
+
   const handleOpen = () => {
     if (onPress) {
       onPress();
@@ -129,15 +146,26 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
       style={({ pressed }) => [
         styles.pressable,
         pressed && styles.pressablePressed,
-        isMining && { opacity: 0.82 },
+        isMining && { opacity: 0.95 },
       ]}
     >
-      <LinearGradient
-        colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientEnd]}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.88, y: 1 }}
-        style={styles.card}
-      >
+      <View style={{ borderRadius: 32, overflow: 'hidden', padding: 1.5, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+        {/* Border Beam Animation */}
+        <Animated.View style={[{ position: 'absolute', width: '300%', height: '300%', top: '-100%', left: '-100%' }, animatedBorderStyle]}>
+          <LinearGradient
+            colors={[COLORS.primary, 'transparent', '#28ac5aff', 'transparent', COLORS.success, 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1 }}
+          />
+        </Animated.View>
+
+        <LinearGradient
+          colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientEnd]}
+          start={{ x: 0.15, y: 0 }}
+          end={{ x: 0.88, y: 1 }}
+          style={styles.card}
+        >
         <Text style={styles.footerText}>
           {isMining ? 'MINING IN PROGRESS' : 'TAP TO CONTINUE'}
         </Text>
@@ -199,7 +227,8 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
     ? 'Tap to View your active mining session and performance details.'
     : 'Begin mining and track your assets from the dashboard.'}
 </Text>
-      </LinearGradient>
+        </LinearGradient>
+      </View>
     </Pressable>
   );
 }

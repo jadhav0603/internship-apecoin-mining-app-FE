@@ -99,7 +99,7 @@ const MiningLiveBar = () => {
             marginTop: 2,
           }}
         >
-          ⏱ {formatTime(secondsLeft)} • 💰 {earned.toFixed(4)}
+          ⏱ {formatTime(secondsLeft)} • 💰 {earned.toFixed(11)}
         </Text>
       </View>
 
@@ -107,7 +107,7 @@ const MiningLiveBar = () => {
       <Pressable
         onPress={() => navigation.navigate('Mining')}
         style={({ pressed }) => ({
-          backgroundColor: '#00E676',
+          backgroundColor: '#40a920ff',
           paddingVertical: 8,
           paddingHorizontal: 16,
           borderRadius: 20,
