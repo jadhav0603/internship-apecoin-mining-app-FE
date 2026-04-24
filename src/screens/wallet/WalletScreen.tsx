@@ -14,7 +14,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
@@ -34,10 +33,11 @@ import {
   withdrawService,
   type WithdrawRecord,
 } from '../../services/withdrawService';
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 
 const WalletScreen = () => {
-  const tabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
+  const bottomContentPadding = useBottomOverlayPadding(28);
   const navigation =
     useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
   const { user } = useUser();
@@ -141,7 +141,7 @@ const WalletScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(100, tabBarHeight + 28) },
+            { paddingBottom: bottomContentPadding },
           ]}
         >
           <View

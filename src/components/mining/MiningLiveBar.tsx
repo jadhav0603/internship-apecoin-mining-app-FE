@@ -49,11 +49,20 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  FLOATING_TAB_BAR_BASE_HEIGHT,
+  FLOATING_TAB_BAR_BOTTOM_OFFSET,
+  MINING_LIVE_BAR_GAP,
+  MINING_LIVE_BAR_HEIGHT,
+  MINING_LIVE_BAR_HORIZONTAL_MARGIN,
+} from '../../constants/bottomLayout';
 
 const MiningLiveBar = () => {
   const { isMining, secondsLeft, earned } = useMining();
   const navigation = useNavigation<any>();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
 
   if (route.name === 'Mining') return null;
   if (!isMining) return null;
@@ -72,9 +81,14 @@ const MiningLiveBar = () => {
     <View
       style={{
         position: 'absolute',
-        bottom: 120,
-        left: 16,
-        right: 16,
+        bottom:
+          FLOATING_TAB_BAR_BASE_HEIGHT +
+          insets.bottom +
+          FLOATING_TAB_BAR_BOTTOM_OFFSET +
+          MINING_LIVE_BAR_GAP,
+        left: MINING_LIVE_BAR_HORIZONTAL_MARGIN,
+        right: MINING_LIVE_BAR_HORIZONTAL_MARGIN,
+        minHeight: MINING_LIVE_BAR_HEIGHT,
         backgroundColor: '#1A1A1A',
         padding: 14,
         borderRadius: 20,

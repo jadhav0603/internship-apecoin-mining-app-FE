@@ -25,10 +25,12 @@ import ConfirmModal from '../../components/ConfirmModal';
 import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
 import { PROFILE_THEME, resolveProfileName } from '../../components/profile/profileTheme';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const bottomContentPadding = useBottomOverlayPadding(56);
   const { user } = useUser();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
@@ -143,7 +145,10 @@ const ProfileScreen = () => {
 
         <ScrollView 
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: bottomContentPadding },
+          ]}
         >
           {/* Profile Info */}
           <View style={styles.profileSection}>
@@ -218,7 +223,7 @@ const ProfileScreen = () => {
             ))}
           </View>
 
-          <View style={{ height: 100 }} />
+          <View style={styles.footerSpacer} />
         </ScrollView>
 
         {/* Modals */}
@@ -339,6 +344,9 @@ const styles = StyleSheet.create({
     marginBottom: 15, 
     marginLeft: 5,
     letterSpacing: 1,
+  },
+  footerSpacer: {
+    height: 8,
   },
 });
 

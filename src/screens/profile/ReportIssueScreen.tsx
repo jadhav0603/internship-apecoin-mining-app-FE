@@ -31,9 +31,18 @@ import { useUser } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
-import { ticketService, type TicketItem, type TicketPriority } from '../../services/ticketService';
+import {
+  ticketService,
+  type TicketItem,
+  type TicketPriority,
+} from '../../services/ticketService';
 
-const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_ATTACHMENT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
 
 const formatCompactDate = (value?: string) => {
   if (!value) {
@@ -48,7 +57,8 @@ const formatCompactDate = (value?: string) => {
 };
 
 const ReportIssueScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { showConfirm, showError, showWarning } = useAlert();
@@ -65,7 +75,8 @@ const ReportIssueScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
   const [isRefreshingReports, setIsRefreshingReports] = useState(false);
-  const [isPreviousReportsExpanded, setIsPreviousReportsExpanded] = useState(false);
+  const [isPreviousReportsExpanded, setIsPreviousReportsExpanded] =
+    useState(false);
   const [recentTickets, setRecentTickets] = useState<TicketItem[]>([]);
 
   const previousReports = useMemo(
@@ -73,39 +84,43 @@ const ReportIssueScreen = () => {
       [...recentTickets]
         .sort(
           (first, second) =>
-            new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+            new Date(second.createdAt).getTime() -
+            new Date(first.createdAt).getTime(),
         )
         .slice(0, 2),
     [recentTickets],
   );
 
-  const fetchRecentTickets = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) {
-        setIsRefreshingReports(true);
-      } else {
-        setIsLoadingReports(true);
-      }
+  const fetchRecentTickets = useCallback(
+    async (showRefresh = false) => {
+      try {
+        if (showRefresh) {
+          setIsRefreshingReports(true);
+        } else {
+          setIsLoadingReports(true);
+        }
 
-      const tickets = await ticketService.getTickets();
-      setRecentTickets(tickets);
-    } catch (error: any) {
-      if (!showRefresh) {
-        showError(
-          error?.response?.data?.message ?? 'Please try again in a moment.',
-          'Unable to Load Reports',
-        );
+        const tickets = await ticketService.getTickets();
+        setRecentTickets(tickets);
+      } catch (error: any) {
+        if (!showRefresh) {
+          showError(
+            error?.response?.data?.message ?? 'Please try again in a moment.',
+            'Unable to Load Reports',
+          );
+        }
+      } finally {
+        setIsLoadingReports(false);
+        setIsRefreshingReports(false);
       }
-    } finally {
-      setIsLoadingReports(false);
-      setIsRefreshingReports(false);
-    }
-  }, [showError]);
+    },
+    [showError],
+  );
 
   useFocusEffect(
     useCallback(() => {
       fetchRecentTickets();
-    }, [fetchRecentTickets])
+    }, [fetchRecentTickets]),
   );
 
   const validateForm = () => {
@@ -130,7 +145,10 @@ const ReportIssueScreen = () => {
     }
 
     if (attachments.some(item => !item.url)) {
-      showWarning('Please wait for all attachments to finish uploading.', 'Validation');
+      showWarning(
+        'Please wait for all attachments to finish uploading.',
+        'Validation',
+      );
       return false;
     }
 
@@ -139,11 +157,14 @@ const ReportIssueScreen = () => {
 
   const handleAttachmentPick = useCallback(async () => {
     if (attachments.length >= MAX_TICKET_ATTACHMENTS) {
-      showWarning(`You can upload up to ${MAX_TICKET_ATTACHMENTS} files.`, 'Attachment limit');
+      showWarning(
+        `You can upload up to ${MAX_TICKET_ATTACHMENTS} files.`,
+        'Attachment limit',
+      );
       return;
     }
 
-      const result = await new Promise<{
+    const result = await new Promise<{
       assets?: Asset[];
       didCancel?: boolean;
       errorCode?: string;
@@ -155,7 +176,7 @@ const ReportIssueScreen = () => {
           selectionLimit: MAX_TICKET_ATTACHMENTS - attachments.length,
           quality: 0.8,
         },
-        resolve
+        resolve,
       );
     });
 
@@ -164,7 +185,10 @@ const ReportIssueScreen = () => {
     }
 
     if (result.errorCode) {
-      showError(result.errorMessage ?? 'Unable to select images.', 'Upload Failed');
+      showError(
+        result.errorMessage ?? 'Unable to select images.',
+        'Upload Failed',
+      );
       return;
     }
 
@@ -215,10 +239,16 @@ const ReportIssueScreen = () => {
       try {
         const url = await ticketService.uploadAttachment(asset);
         setAttachments(current =>
-          current.map(item => (item.id === pendingItem.id ? { ...item, url, uploading: false } : item))
+          current.map(item =>
+            item.id === pendingItem.id
+              ? { ...item, url, uploading: false }
+              : item,
+          ),
         );
       } catch (error: any) {
-        setAttachments(current => current.filter(item => item.id !== pendingItem.id));
+        setAttachments(current =>
+          current.filter(item => item.id !== pendingItem.id),
+        );
         showError(
           error?.message ?? 'Please try again with another image.',
           'Attachment Upload Failed',
@@ -255,10 +285,14 @@ const ReportIssueScreen = () => {
         category,
         priority,
         description: description.trim(),
-        attachments: attachments.map(item => item.url).filter(Boolean) as string[],
+        attachments: attachments
+          .map(item => item.url)
+          .filter(Boolean) as string[],
         allowContact,
-        contactEmail: allowContact && contactEmail.trim() ? contactEmail.trim() : null,
-        contactPhone: allowContact && contactPhone.trim() ? contactPhone.trim() : null,
+        contactEmail:
+          allowContact && contactEmail.trim() ? contactEmail.trim() : null,
+        contactPhone:
+          allowContact && contactPhone.trim() ? contactPhone.trim() : null,
       });
 
       resetForm();
@@ -269,11 +303,13 @@ const ReportIssueScreen = () => {
         message: `Your report ${ticket.ticketId} has been created.`,
         confirmText: 'View Details',
         cancelText: 'OK',
-        onConfirm: () => navigation.navigate('TicketDetail', { ticketId: ticket.ticketId }),
+        onConfirm: () =>
+          navigation.navigate('TicketDetail', { ticketId: ticket.ticketId }),
       });
     } catch (error: any) {
       showError(
-        error?.response?.data?.message ?? 'Unable to submit your report right now.',
+        error?.response?.data?.message ??
+          'Unable to submit your report right now.',
         'Submission Failed',
       );
     } finally {
@@ -300,16 +336,24 @@ const ReportIssueScreen = () => {
           />
         }
       >
-        <TicketHeader title="Report an Issue" onBack={() => navigation.goBack()} />
+        <TicketHeader
+          title="Report an Issue"
+          onBack={() => navigation.goBack()}
+        />
 
         <View style={styles.helpCard}>
           <View style={styles.helpIconWrap}>
-            <Ionicons name="shield-checkmark-outline" size={22} color={TICKET_THEME.accent} />
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={22}
+              color={TICKET_THEME.accent}
+            />
           </View>
           <View style={styles.helpTextWrap}>
             <Text style={styles.helpTitle}>Need help?</Text>
             <Text style={styles.helpDescription}>
-              Describe your issue clearly and we will review it as soon as possible.
+              Describe your issue clearly and we will review it as soon as
+              possible.
             </Text>
           </View>
         </View>
@@ -324,11 +368,15 @@ const ReportIssueScreen = () => {
             <View style={styles.previousReportsActions}>
               <Pressable
                 hitSlop={8}
-                onPress={() => setIsPreviousReportsExpanded(current => !current)}
+                onPress={() =>
+                  setIsPreviousReportsExpanded(current => !current)
+                }
                 style={styles.expandIconWrap}
               >
                 <Ionicons
-                  name={isPreviousReportsExpanded ? 'chevron-up' : 'chevron-down'}
+                  name={
+                    isPreviousReportsExpanded ? 'chevron-up' : 'chevron-down'
+                  }
                   size={18}
                   color={TICKET_THEME.textSecondary}
                 />
@@ -358,24 +406,35 @@ const ReportIssueScreen = () => {
                     <Pressable
                       key={ticket.ticketId}
                       onPress={() =>
-                        navigation.navigate('TicketDetail', {ticketId: ticket.ticketId})
+                        navigation.navigate('TicketDetail', {
+                          ticketId: ticket.ticketId,
+                        })
                       }
                       style={styles.reportPreviewItem}
                     >
                       <View style={styles.reportPreviewTopRow}>
-                        <Text style={styles.reportPreviewCategory} numberOfLines={1}>
+                        <Text
+                          style={styles.reportPreviewCategory}
+                          numberOfLines={1}
+                        >
                           {ticket.category}
                         </Text>
-                        <Text style={styles.reportPreviewStatus}>{ticket.status}</Text>
+                        <Text style={styles.reportPreviewStatus}>
+                          {ticket.status}
+                        </Text>
                       </View>
 
-                      <Text style={styles.reportPreviewDescription} numberOfLines={2}>
+                      <Text
+                        style={styles.reportPreviewDescription}
+                        numberOfLines={2}
+                      >
                         {ticket.description}
                       </Text>
 
                       <View style={styles.reportPreviewFooter}>
                         <Text style={styles.reportPreviewMeta}>
-                          {ticket.ticketId} • {formatCompactDate(ticket.createdAt)}
+                          {ticket.ticketId} •{' '}
+                          {formatCompactDate(ticket.createdAt)}
                         </Text>
                         <Ionicons
                           name="chevron-forward"
@@ -399,11 +458,20 @@ const ReportIssueScreen = () => {
         </View>
 
         <Text style={styles.label}>Category</Text>
-        <Pressable style={styles.selector} onPress={() => setIsCategoryModalVisible(true)}>
-          <Text style={[styles.selectorText, !category && styles.placeholderText]}>
+        <Pressable
+          style={styles.selector}
+          onPress={() => setIsCategoryModalVisible(true)}
+        >
+          <Text
+            style={[styles.selectorText, !category && styles.placeholderText]}
+          >
             {category || 'Select a category'}
           </Text>
-          <Ionicons name="chevron-down" size={20} color={TICKET_THEME.textSecondary} />
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={TICKET_THEME.textSecondary}
+          />
         </Pressable>
 
         <Text style={styles.label}>Priority</Text>
@@ -445,7 +513,10 @@ const ReportIssueScreen = () => {
                 }
               }}
               thumbColor={allowContact ? TICKET_THEME.accent : '#f4f3f4'}
-              trackColor={{ false: '#3A4035', true: `${TICKET_THEME.accent}66` }}
+              trackColor={{
+                false: '#3A4035',
+                true: `${TICKET_THEME.accent}66`,
+              }}
             />
           </View>
 
@@ -473,7 +544,10 @@ const ReportIssueScreen = () => {
         </View>
 
         <Pressable
-          style={[styles.submitButton, (isSubmitting || isUploadingAttachments) && styles.buttonDisabled]}
+          style={[
+            styles.submitButton,
+            (isSubmitting || isUploadingAttachments) && styles.buttonDisabled,
+          ]}
           onPress={handleSubmit}
           disabled={isSubmitting || isUploadingAttachments}
         >
@@ -508,7 +582,11 @@ const ReportIssueScreen = () => {
               >
                 <Text style={styles.modalOptionText}>{item}</Text>
                 {category === item ? (
-                  <Ionicons name="checkmark" size={18} color={TICKET_THEME.accent} />
+                  <Ionicons
+                    name="checkmark"
+                    size={18}
+                    color={TICKET_THEME.accent}
+                  />
                 ) : null}
               </Pressable>
             ))}
@@ -567,7 +645,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: TICKET_THEME.cardBorder,
     overflow: 'hidden',
-
   },
   previousReportsHeader: {
     minHeight: 72,
