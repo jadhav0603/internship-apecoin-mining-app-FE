@@ -114,145 +114,174 @@ const ProfileScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      
-      <LinearGradient
-        colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientMid, COLORS.backgroundGradientEnd]}
-        style={StyleSheet.absoluteFill}
-      />
+    <LinearGradient
+      colors={[
+        COLORS.backgroundGradientStart,
+        COLORS.backgroundGradientMid,
+        COLORS.backgroundGradientEnd,
+      ]}
+      start={{ x: 0.15, y: 0 }}
+      end={{ x: 0.85, y: 1 }}
+      style={styles.background}
+    >
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <View style={styles.primaryGlow} />
+        <View style={styles.secondaryGlow} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <AppBackButton onPress={handleBack} iconSize={24} />
-        <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity 
-          style={styles.settingsButton}
-          onPress={() => setSettingsVisible(true)}
-        >
-          <Ionicons name="settings-outline" size={24} color={COLORS.textPrimary} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Profile Info */}
-        <View style={styles.profileSection}>
-          <View style={styles.avatarGlow}>
-            <View style={styles.avatarBorder}>
-              <Image 
-                source={avatarUri ? { uri: avatarUri } : require('../../assets/images/splashScreen-1.webp')} 
-                style={styles.avatar}
-              />
-            </View>
-          </View>
-          <Text style={styles.userName}>{username}</Text>
-          <Text style={styles.userEmail}>{email}</Text>
-          
-          {/* <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => navigation.navigate('ProfileDetails')}
+        {/* Header */}
+        <View style={styles.header}>
+          <AppBackButton onPress={handleBack} iconSize={24} />
+          <Text style={styles.headerTitle}>Profile</Text>
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => setSettingsVisible(true)}
           >
-            <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity> */}
+            <Ionicons name="settings-outline" size={24} color={COLORS.textPrimary} />
+          </TouchableOpacity>
         </View>
 
-        {/* Main Menu */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>ACCOUNT & ACTIVITY</Text>
-          {menuItems.map((item, index) => (
-            <Animated.View
-              key={item.id}
-              style={{
-                opacity: menuAnimations[index],
-                transform: [{
-                  translateY: menuAnimations[index].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [18, 0],
-                  }),
-                }],
-              }}
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Profile Info */}
+          <View style={styles.profileSection}>
+            <View style={styles.avatarGlow}>
+              <View style={styles.avatarBorder}>
+                <Image 
+                  source={avatarUri ? { uri: avatarUri } : require('../../assets/images/splashScreen-1.webp')} 
+                  style={styles.avatar}
+                />
+              </View>
+            </View>
+            <Text style={styles.userName}>{username}</Text>
+            <Text style={styles.userEmail}>{email}</Text>
+            
+            {/* <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => navigation.navigate('ProfileDetails')}
             >
-              <ProfileMenuItem
-                label={item.label}
-                icon={item.icon}
-                iconBg={item.iconBg}
-                active={item.active}
-                tone={item.tone as any}
-                disabled={item.id === 'logout' && isLoggingOut}
-                onPress={() => {
-                  if (item.id === 'account') { setMyProfileVisible(true); return; }
-                  if (item.id === 'logout') { confirmLogout(); return; }
-                  if (item.id === 'progress') {
-                    navigation.navigate('MyProgress');
-                    return;
-                  }
-                  if (item.id === 'referral') {
-                    navigation.navigate('ReferAndEarn');
-                    return;
-                  }
-                  if (item.id === 'report_issue') {
-                    navigation.navigate('ReportIssue');
-                    return;
-                  }
-                  if (item.id === 'leaderboard') {
-                    navigation.navigate('Leaderboard');
-                    return;
-                  }
-                  if (item.id === 'about') {
-                    navigation.navigate('AboutUs');
-                    return;
-                  }
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity> */}
+          </View>
+
+          {/* Main Menu */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>ACCOUNT & ACTIVITY</Text>
+            {menuItems.map((item, index) => (
+              <Animated.View
+                key={item.id}
+                style={{
+                  opacity: menuAnimations[index],
+                  transform: [{
+                    translateY: menuAnimations[index].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [18, 0],
+                    }),
+                  }],
                 }}
-              />
-            </Animated.View>
-          ))}
-        </View>
+              >
+                <ProfileMenuItem
+                  label={item.label}
+                  icon={item.icon}
+                  iconBg={item.iconBg}
+                  active={item.active}
+                  tone={item.tone as any}
+                  disabled={item.id === 'logout' && isLoggingOut}
+                  onPress={() => {
+                    if (item.id === 'account') { setMyProfileVisible(true); return; }
+                    if (item.id === 'logout') { confirmLogout(); return; }
+                    if (item.id === 'progress') {
+                      navigation.navigate('MyProgress');
+                      return;
+                    }
+                    if (item.id === 'referral') {
+                      navigation.navigate('ReferAndEarn');
+                      return;
+                    }
+                    if (item.id === 'report_issue') {
+                      navigation.navigate('ReportIssue');
+                      return;
+                    }
+                    if (item.id === 'leaderboard') {
+                      navigation.navigate('Leaderboard');
+                      return;
+                    }
+                    if (item.id === 'about') {
+                      navigation.navigate('AboutUs');
+                      return;
+                    }
+                  }}
+                />
+              </Animated.View>
+            ))}
+          </View>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          <View style={{ height: 100 }} />
+        </ScrollView>
 
-      {/* Modals */}
-      <ProfileSettingsModal 
-        visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
-        onAboutUs={() => {
-          setSettingsVisible(false);
-          navigation.navigate('AboutUs');
-        }}
-        onReportIssue={() => {
-          setSettingsVisible(false);
-          navigation.navigate('ReportIssue');
-        }}
-        onLogout={() => {
-          setSettingsVisible(false);
-          setLogoutVisible(true);
-        }}
-      />
+        {/* Modals */}
+        <ProfileSettingsModal 
+          visible={settingsVisible}
+          onClose={() => setSettingsVisible(false)}
+          onAboutUs={() => {
+            setSettingsVisible(false);
+            navigation.navigate('AboutUs');
+          }}
+          onReportIssue={() => {
+            setSettingsVisible(false);
+            navigation.navigate('ReportIssue');
+          }}
+          onLogout={() => {
+            setSettingsVisible(false);
+            setLogoutVisible(true);
+          }}
+        />
 
-      <MyProfileModal
-        visible={myProfileVisible}
-        onClose={() => setMyProfileVisible(false)}
-      />
+        <MyProfileModal
+          visible={myProfileVisible}
+          onClose={() => setMyProfileVisible(false)}
+        />
 
-      <ConfirmModal
-        visible={logoutVisible}
-        title="Logout"
-        message="Are you sure you want to logout of your account?"
-        confirmText="Logout"
-        cancelText="Cancel"
-        tone="danger"
-        onConfirm={handleLogout}
-        onCancel={() => setLogoutVisible(false)}
-      />
-    </SafeAreaView>
+        <ConfirmModal
+          visible={logoutVisible}
+          title="Logout"
+          message="Are you sure you want to logout of your account?"
+          confirmText="Logout"
+          cancelText="Cancel"
+          tone="danger"
+          onConfirm={handleLogout}
+          onCancel={() => setLogoutVisible(false)}
+        />
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  background: { flex: 1 },
+  container: { flex: 1 },
+  primaryGlow: {
+    position: 'absolute',
+    top: -60,
+    left: -40,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: COLORS.surfaceGlow,
+    opacity: 0.34,
+  },
+  secondaryGlow: {
+    position: 'absolute',
+    right: -50,
+    bottom: 80,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: COLORS.ringGlowSoft,
+    opacity: 0.3,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
