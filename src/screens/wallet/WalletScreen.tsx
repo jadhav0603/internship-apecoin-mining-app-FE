@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   useNavigation,
   type NavigationProp,
@@ -6,6 +6,7 @@ import {
 } from '@react-navigation/native';
 import {
   ActivityIndicator,
+  Animated,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -16,6 +17,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
 import WithdrawDetailsSheet from '../../components/wallet/WithdrawDetailsSheet';
 import RevenueChart from '../../components/wallet/RevenueChart';
@@ -37,11 +39,12 @@ import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 
 const WalletScreen = () => {
   const insets = useSafeAreaInsets();
-  const bottomContentPadding = useBottomOverlayPadding(28);
+  const bottomContentPadding = useBottomOverlayPadding(132);
   const navigation =
     useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
   const { user } = useUser();
   const { showError } = useAlert();
+  const ctaFloat = useRef(new Animated.Value(0)).current;
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
     useState(false);
@@ -64,6 +67,28 @@ const WalletScreen = () => {
   } = useLiquidBalance();
   const displayBalance = liquidBalance;
   const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
+  const walletReady = !isBalanceLoading;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ctaFloat, {
+          toValue: 1,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaFloat, {
+          toValue: 0,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [ctaFloat]);
 
   const mapWithdrawRecordToTransaction = (
     item: WithdrawRecord,
@@ -83,8 +108,20 @@ const WalletScreen = () => {
     dailyRewards: item.dailyRewards ?? 0,
   });
 
-  const pendingWithdrawItems = pendingRecords.map(mapWithdrawRecordToTransaction);
+  const pendingWithdrawItems = pendingRecords.map(
+    mapWithdrawRecordToTransaction,
+  );
   const paidWithdrawItems = paidRecords.map(mapWithdrawRecordToTransaction);
+  const balancePulseStyle = {
+    transform: [
+      {
+        translateY: ctaFloat.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -4],
+        }),
+      },
+    ],
+  };
 
   const handleWithdrawPress = async () => {
     if (isWithdrawDisabled) {
@@ -167,66 +204,164 @@ const WalletScreen = () => {
             />
           </View>
 
-          <View style={styles.totalSection}>
-            <View style={styles.totalLabelRow}>
-              <Ionicons
-                name="wallet-outline"
-                size={16}
-                color={THEME.textMuted}
-                style={styles.totalLabelIcon}
-              />
-              <Text style={styles.totalLabel}>Total Balance</Text>
+          <LinearGradient
+            colors={['rgba(20, 28, 16, 0.96)', 'rgba(8, 17, 11, 0.92)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            <View style={styles.heroGlowPrimary} />
+            <View style={styles.heroGlowSecondary} />
+
+            <View style={styles.heroTopRow}>
+              <View style={styles.totalLabelRow}>
+                <View style={styles.totalLabelBadge}>
+                  <Ionicons
+                    name="wallet-outline"
+                    size={16}
+                    color={THEME.neonGreen}
+                    style={styles.totalLabelIcon}
+                  />
+                  <Text style={styles.totalLabel}>Liquid Wallet</Text>
+                </View>
+              </View>
+
+              <View style={styles.heroMetaPill}>
+                <Ionicons
+                  name="sparkles-outline"
+                  size={14}
+                  color={THEME.neonGreen}
+                />
+                <Text style={styles.heroMetaText}>Premium Yield</Text>
+              </View>
             </View>
 
-            {isBalanceLoading ? (
-              <ActivityIndicator
-                size="large"
-                color={THEME.neonGreen}
-                style={styles.loadingIndicator}
-              />
-            ) : (
-              <Text style={styles.totalAmount}>
-                {formatAmount(displayBalance)}
-                <Text style={styles.apcLabel}> APE</Text>
-              </Text>
-            )}
-          </View>
+            <View style={styles.totalSection}>
+              {walletReady ? (
+                <>
+                  <Text style={styles.totalAmount}>
+                    {formatAmount(displayBalance)}
+                    <Text style={styles.apcLabel}> APE</Text>
+                  </Text>
+                  <Text style={styles.heroCaption}>
+                    Withdrawable balance available now
+                  </Text>
+                </>
+              ) : (
+                <View style={styles.balanceSkeletonWrap}>
+                  <View style={styles.balanceSkeletonBadge} />
+                  <View style={styles.balanceSkeletonAmount} />
+                  <View style={styles.balanceSkeletonCaption} />
+                </View>
+              )}
+            </View>
 
+            <View style={styles.heroInsightsRow}>
+              <View style={[styles.insightCard, styles.insightCardSpacing]}>
+                <Text style={styles.insightLabel}>Mining</Text>
+                {isBalanceLoading ? (
+                  <View style={styles.insightSkeletonLine} />
+                ) : (
+                  <Text style={styles.insightValue}>
+                    {formatAmount(miningTotal)}{' '}
+                    <Text style={styles.insightUnit}>APE</Text>
+                  </Text>
+                )}
+              </View>
+
+              <View style={[styles.insightCard, styles.insightCardSpacing]}>
+                <Text style={styles.insightLabel}>Rewards</Text>
+                {isBalanceLoading ? (
+                  <View style={styles.insightSkeletonLine} />
+                ) : (
+                  <Text style={styles.insightValue}>
+                    {formatAmount(totalCollected)}{' '}
+                    <Text style={styles.insightUnit}>APE</Text>
+                  </Text>
+                )}
+              </View>
+
+              <View style={styles.insightCard}>
+                <Text style={styles.insightLabel}>Referrals</Text>
+                {isBalanceLoading ? (
+                  <View style={styles.insightSkeletonLine} />
+                ) : (
+                  <Text style={styles.insightValue}>
+                    {formatAmount(referralEarnings)}{' '}
+                    <Text style={styles.insightUnit}>APE</Text>
+                  </Text>
+                )}
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* <View style={styles.sectionBlock}>
+            <RevenueChart
+              weekData={weekData}
+              totalCollected={totalCollected}
+              miningHistory={miningHistory}
+              miningTotal={miningTotal}
+              referralWeekData={referralWeekData}
+              referralEarnings={referralEarnings}
+              loading={isBalanceLoading}
+              miningLoading={isBalanceLoading}
+              referralLoading={isBalanceLoading}
+            />
+          </View> */}
+
+          <View style={styles.sectionBlock}>
+            <PendingPaidTabs
+              pendingItems={pendingWithdrawItems}
+              paidItems={paidWithdrawItems}
+              loading={withdrawDataLoading}
+              error={withdrawDataError}
+              onRecordPress={setSelectedWithdrawRecord}
+            />
+          </View>
+        </ScrollView>
+
+        <Animated.View
+          style={[
+            styles.stickyCtaWrap,
+            balancePulseStyle,
+            { bottom: Math.max(bottomContentPadding - 92, insets.bottom + 24) },
+          ]}
+        >
           <Pressable
-            style={[
+            style={({ pressed }) => [
               styles.withdrawButton,
+              pressed && styles.withdrawButtonPressed,
               isWithdrawDisabled && styles.withdrawButtonDisabled,
             ]}
             onPress={handleWithdrawPress}
             disabled={isWithdrawDisabled}
           >
-            {withdrawLoading ? (
-              <ActivityIndicator size="small" color={THEME.bg} />
-            ) : (
-              <Text style={styles.withdrawButtonText}>Withdraw</Text>
-            )}
+            <LinearGradient
+              colors={['#EBFF9A', THEME.neonGreen, '#8FD312']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.withdrawButtonGradient}
+            >
+              {withdrawLoading ? (
+                <ActivityIndicator size="small" color={THEME.bg} />
+              ) : (
+                <>
+                  <View>
+                    <Text style={styles.withdrawButtonEyebrow}>
+                      Ready to move funds?
+                    </Text>
+                    <Text style={styles.withdrawButtonText}>
+                      Withdraw to your account
+                    </Text>
+                  </View>
+                  <View style={styles.withdrawButtonIconWrap}>
+                    <Ionicons name="arrow-forward" size={18} color={THEME.bg} />
+                  </View>
+                </>
+              )}
+            </LinearGradient>
           </Pressable>
-
-          <RevenueChart
-            weekData={weekData}
-            totalCollected={totalCollected}
-            miningHistory={miningHistory}
-            miningTotal={miningTotal}
-            referralWeekData={referralWeekData}
-            referralEarnings={referralEarnings}
-            loading={isBalanceLoading}
-            miningLoading={isBalanceLoading}
-            referralLoading={isBalanceLoading}
-          />
-
-          <PendingPaidTabs
-            pendingItems={pendingWithdrawItems}
-            paidItems={paidWithdrawItems}
-            loading={withdrawDataLoading}
-            error={withdrawDataError}
-            onRecordPress={setSelectedWithdrawRecord}
-          />
-        </ScrollView>
+        </Animated.View>
       </View>
 
       <WithdrawSuccessModal
@@ -283,124 +418,249 @@ const styles = StyleSheet.create({
   },
   walletTitle: {
     color: THEME.white,
-    fontSize: 28,
+    fontSize: 30,
     fontFamily: FONTS.black,
     fontWeight: '800',
+    letterSpacing: 0.4,
   },
   bellButton: {
     width: 48,
     height: 48,
-    borderRadius: 12,
-    backgroundColor: '#2a2a2a',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: '#3a3a3a',
+    borderColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: THEME.neonGreen,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  heroCard: {
+    marginTop: 10,
+    marginHorizontal: 18,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(198, 255, 117, 0.18)',
+    overflow: 'hidden',
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(17, 23, 16, 0.9)',
+    shadowColor: THEME.neonGreen,
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 16,
+  },
+  heroGlowPrimary: {
+    position: 'absolute',
+    top: -40,
+    right: -10,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(170, 255, 0, 0.14)',
+  },
+  heroGlowSecondary: {
+    position: 'absolute',
+    bottom: -32,
+    left: -24,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(4, 92, 77, 0.08)',
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   totalSection: {
-    alignItems: 'center',
-    marginTop: 24,
-    paddingHorizontal: 20,
-    minHeight: 80,
+    marginTop: 18,
+    minHeight: 104,
     justifyContent: 'center',
   },
   totalLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  totalLabelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
   totalLabelIcon: {
     marginRight: 6,
   },
   totalLabel: {
-    color: THEME.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
+    color: THEME.white,
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    letterSpacing: 0.3,
+  },
+  heroMetaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(170, 255, 0, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(170, 255, 0, 0.18)',
+  },
+  heroMetaText: {
+    color: THEME.neonGreen,
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+    fontWeight: '600',
   },
   totalAmount: {
     color: THEME.white,
-    fontSize: 44,
+    fontSize: 46,
     fontFamily: FONTS.black,
     fontWeight: '900',
-    textAlign: 'center',
-    marginTop: 4,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   apcLabel: {
     color: THEME.neonGreen,
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: FONTS.regular,
     fontWeight: '400',
+  },
+  heroCaption: {
+    marginTop: 10,
+    color: THEME.textMuted,
+    fontSize: 14,
+    fontFamily: FONTS.medium,
   },
   loadingIndicator: {
     marginTop: 8,
   },
-  breakdownRow: {
+  balanceSkeletonWrap: {
+    gap: 12,
+  },
+  balanceSkeletonBadge: {
+    width: 116,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  balanceSkeletonAmount: {
+    width: '82%',
+    height: 48,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  balanceSkeletonCaption: {
+    width: '58%',
+    height: 14,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroInsightsRow: {
     flexDirection: 'row',
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  breakdownCard: {
-    flex: 1,
-    minHeight: 120,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: THEME.borderMuted,
-    backgroundColor: 'rgba(28, 32, 24, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    justifyContent: 'center',
-  },
-  breakdownCardSpacing: {
-    marginRight: 12,
-  },
-  breakdownHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  breakdownLabel: {
-    marginLeft: 8,
-    color: THEME.textMuted,
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  breakdownValue: {
-    marginTop: 10,
-    color: THEME.white,
-    fontSize: 28,
-    fontFamily: FONTS.black,
-    fontWeight: '800',
-  },
-  breakdownUnit: {
-    color: THEME.neonGreen,
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    fontWeight: '600',
-  },
-  breakdownLoader: {
     marginTop: 18,
+  },
+  insightCard: {
+    flex: 1,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  insightCardSpacing: {
+    marginRight: 10,
+  },
+  insightLabel: {
+    color: THEME.textMuted,
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+    marginBottom: 8,
+  },
+  insightValue: {
+    color: THEME.white,
+    fontSize: 16,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  insightUnit: {
+    color: THEME.neonGreen,
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+  },
+  insightSkeletonLine: {
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginTop: 4,
+  },
+  sectionBlock: {
+    marginTop: 2,
   },
   adContainer: {
     alignItems: 'center',
     marginVertical: 16,
     width: '100%',
   },
+  stickyCtaWrap: {
+    position: 'absolute',
+    left: 18,
+    right: 18,
+  },
   withdrawButton: {
-    marginTop: 12,
-    marginHorizontal: 20,
-    minHeight: 52,
-    borderRadius: 14,
-    backgroundColor: THEME.neonGreen,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: THEME.neonGreen,
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 18,
+  },
+  withdrawButtonGradient: {
+    minHeight: 72,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
   },
   withdrawButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.55,
+  },
+  withdrawButtonPressed: {
+    opacity: 0.92,
+  },
+  withdrawButtonEyebrow: {
+    color: 'rgba(7, 12, 6, 0.72)',
+    fontSize: 11,
+    fontFamily: FONTS.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.7,
   },
   withdrawButtonText: {
     color: THEME.bg,
     fontSize: 16,
     fontFamily: FONTS.bold,
     fontWeight: '700',
+  },
+  withdrawButtonIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
