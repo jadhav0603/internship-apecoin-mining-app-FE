@@ -31,6 +31,5 @@ export type RootStackParamList = {
   } | undefined;
   MyProgress: undefined;
   ProfileDetails: undefined;
-  ReportIssue: undefined;
   AboutUs: undefined;
 };
