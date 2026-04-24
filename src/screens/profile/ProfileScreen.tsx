@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { COLORS } from '../../constants/COLORS';
+import { FONTS } from '../../constants/FONTS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { authService } from '../../services/authService';
 import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
@@ -57,65 +59,6 @@ const ProfileScreen = () => {
       console.error('Logout failed', err);
     }
   };
-
-  const confirmLogout = () => {
-    if (isLoggingOut) return;
-    setIsLogoutModalVisible(true);
-  };
-
-  const menuItems = useMemo(
-    () => [
-      { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
-      { id: 'report_issue', label: 'Report & Issues', icon: 'alert-circle-outline' as const, iconBg: '#2a3517', active: false },
-      { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
-      { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
-      { id: 'logout', label: 'Log Out', icon: 'log-out-outline' as const, iconBg: PROFILE_THEME.dangerBg, active: false, tone: 'danger' as const },
-    ],
-    []
-  );
-
-  const menuAnimations = useRef(menuItems.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchProfile = async () => {
-      try {
-        const profile = await userService.getProfileIdentity();
-        if (!isMounted) return;
-        const resolvedName = resolveProfileName(profile.username, profile.email);
-        setUsername(resolvedName);
-        setEmail(profile.email);
-        setAvatarUri(profile.photoURL ?? '');
-      } catch {
-        if (isMounted) {
-          setUsername(getUserDisplayName(user));
-          setEmail(user?.email ?? '');
-          setAvatarUri(user?.photoURL ?? '');
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    fetchProfile();
-    return () => { isMounted = false; };
-  }, [user]);
-
-  useEffect(() => {
-    const animation = Animated.stagger(
-      80,
-      menuAnimations.map(anim =>
-        Animated.timing(anim, { toValue: 1, duration: 350, useNativeDriver: true })
-      )
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [menuAnimations]);
-
-  const userHandle = useMemo(() => buildHandle(username), [username]);
-  const avatarSource = useMemo<ImageSourcePropType | undefined>(
-    () => (avatarUri ? { uri: avatarUri } : undefined),
-    [avatarUri]
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -162,7 +105,7 @@ const ProfileScreen = () => {
           
           <TouchableOpacity 
             style={styles.editButton}
-            onPress={() => navigation.navigate('ProfileDetails')}
+            onPress={() => setMyProfileVisible(true)}
           >
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
@@ -222,46 +165,6 @@ const ProfileScreen = () => {
               onPress={() => setLogoutVisible(true)}
             />
           </View>
-z          {menuItems.map((item, index) => (
-            <Animated.View
-              key={item.id}
-              style={{
-                opacity: menuAnimations[index],
-                transform: [{
-                  translateY: menuAnimations[index].interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [18, 0],
-                  }),
-                }],
-              }}
-            >
-              <ProfileMenuItem
-                label={item.label}
-                icon={item.icon}
-                iconBg={item.iconBg}
-                active={item.active}
-                tone={item.tone}
-                disabled={item.id === 'logout' && isLoggingOut}
-                onPress={() => {
-                  if (item.id === 'account') { openAccountModal(); return; }
-                  if (item.id === 'logout') { confirmLogout(); return; }
-                  if (item.id === 'referral') {
-                    navigation.navigate('ReferAndEarn', { email, username });
-                    return;
-                  }
-                  if (item.id === 'report_issue') {
-                    navigation.navigate('ReportIssue');
-                    return;
-                  }
-                  if (item.id === 'leaderboard') {
-                    navigation.navigate('Leaderboard', { email, username, avatarUri });
-                    return;
-                  }
-                  handleComingSoon(item.label);
-                }}
-              />
-            </Animated.View>
-          ))}
         </View>
 
         <View style={{ height: 100 }} />

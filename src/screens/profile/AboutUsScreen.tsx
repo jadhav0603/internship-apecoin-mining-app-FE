@@ -8,13 +8,15 @@ import {
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';
 
 const AboutUsScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,7 +27,7 @@ const AboutUsScreen = () => {
 
       <View style={styles.header}>
         <TouchableOpacity 
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} 
+          onPress={() => navigation.goBack()} 
           style={styles.backButton}
         >
           <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />

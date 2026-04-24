@@ -19,7 +19,6 @@ import MyProgressScreen from '../screens/profile/MyProgressScreen';
 import ProfileDetailsScreen from '../screens/profile/ProfileDetailsScreen';
 import ReportIssueScreen from '../screens/profile/ReportIssueScreen';
 import AboutUsScreen from '../screens/profile/AboutUsScreen';
-import ReportIssueScreen from '../screens/profile/ReportIssueScreen';
 import TicketListScreen from '../screens/profile/TicketListScreen';
 import TicketDetailScreen from '../screens/profile/TicketDetailScreen';
 import TransactionHistoryScreen from '../screens/home/TransactionHistoryScreen';
@@ -150,7 +149,6 @@ const AppNavigator = () => {
             <Stack.Screen name="ReferAndEarn" component={ReferAndEarnScreen} />
             <Stack.Screen name="MyProgress" component={MyProgressScreen} />
             <Stack.Screen name="ProfileDetails" component={ProfileDetailsScreen} />
-            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
             <Stack.Screen name="AboutUs" component={AboutUsScreen} />
           </>
         ) : (
