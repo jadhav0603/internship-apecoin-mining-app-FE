@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  LayoutChangeEvent,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { FONTS } from '../../constants/FONTS';
 import TransactionItem, { WalletTransaction } from './TransactionItem';
 import { THEME } from './theme';
@@ -30,19 +31,47 @@ const PendingPaidTabs = ({
   onRecordPress,
 }: PendingPaidTabsProps) => {
   const [activeTab, setActiveTab] = useState<WalletTab>('pending');
+  const [tabWidth, setTabWidth] = useState(0);
+  const indicatorX = useRef(new Animated.Value(0)).current;
 
   const activeItems = useMemo(
     () => (activeTab === 'pending' ? pendingItems : paidItems),
     [activeTab, paidItems, pendingItems],
   );
 
-  const handleTabPress = (nextTab: WalletTab) => {
-    if (nextTab === activeTab) {
+  useEffect(() => {
+    if (!tabWidth) {
       return;
     }
 
-    setActiveTab(nextTab);
+    Animated.spring(indicatorX, {
+      toValue: activeTab === 'pending' ? 0 : tabWidth,
+      useNativeDriver: true,
+      damping: 18,
+      stiffness: 220,
+      mass: 0.9,
+    }).start();
+  }, [activeTab, indicatorX, tabWidth]);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setTabWidth(event.nativeEvent.layout.width / 2);
   };
+
+  const renderLoadingState = () => (
+    <View style={styles.stateContainer}>
+      <ActivityIndicator size="small" color={THEME.neonGreen} />
+      <Text style={styles.stateText}>Loading recent withdrawals...</Text>
+      {[0, 1].map(index => (
+        <View key={index} style={styles.skeletonRow}>
+          <View style={styles.skeletonRail} />
+          <View style={styles.skeletonCard}>
+            <View style={styles.skeletonLineWide} />
+            <View style={styles.skeletonLineShort} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.wrapper}>
@@ -56,7 +85,20 @@ const PendingPaidTabs = ({
         </View>
       </View>
 
-      <View style={styles.tabContainer}>
+      <View style={styles.toggleShell} onLayout={handleLayout}>
+        {tabWidth ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.toggleIndicator,
+              {
+                width: tabWidth,
+                transform: [{ translateX: indicatorX }],
+              },
+            ]}
+          />
+        ) : null}
+
         {(['pending', 'paid'] as const).map(tab => {
           const isActive = activeTab === tab;
           const count = tab === 'pending' ? pendingItems.length : paidItems.length;
@@ -64,34 +106,21 @@ const PendingPaidTabs = ({
           return (
             <Pressable
               key={tab}
-              onPress={() => handleTabPress(tab)}
-              style={[
-                styles.tabButton,
-                isActive ? styles.tabButtonActive : styles.tabButtonInactive,
-              ]}
+              style={styles.toggleButton}
+              onPress={() => setActiveTab(tab)}
             >
-              {isActive ? (
-                <LinearGradient
-                  colors={['#7DA91C', '#6F9818', '#5A7D10']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.activePill}
+              <View style={styles.toggleContent}>
+                <Text style={isActive ? styles.toggleTextActive : styles.toggleTextInactive}>
+                  {tab === 'pending' ? 'Pending' : 'Paid'}
+                </Text>
+                <View
+                  style={isActive ? styles.countBadgeActive : styles.countBadgeInactive}
                 >
-                  <Text style={styles.tabTextActive}>
-                    {tab === 'pending' ? 'Pending' : 'Paid'}
+                  <Text style={isActive ? styles.countTextActive : styles.countTextInactive}>
+                    {count}
                   </Text>
-                  <View style={styles.activeCountBadge}>
-                    <Text style={styles.activeCountText}>{count}</Text>
-                  </View>
-                </LinearGradient>
-              ) : (
-                <View style={styles.inactivePill}>
-                  <Text style={styles.tabTextInactive}>
-                    {tab === 'pending' ? 'Pending' : 'Paid'}
-                  </Text>
-                  <Text style={styles.inactiveCountText}>{count}</Text>
                 </View>
-              )}
+              </View>
             </Pressable>
           );
         })}
@@ -99,38 +128,29 @@ const PendingPaidTabs = ({
 
       <View style={styles.listContainer}>
         {loading ? (
-          <View style={styles.stateContainer}>
-            <ActivityIndicator size="small" color={THEME.neonGreen} />
-            <Text style={styles.stateText}>Loading transaction activity...</Text>
-            {[0, 1, 2].map(index => (
-              <View key={index} style={styles.skeletonCard}>
-                <View style={styles.skeletonIcon} />
-                <View style={styles.skeletonContent}>
-                  <View style={styles.skeletonLineWide} />
-                  <View style={styles.skeletonLineShort} />
-                </View>
-                <View style={styles.skeletonMeta}>
-                  <View style={styles.skeletonAmount} />
-                  <View style={styles.skeletonStatus} />
-                </View>
-              </View>
-            ))}
-          </View>
+          renderLoadingState()
         ) : error ? (
           <View style={styles.stateContainer}>
-            <Ionicons name="alert-circle-outline" size={32} color={THEME.gold} />
+            <Ionicons name="alert-circle-outline" size={30} color={THEME.gold} />
             <Text style={styles.stateText}>{error}</Text>
           </View>
         ) : activeItems.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={48} color={THEME.borderMuted} />
-            <Text style={styles.emptyText}>No {activeTab} transactions found.</Text>
+            <Ionicons
+              name="document-text-outline"
+              size={44}
+              color="rgba(255,255,255,0.22)"
+            />
+            <Text style={styles.emptyText}>No {activeTab} withdrawals found.</Text>
           </View>
         ) : (
-          activeItems.map(item => (
-            <View key={`${activeTab}-${item.id}`}>
-              <TransactionItem item={item} onPress={onRecordPress} />
-            </View>
+          activeItems.map((item, index) => (
+            <TransactionItem
+              key={`${activeTab}-${item.id}`}
+              item={item}
+              onPress={onRecordPress}
+              showConnector={index < activeItems.length - 1}
+            />
           ))
         )}
       </View>
@@ -140,190 +160,165 @@ const PendingPaidTabs = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: 24,
     marginHorizontal: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
     marginBottom: 14,
   },
   sectionEyebrow: {
-    color: THEME.textMuted,
+    color: 'rgba(255,255,255,0.5)',
     fontSize: 11,
     fontFamily: FONTS.medium,
     textTransform: 'uppercase',
-    letterSpacing: 0.9,
+    letterSpacing: 1,
   },
   sectionTitle: {
-    marginTop: 4,
+    marginTop: 6,
     color: THEME.white,
     fontSize: 20,
-    fontFamily: FONTS.bold,
+    fontFamily: FONTS.black,
     fontWeight: '800',
   },
   sectionBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
   },
   sectionBadgeText: {
-    color: THEME.textMuted,
+    color: 'rgba(255,255,255,0.72)',
     fontSize: 12,
     fontFamily: FONTS.medium,
   },
-  tabContainer: {
+  toggleShell: {
+    position: 'relative',
     flexDirection: 'row',
     borderRadius: 22,
-    backgroundColor: 'rgba(8, 12, 8, 0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(198,255,117,0.12)',
     padding: 6,
+    backgroundColor: 'rgba(7, 12, 8, 0.84)',
+    borderWidth: 1,
+    borderColor: 'rgba(157, 231, 95, 0.16)',
     overflow: 'hidden',
   },
-  tabButton: {
-    flex: 1,
+  toggleIndicator: {
+    position: 'absolute',
+    top: 6,
+    bottom: 6,
+    left: 6,
     borderRadius: 16,
-  },
-  tabButtonActive: {
-    shadowColor: THEME.neonGreen,
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  tabButtonInactive: {
-    backgroundColor: 'transparent',
-  },
-  activePill: {
-    minHeight: 54,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#6E9918',
     borderWidth: 1,
-    borderColor: 'rgba(214,255,120,0.42)',
-    backgroundColor: '#6D9717',
-    shadowColor: 'rgba(170,255,0,0.65)',
-    shadowOpacity: 0.28,
+    borderColor: 'rgba(214,255,120,0.4)',
+    shadowColor: 'rgba(170,255,0,0.55)',
+    shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
-  inactivePill: {
+  toggleButton: {
+    flex: 1,
+    zIndex: 1,
+    // marginHorizontal: 12,
+  },
+  toggleContent: {
     minHeight: 54,
-    borderRadius: 16,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    
   },
-  activeCountBadge: {
+  toggleTextActive: {
+    color: THEME.white,
+    fontSize: 15,
+    fontFamily: FONTS.bold,
+    fontWeight: '800',
+    
+  },
+  toggleTextInactive: {
+    color: 'rgba(255,255,255,0.48)',
+    fontSize: 15,
+    fontFamily: FONTS.medium,
+  },
+  countBadgeActive: {
     minWidth: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(14, 22, 8, 0.88)',
-    borderWidth: 1,
-    borderColor: 'rgba(214,255,120,0.2)',
+    backgroundColor: 'rgba(8, 13, 7, 0.74)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeCountText: {
+  countBadgeInactive: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countTextActive: {
     color: THEME.white,
     fontSize: 12,
     fontFamily: FONTS.bold,
     fontWeight: '700',
   },
-  tabTextActive: {
-    color: THEME.white,
-    fontSize: 15,
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-  },
-  tabTextInactive: {
-    color: '#8B9383',
-    fontSize: 15,
-    fontFamily: FONTS.medium,
-    fontWeight: '500',
-  },
-  inactiveCountText: {
-    color: THEME.textMuted,
+  countTextInactive: {
+    color: 'rgba(255,255,255,0.54)',
     fontSize: 12,
     fontFamily: FONTS.medium,
   },
   listContainer: {
-    marginTop: 12,
+    marginTop: 16,
   },
   stateContainer: {
-    paddingVertical: 28,
+    paddingVertical: 26,
     alignItems: 'center',
   },
   stateText: {
     marginTop: 12,
     color: THEME.textMuted,
     fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
     fontFamily: FONTS.medium,
+    textAlign: 'center',
+  },
+  skeletonRow: {
+    width: '100%',
+    flexDirection: 'row',
+    marginTop: 18,
+  },
+  skeletonRail: {
+    width: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   skeletonCard: {
-    width: '100%',
-    marginTop: 14,
+    flex: 1,
     borderRadius: 22,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 18,
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  skeletonIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  skeletonContent: {
-    flex: 1,
-    marginLeft: 12,
-    gap: 8,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   skeletonLineWide: {
-    height: 14,
-    width: '68%',
+    width: '56%',
+    height: 16,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
   skeletonLineShort: {
-    height: 12,
-    width: '42%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  skeletonMeta: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  skeletonAmount: {
-    width: 74,
+    width: '34%',
     height: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  skeletonStatus: {
-    width: 56,
-    height: 22,
-    borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.06)',
+    marginTop: 12,
   },
   emptyContainer: {
-    paddingVertical: 40,
+    paddingVertical: 34,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 24,
@@ -332,10 +327,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
   },
   emptyText: {
+    marginTop: 12,
     color: THEME.textMuted,
     fontSize: 15,
     fontFamily: FONTS.medium,
-    marginTop: 12,
   },
 });
 
