@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   ImageBackground,
@@ -18,6 +17,7 @@ import { authService } from '../../services/authService';
 import ClaimPopupModal from '../../components/ClaimPopupModal';
 import SuccessOverlay from '../../components/SuccessOverlay';
 import RewardsGridSection from '../../components/RewardsGridSection';
+import { useAlert } from '../../context/AlertContext';
 // import { useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 // import { AD_UNITS } from '../../constants/AD_UNITS';
 
@@ -74,6 +74,7 @@ const formatTime = (seconds: number) => {
 };
 
 const DailyRewardsScreen = () => {
+  const { showError } = useAlert();
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -142,7 +143,7 @@ const DailyRewardsScreen = () => {
           baseURL: axios.isAxiosError(error) ? error.config?.baseURL || apiClient.defaults.baseURL : undefined,
         });
       }
-      Alert.alert('Rewards unavailable', message);
+      showError(message, 'Rewards unavailable');
     } finally {
       setLoading(false);
     }
@@ -203,7 +204,7 @@ const DailyRewardsScreen = () => {
         });
       }
 
-      Alert.alert('Claim Failed', msg);
+      showError(msg, 'Claim Failed');
     } finally {
       setClaiming(false);
     }

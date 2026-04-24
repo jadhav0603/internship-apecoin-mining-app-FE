@@ -15,7 +15,7 @@ import { COLORS } from '../../constants/COLORS';
 import styles from './mining.styles';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppBackButton from '../../components/navigation/AppBackButton';
 
 const MiningScreen = () => {
   const { earned, secondsLeft, multiplier, multipliers, setMultiplier } = useMining();
@@ -46,15 +46,7 @@ const MiningScreen = () => {
 
         <View style={styles.topBar}>
           <View style={styles.profileChip}>
-            <Pressable
-              onPress={() => {
-                if (navigation.canGoBack()) {
-                  navigation.goBack();
-                }
-              }}
-            >
-              <Ionicons name="arrow-back" size={22} color="#f6f2f2" />
-            </Pressable>
+            <AppBackButton onPress={() => navigation.goBack()} />
           </View>
 
           <View style={styles.topActions}>

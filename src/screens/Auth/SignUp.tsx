@@ -1,6 +1,5 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   StyleSheet,
@@ -13,15 +12,19 @@ import {
   Dimensions,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {authService} from '../../services/authService';
-import {referralService} from '../../services/referralService';
-import {Colors} from '../../theme/colors';
-import {RootStackParamList} from '../../navigation/types';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { authService } from '../../services/authService';
+import { referralService } from '../../services/referralService';
+import { Colors } from '../../theme/colors';
+import { RootStackParamList } from '../../navigation/types';
+import { useAlert } from '../../context/AlertContext';
 
 const MONKEY_IMG = require('../../assets/images/auth_bg.webp');
-const {height: SCREEN_HEIGHT} = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
@@ -31,8 +34,9 @@ const getReadableErrorMessage = (error: any, fallback: string) => {
   return error?.response?.data?.message || error?.message || fallback;
 };
 
-const SignUp: React.FC<Props> = ({navigation}) => {
+const SignUp: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { showWarning } = useAlert();
 
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
@@ -48,7 +52,8 @@ const SignUp: React.FC<Props> = ({navigation}) => {
 
   const validate = () => {
     let valid = true;
-    let newErrors: {firstName?: string; email?: string; password?: string} = {};
+    let newErrors: { firstName?: string; email?: string; password?: string } =
+      {};
 
     if (!firstName.trim()) {
       newErrors.firstName = 'First name is required';
@@ -87,19 +92,22 @@ const SignUp: React.FC<Props> = ({navigation}) => {
             source: 'signup',
           });
         } catch (referralError: any) {
-          Alert.alert(
-            'Referral',
+          showWarning(
             referralError?.response?.data?.message ||
-              'Account created, but the referral email could not be applied.'
+              'Account created, but the referral email could not be applied.',
+            'Referral',
           );
         }
       }
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        setErrors({email: 'That email address is already in use!'});
+        setErrors({ email: 'That email address is already in use!' });
       } else {
         setErrors({
-          email: getReadableErrorMessage(error, 'Registration failed. Please try again.'),
+          email: getReadableErrorMessage(
+            error,
+            'Registration failed. Please try again.',
+          ),
         });
       }
     } finally {
@@ -113,7 +121,10 @@ const SignUp: React.FC<Props> = ({navigation}) => {
       await authService.googleSignIn();
     } catch (error: any) {
       setErrors({
-        email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),
+        email: getReadableErrorMessage(
+          error,
+          'Google sign-in failed. Please try again.',
+        ),
       });
     } finally {
       setLoading(false);
@@ -122,21 +133,22 @@ const SignUp: React.FC<Props> = ({navigation}) => {
 
   return (
     <SafeAreaView
-      style={[
-        styles.container,
-        {paddingBottom: Math.max(insets.bottom, 12)},
-      ]}>
+      style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}
+    >
       <StatusBar barStyle="light-content" backgroundColor="#1A2B1A" />
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <View style={styles.inner}>
-
           {/* ── Monkey Avatar ── */}
           <View style={styles.avatarWrapper}>
-            <Image source={MONKEY_IMG} style={styles.avatar} resizeMode="cover" />
+            <Image
+              source={MONKEY_IMG}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
             {/* Fade bottom edge to match background */}
             <LinearGradient
               colors={['transparent', '#1A2B1A']}
@@ -152,7 +164,12 @@ const SignUp: React.FC<Props> = ({navigation}) => {
 
           {/* ── First Name ── */}
           <Text style={styles.label}>First name*</Text>
-          <View style={[styles.inputContainer, errors.firstName ? styles.inputError : null]}>
+          <View
+            style={[
+              styles.inputContainer,
+              errors.firstName ? styles.inputError : null,
+            ]}
+          >
             <TextInput
               style={styles.input}
               placeholder="John"
@@ -160,7 +177,8 @@ const SignUp: React.FC<Props> = ({navigation}) => {
               value={firstName}
               onChangeText={t => {
                 setFirstName(t);
-                if (errors.firstName) setErrors(e => ({...e, firstName: undefined}));
+                if (errors.firstName)
+                  setErrors(e => ({ ...e, firstName: undefined }));
               }}
               autoCapitalize="words"
               autoCorrect={false}
@@ -171,8 +189,15 @@ const SignUp: React.FC<Props> = ({navigation}) => {
           )}
 
           {/* ── Email ── */}
-          <Text style={[styles.label, styles.labelSpacing]}>Email address*</Text>
-          <View style={[styles.inputContainer, errors.email ? styles.inputError : null]}>
+          <Text style={[styles.label, styles.labelSpacing]}>
+            Email address*
+          </Text>
+          <View
+            style={[
+              styles.inputContainer,
+              errors.email ? styles.inputError : null,
+            ]}
+          >
             <TextInput
               style={styles.input}
               placeholder="example@gmail.com"
@@ -180,7 +205,7 @@ const SignUp: React.FC<Props> = ({navigation}) => {
               value={email}
               onChangeText={t => {
                 setEmail(t);
-                if (errors.email) setErrors(e => ({...e, email: undefined}));
+                if (errors.email) setErrors(e => ({ ...e, email: undefined }));
               }}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -193,7 +218,12 @@ const SignUp: React.FC<Props> = ({navigation}) => {
 
           {/* ── Password ── */}
           <Text style={[styles.label, styles.labelSpacing]}>Password*</Text>
-          <View style={[styles.inputContainer, errors.password ? styles.inputError : null]}>
+          <View
+            style={[
+              styles.inputContainer,
+              errors.password ? styles.inputError : null,
+            ]}
+          >
             <TextInput
               style={styles.input}
               placeholder="Min. 6 characters"
@@ -201,7 +231,8 @@ const SignUp: React.FC<Props> = ({navigation}) => {
               value={password}
               onChangeText={t => {
                 setPassword(t);
-                if (errors.password) setErrors(e => ({...e, password: undefined}));
+                if (errors.password)
+                  setErrors(e => ({ ...e, password: undefined }));
               }}
               secureTextEntry={securePassword}
               autoCapitalize="none"
@@ -209,7 +240,8 @@ const SignUp: React.FC<Props> = ({navigation}) => {
             />
             <TouchableOpacity
               onPress={() => setSecurePassword(prev => !prev)}
-              hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Text style={styles.eyeIcon}>{securePassword ? '🙈' : '🙉'}</Text>
             </TouchableOpacity>
           </View>
@@ -219,8 +251,7 @@ const SignUp: React.FC<Props> = ({navigation}) => {
 
           {/* ── Referral Code (optional) ── */}
           <Text style={[styles.label, styles.labelSpacing]}>
-            Referral email{' '}
-            <Text style={styles.optionalTag}>(optional)</Text>
+            Referral email <Text style={styles.optionalTag}>(optional)</Text>
           </Text>
           <View style={styles.inputContainer}>
             <TextInput
@@ -239,7 +270,8 @@ const SignUp: React.FC<Props> = ({navigation}) => {
             style={styles.signUpBtn}
             onPress={handleContinue}
             activeOpacity={0.85}
-            disabled={loading}>
+            disabled={loading}
+          >
             {/* <Text style={styles.signUpIcon}>✦</Text> */}
             <Text style={styles.signUpLabel}>
               {loading ? 'Creating account…' : 'Sign up'}
@@ -258,7 +290,8 @@ const SignUp: React.FC<Props> = ({navigation}) => {
             style={styles.googleBtn}
             onPress={handleGoogle}
             activeOpacity={0.8}
-            disabled={loading}>
+            disabled={loading}
+          >
             <View style={styles.gLetterRow}>
               <Text style={[styles.gLetter, styles.gBlue]}>G</Text>
               <Text style={[styles.gLetter, styles.gRed]}>o</Text>
@@ -276,7 +309,6 @@ const SignUp: React.FC<Props> = ({navigation}) => {
               <Text style={styles.bottomLink}>Login</Text>
             </TouchableOpacity>
           </View>
-
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -289,7 +321,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1A2B1A',
   },
-  flex: {flex: 1},
+  flex: { flex: 1 },
 
   inner: {
     flex: 1,
@@ -393,7 +425,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     marginBottom: 16,
     shadowColor: Colors.neonGreen,
-    shadowOffset: {width: 0, height: 6},
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.45,
     shadowRadius: 16,
     elevation: 10,

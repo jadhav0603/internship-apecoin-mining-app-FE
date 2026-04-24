@@ -8,7 +8,6 @@ import {
   Image,
   StatusBar,
   Animated,
-  ImageSourcePropType,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +23,8 @@ import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal'
 import MyProfileModal from '../../components/profile/MyProfileModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
-import { PROFILE_THEME, resolveProfileName, buildHandle } from '../../components/profile/profileTheme';
+import { PROFILE_THEME, resolveProfileName } from '../../components/profile/profileTheme';
+import AppBackButton from '../../components/navigation/AppBackButton';
 
 
 const ProfileScreen = () => {
@@ -33,8 +33,8 @@ const ProfileScreen = () => {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [myProfileVisible, setMyProfileVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [, setIsLoading] = useState(true);
+  const [isLoggingOut] = useState(false);
 
   const [username, setUsername] = useState(getUserDisplayName(user));
   const [email, setEmail] = useState(user?.email ?? '');
@@ -56,7 +56,7 @@ const ProfileScreen = () => {
 
   const menuItems = useMemo(
     () => [
-      { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
+      { id: 'account', label: 'Edit Profile', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
       { id: 'progress', label: 'My Progress', icon: 'stats-chart-outline' as const, iconBg: '#1a3a1a', active: false },
       { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
       { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
@@ -104,11 +104,14 @@ const ProfileScreen = () => {
     return () => animation.stop();
   }, [menuAnimations]);
 
-  const userHandle = useMemo(() => buildHandle(username), [username]);
-  const avatarSource = useMemo<ImageSourcePropType | undefined>(
-    () => (avatarUri ? { uri: avatarUri } : undefined),
-    [avatarUri]
-  );
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('MainTabs', {screen: 'Home'});
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -121,12 +124,7 @@ const ProfileScreen = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} 
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
-        </TouchableOpacity>
+        <AppBackButton onPress={handleBack} iconSize={24} />
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity 
           style={styles.settingsButton}
@@ -153,12 +151,12 @@ const ProfileScreen = () => {
           <Text style={styles.userName}>{username}</Text>
           <Text style={styles.userEmail}>{email}</Text>
           
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={styles.editButton}
             onPress={() => navigation.navigate('ProfileDetails')}
           >
             <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* Main Menu */}
@@ -264,14 +262,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
   settingsButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-  },
-  backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',

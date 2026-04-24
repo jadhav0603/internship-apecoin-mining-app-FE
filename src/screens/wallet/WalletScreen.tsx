@@ -6,7 +6,6 @@ import {
 } from '@react-navigation/native';
 import {
   ActivityIndicator,
-  Alert,
   ImageBackground,
   Pressable,
   ScrollView,
@@ -30,6 +29,7 @@ import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import type { RootStackParamList } from '../../navigation/types';
 import { useUser } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import {
   withdrawService,
   type WithdrawRecord,
@@ -41,6 +41,7 @@ const WalletScreen = () => {
   const navigation =
     useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
   const { user } = useUser();
+  const { showError } = useAlert();
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
     useState(false);
@@ -91,9 +92,9 @@ const WalletScreen = () => {
     }
 
     if (!user?.uid || !user?.email) {
-      Alert.alert(
-        'Unable to continue',
+      showError(
         'User details are missing for this withdrawal request.',
+        'Unable to continue',
       );
       return;
     }
@@ -114,7 +115,7 @@ const WalletScreen = () => {
         error?.response?.data?.message ||
         'Failed to submit withdrawal request.';
 
-      Alert.alert('Request Failed', message);
+      showError(message, 'Request Failed');
     } finally {
       setWithdrawLoading(false);
     }

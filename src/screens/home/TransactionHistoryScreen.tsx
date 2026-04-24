@@ -17,7 +17,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppBackButton from '../../components/navigation/AppBackButton';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import MultiLineChart, {
@@ -260,12 +260,7 @@ const TransactionHistoryScreen = () => {
       <View
         style={[styles.headerRow, { paddingTop: Math.max(insets.top + 4, 18) }]}
       >
-        <Pressable
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
-        </Pressable>
+        <AppBackButton onPress={() => navigation.goBack()} />
 
         <Text style={styles.headerTitle}>My Transactions</Text>
 
@@ -418,17 +413,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontWeight: '700',
     marginHorizontal: 12,
-  },
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    color: '#FFFFFF',
-    backgroundColor: COLORS.cardStrong,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatar: {
     width: 44,

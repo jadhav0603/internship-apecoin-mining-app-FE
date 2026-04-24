@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Clipboard,
   Pressable,
   ScrollView,
@@ -18,8 +17,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
+import AppBackButton from '../../components/navigation/AppBackButton';
 import { FONTS } from '../../constants/FONTS';
 import { getUserDisplayName, useUser } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import { useReferralData } from '../../hooks/useReferralData';
 import { RootStackParamList } from '../../navigation/types';
 import { referralService } from '../../services/referralService';
@@ -51,6 +52,7 @@ const ReferAndEarnScreen = () => {
   const route = useRoute<ReferAndEarnRouteProp>();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const { showError, showSuccess } = useAlert();
   const [redeemCode, setRedeemCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -73,12 +75,17 @@ const ReferAndEarnScreen = () => {
   );
 
   const handleBack = () => {
-    navigation.navigate('MainTabs', { screen: 'Profile' });
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.navigate('MainTabs', {screen: 'Profile'});
   };
 
   const handleCopy = () => {
     Clipboard.setString(referralCode);
-    Alert.alert('Copied', 'Referral code copied to clipboard.');
+    showSuccess('Referral code copied to clipboard.', 'Copied');
   };
 
   const handleShare = async () => {
@@ -87,7 +94,7 @@ const ReferAndEarnScreen = () => {
         message: `Join me on ApeCoin and use my referral code: ${referralCode}`,
       });
     } catch {
-      Alert.alert('Share', 'Unable to open the share sheet right now.');
+      showError('Unable to open the share sheet right now.', 'Share');
     }
   };
 
@@ -95,12 +102,12 @@ const ReferAndEarnScreen = () => {
     const referralEmail = redeemCode.trim().toLowerCase();
 
     if (!referralEmail) {
-      Alert.alert('Redeem Code', 'Please enter a referral email first.');
+      showError('Please enter a referral email first.', 'Redeem Code');
       return;
     }
 
     if (!resolvedEmail) {
-      Alert.alert('Redeem Code', 'Unable to resolve your account email right now.');
+      showError('Unable to resolve your account email right now.', 'Redeem Code');
       return;
     }
 
@@ -116,16 +123,16 @@ const ReferAndEarnScreen = () => {
       setRedeemCode('');
       refresh();
 
-      Alert.alert(
-        'Referral Applied',
+      showSuccess(
         response.referralRewardApplied
           ? `Referral linked successfully. ${response.reward.toFixed(2)} APE was credited from current earnings.`
-          : 'Referral linked successfully. Future mining and reward activity will credit the referrer automatically.'
+          : 'Referral linked successfully. Future mining and reward activity will credit the referrer automatically.',
+        'Referral Applied',
       );
     } catch (error: any) {
-      Alert.alert(
+      showError(
+        error?.response?.data?.message || 'Unable to apply the referral right now.',
         'Redeem Code',
-        error?.response?.data?.message || 'Unable to apply the referral right now.'
       );
     } finally {
       setSubmitting(false);
@@ -152,15 +159,11 @@ const ReferAndEarnScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.headerRow}>
-            <Pressable
+            <AppBackButton
               onPress={handleBack}
-              style={({ pressed }) => [
-                styles.iconButton,
-                pressed && styles.iconButtonPressed,
-              ]}
-            >
-              <Ionicons name="arrow-back" size={25} color="#FFFFFF" />
-            </Pressable>
+              iconSize={22}
+              style={styles.iconButton}
+            />
 
             <Text style={styles.headerTitle}>Refer &amp; Earn</Text>
 
@@ -329,17 +332,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   iconButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  iconButtonPressed: {
-    opacity: 0.9,
+    width: 46,
+    height: 46,
+    borderRadius: 16,
   },
   headerTitle: {
     color: '#FFFFFF',

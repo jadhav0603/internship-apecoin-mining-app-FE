@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   RefreshControl,
@@ -30,6 +29,7 @@ import {
   TICKET_THEME,
 } from '../../components/tickets/ticketTheme';
 import { useUser } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
 import { ticketService, type TicketItem, type TicketPriority } from '../../services/ticketService';
@@ -40,6 +40,7 @@ const ReportIssueScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const { showConfirm, showError, showWarning } = useAlert();
 
   const [category, setCategory] = useState<string>('');
   const [priority, setPriority] = useState<TicketPriority | ''>('');
@@ -69,16 +70,16 @@ const ReportIssueScreen = () => {
       setRecentTickets(tickets);
     } catch (error: any) {
       if (!showRefresh) {
-        Alert.alert(
+        showError(
+          error?.response?.data?.message ?? 'Please try again in a moment.',
           'Unable to Load Reports',
-          error?.response?.data?.message ?? 'Please try again in a moment.'
         );
       }
     } finally {
       setIsLoadingReports(false);
       setIsRefreshingReports(false);
     }
-  }, []);
+  }, [showError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -88,27 +89,27 @@ const ReportIssueScreen = () => {
 
   const validateForm = () => {
     if (!category) {
-      Alert.alert('Validation', 'Please select a category.');
+      showWarning('Please select a category.', 'Validation');
       return false;
     }
 
     if (!priority) {
-      Alert.alert('Validation', 'Please select a priority.');
+      showWarning('Please select a priority.', 'Validation');
       return false;
     }
 
     if (!description.trim()) {
-      Alert.alert('Validation', 'Please enter a description.');
+      showWarning('Please enter a description.', 'Validation');
       return false;
     }
 
     if (allowContact && !contactEmail.trim() && !contactPhone.trim()) {
-      Alert.alert('Validation', 'Please enter an email or phone number.');
+      showWarning('Please enter an email or phone number.', 'Validation');
       return false;
     }
 
     if (attachments.some(item => !item.url)) {
-      Alert.alert('Validation', 'Please wait for all attachments to finish uploading.');
+      showWarning('Please wait for all attachments to finish uploading.', 'Validation');
       return false;
     }
 
@@ -117,7 +118,7 @@ const ReportIssueScreen = () => {
 
   const handleAttachmentPick = useCallback(async () => {
     if (attachments.length >= MAX_TICKET_ATTACHMENTS) {
-      Alert.alert('Attachment limit', `You can upload up to ${MAX_TICKET_ATTACHMENTS} files.`);
+      showWarning(`You can upload up to ${MAX_TICKET_ATTACHMENTS} files.`, 'Attachment limit');
       return;
     }
 
@@ -142,7 +143,7 @@ const ReportIssueScreen = () => {
     }
 
     if (result.errorCode) {
-      Alert.alert('Upload Failed', result.errorMessage ?? 'Unable to select images.');
+      showError(result.errorMessage ?? 'Unable to select images.', 'Upload Failed');
       return;
     }
 
@@ -152,17 +153,17 @@ const ReportIssueScreen = () => {
       }
 
       if ((asset.fileSize ?? 0) > MAX_TICKET_ATTACHMENT_SIZE_BYTES) {
-        Alert.alert(
+        showWarning(
+          `${asset.fileName ?? 'One file'} exceeds the 5MB size limit.`,
           'File too large',
-          `${asset.fileName ?? 'One file'} exceeds the 5MB size limit.`
         );
         return false;
       }
 
       if (asset.type && !ALLOWED_ATTACHMENT_TYPES.includes(asset.type)) {
-        Alert.alert(
+        showWarning(
+          'Please upload JPG, PNG, WEBP, or GIF images only.',
           'Unsupported file type',
-          'Please upload JPG, PNG, WEBP, or GIF images only.'
         );
         return false;
       }
@@ -197,15 +198,15 @@ const ReportIssueScreen = () => {
         );
       } catch (error: any) {
         setAttachments(current => current.filter(item => item.id !== pendingItem.id));
-        Alert.alert(
+        showError(
+          error?.message ?? 'Please try again with another image.',
           'Attachment Upload Failed',
-          error?.message ?? 'Please try again with another image.'
         );
       }
     }
 
     setIsUploadingAttachments(false);
-  }, [attachments.length]);
+  }, [attachments.length, showError, showWarning]);
 
   const handleRemoveAttachment = (id: string) => {
     setAttachments(current => current.filter(item => item.id !== id));
@@ -242,20 +243,17 @@ const ReportIssueScreen = () => {
       resetForm();
       await fetchRecentTickets();
 
-      Alert.alert('Report Submitted', `Your report ${ticket.ticketId} has been created.`, [
-        {
-          text: 'View Details',
-          onPress: () => navigation.navigate('TicketDetail', { ticketId: ticket.ticketId }),
-        },
-        {
-          text: 'OK',
-          style: 'cancel',
-        },
-      ]);
+      showConfirm({
+        title: 'Report Submitted',
+        message: `Your report ${ticket.ticketId} has been created.`,
+        confirmText: 'View Details',
+        cancelText: 'OK',
+        onConfirm: () => navigation.navigate('TicketDetail', { ticketId: ticket.ticketId }),
+      });
     } catch (error: any) {
-      Alert.alert(
+      showError(
+        error?.response?.data?.message ?? 'Unable to submit your report right now.',
         'Submission Failed',
-        error?.response?.data?.message ?? 'Unable to submit your report right now.'
       );
     } finally {
       setIsSubmitting(false);

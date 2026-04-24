@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -23,8 +23,9 @@ import Animated, {
   FadeInUp,
 } from 'react-native-reanimated';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import AppBackButton from '../../components/navigation/AppBackButton';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
@@ -179,12 +180,7 @@ const LeaderboardScreen = () => {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <Pressable 
-            onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} 
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color="#FFF" />
-          </Pressable>
+          <AppBackButton onPress={() => navigation.goBack()} />
           <Text style={styles.headerTitle}>Top Miners</Text>
           <Pressable style={styles.refreshButton} onPress={refresh}>
             <Ionicons name="refresh-outline" size={20} color={loading ? 'rgba(255,255,255,0.3)' : '#FFF'} />
@@ -285,11 +281,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', paddingHorizontal: 20, height: 60,
-  },
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
   refreshButton: {
     width: 40, height: 40, borderRadius: 20,
