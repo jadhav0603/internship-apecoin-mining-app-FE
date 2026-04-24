@@ -18,12 +18,17 @@ import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const MiningScreen = () => {
-  const { earned, secondsLeft, multiplier, multipliers, setMultiplier } = useMining();
+  const { earned, secondsLeft, hours, miningData, multiplier, multipliers, setMultiplier } =
+    useMining();
   const navigation = useNavigation();
 
   const formatTime = (sec: number) => {
-    const h = Math.floor(sec / 3600).toString().padStart(2, '0');
-    const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+    const h = Math.floor(sec / 3600)
+      .toString()
+      .padStart(2, '0');
+    const m = Math.floor((sec % 3600) / 60)
+      .toString()
+      .padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
 
     return `${h}:${m}:${s}`;
@@ -242,7 +247,7 @@ const MiningScreen = () => {
               <View style={styles.statsHeader}>
                 <View>
                   <Text style={styles.statsLabel}>MINING STATUS</Text>
-                  <Text style={styles.statsTitle}>Core charged and ready</Text>
+                  <Text style={styles.statsTitle}></Text>
                 </View>
                 <View style={styles.statusBadge}>
                   <Text style={styles.statusBadgeText}>LIVE</Text>
@@ -253,20 +258,14 @@ const MiningScreen = () => {
 
               <View style={styles.metricsRow}>
                 <View style={styles.metricBlock}>
-                  <Text style={styles.metricValue}>72</Text>
-                  <Text style={styles.metricCaption}>Circular neon ticks</Text>
+                  <Text style={styles.metricValue}>{hours}h</Text>
+                  <Text style={styles.metricCaption}>Selected Timer</Text>
                 </View>
                 <View style={styles.metricBlock}>
-                  <Text style={styles.metricValue}>5.00</Text>
-                  <Text style={styles.metricCaption}>
-                    Current mined balance
+                  <Text style={styles.metricValue}>
+                    {(miningData?.totalEarned || 0).toFixed(6)}
                   </Text>
-                </View>
-                <View style={styles.metricBlock}>
-                  <Text style={styles.metricValue}>24</Text>
-                  <Text style={styles.metricCaption}>
-                    Active glowing segments
-                  </Text>
+                  <Text style={styles.metricCaption}>Mined Balance</Text>
                 </View>
               </View>
             </LinearGradient>
