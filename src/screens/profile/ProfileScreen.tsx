@@ -66,13 +66,13 @@ const ProfileScreen = () => {
 
   const menuItems = useMemo(
     () => [
-      {
-        id: 'account',
-        label: 'Edit Profile',
-        icon: 'person-outline' as const,
-        iconBg: '#1a3a1a',
-        active: true,
-      },
+      // {
+      //   id: 'account',
+      //   label: 'Edit Profile',
+      //   icon: 'person-outline' as const,
+      //   iconBg: '#1a3a1a',
+      //   active: true,
+      // },
       {
         id: 'progress',
         label: 'My Progress',

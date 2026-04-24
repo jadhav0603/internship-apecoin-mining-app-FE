@@ -62,7 +62,8 @@ const WalletScreen = () => {
     refreshWithdrawRecords,
   } = useLiquidBalance();
 
-  const displayBalance = liquidBalance;
+  const rawBalance = Number.isFinite(liquidBalance) ? liquidBalance : 0;
+  const displayBalance = Number(rawBalance.toFixed(2));
   const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
 
   useEffect(() => {
@@ -169,7 +170,7 @@ const WalletScreen = () => {
       await withdrawService.requestWithdraw({
         userId: user.uid,
         email: user.email,
-        amount: displayBalance,
+        amount: rawBalance,
       });
 
       await refreshWithdrawRecords();
@@ -208,12 +209,7 @@ const WalletScreen = () => {
             { paddingBottom: bottomContentPadding },
           ]}
         >
-          <View
-            style={[
-              styles.headerRow,
-              styles.headerRowSafe,
-            ]}
-          >
+          <View style={[styles.headerRow, styles.headerRowSafe]}>
             <Text style={styles.walletTitle}>Wallet</Text>
 
             <Pressable
@@ -276,7 +272,9 @@ const WalletScreen = () => {
               )}
             </View>
 
-            <Animated.View style={[styles.withdrawActionWrap, withdrawFloatStyle]}>
+            <Animated.View
+              style={[styles.withdrawActionWrap, withdrawFloatStyle]}
+            >
               <Pressable
                 style={({ pressed }) => [
                   styles.withdrawAction,
@@ -287,7 +285,10 @@ const WalletScreen = () => {
                 disabled={isWithdrawDisabled}
               >
                 <LinearGradient
-                  colors={['rgba(86, 120, 101, 0.92)', 'rgba(20, 63, 42, 0.98)']}
+                  colors={[
+                    'rgba(86, 120, 101, 0.92)',
+                    'rgba(20, 63, 42, 0.98)',
+                  ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.withdrawActionGradient}
@@ -337,7 +338,8 @@ const WalletScreen = () => {
                   end={{ x: 1, y: 1 }}
                   style={[
                     styles.overviewCard,
-                    index < overviewCards.length - 1 && styles.overviewCardSpacing,
+                    index < overviewCards.length - 1 &&
+                      styles.overviewCardSpacing,
                   ]}
                 >
                   <View

@@ -59,6 +59,7 @@ const ReferAndEarnScreen = () => {
     referredBy,
     referralEarnings,
     referralCount,
+    referralHistory,
     referralPercentage,
     loading,
     refresh,
@@ -73,6 +74,15 @@ const ReferAndEarnScreen = () => {
     () => buildReferralCode(resolvedEmail, resolvedUsername),
     [resolvedEmail, resolvedUsername]
   );
+
+  const totalReferralEarnings = useMemo(() => {
+    const historyTotal = referralHistory.reduce(
+      (sum, item) => sum + (Number(item.reward) || 0),
+      0,
+    );
+
+    return historyTotal > 0 ? historyTotal : referralEarnings;
+  }, [referralEarnings, referralHistory]);
 
   const handleBack = () => {
     if (navigation.canGoBack()) {
@@ -167,7 +177,7 @@ const ReferAndEarnScreen = () => {
 
             <Text style={styles.headerTitle}>Refer &amp; Earn</Text>
 
-            <View style={{ width: 54 }} />
+            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.heroSection}>
@@ -189,14 +199,26 @@ const ReferAndEarnScreen = () => {
           </View>
 
           <View style={styles.statsRow}>
-            <View style={[styles.statCard, styles.statCardSpacing]}>
+            <Pressable
+              onPress={() => navigation.navigate('TransactionHistory')}
+              style={({ pressed }) => [
+                styles.statCard,
+                styles.statCardSpacing,
+                pressed && styles.statCardPressed,
+              ]}
+            >
               <Text style={styles.statLabel}>Referral Earnings</Text>
               {loading ? (
                 <ActivityIndicator size="small" color="#B7FF31" />
               ) : (
-                <Text style={styles.statValue}>{referralEarnings.toFixed(2)} APE</Text>
+                <>
+                  <Text style={styles.statValue}>
+                    {totalReferralEarnings.toFixed(4)} APE
+                  </Text>
+                  <Text style={styles.statHint}>Open transaction history</Text>
+                </>
               )}
-            </View>
+            </Pressable>
 
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Successful Referrals</Text>
@@ -336,6 +358,9 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 16,
   },
+  headerSpacer: {
+    width: 54,
+  },
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 19,
@@ -398,6 +423,10 @@ const styles = StyleSheet.create({
   statCardSpacing: {
     marginRight: 12,
   },
+  statCardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.985 }],
+  },
   statLabel: {
     color: 'rgba(255,255,255,0.58)',
     fontSize: 12,
@@ -411,6 +440,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: FONTS.black,
     fontWeight: '800',
+  },
+  statHint: {
+    marginTop: 8,
+    color: '#B7FF31',
+    fontSize: 12,
+    fontFamily: FONTS.medium,
   },
   divider: {
     height: 1,
