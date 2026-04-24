@@ -67,7 +67,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
               style={styles.innerCore}
             >
               <FontAwesome5
-                name={isMining ? 'lock' : 'play'}
+                name={isMining ? 'hourglass-start' : 'play'}
                 size={18}
                 color={COLORS.textPrimary}
                 style={styles.playIcon}
@@ -78,11 +78,11 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 
         {/* <Text style={styles.eyebrow}>MINING ENTRY</Text> */}
         <Text style={styles.title}>
-  {isMining ? 'Mining Cycle Live' : 'Activate Asset Engine'}
+  {isMining ? 'Mining Active' : 'Activate Asset Engine'}
 </Text>
        <Text style={styles.subtitle}>
   {isMining
-    ? 'Session in progress. Next cycle available soon.'
+    ? 'View your active mining session and performance details.'
     : 'Begin mining and track your assets from the dashboard.'}
 </Text>
       </LinearGradient>

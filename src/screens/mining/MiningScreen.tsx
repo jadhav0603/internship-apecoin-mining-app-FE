@@ -62,14 +62,14 @@ const MiningScreen = () => {
             </Pressable>
           </View>
 
-          <View style={styles.topActions}>
+          {/* <View style={styles.topActions}>
             <View style={styles.topActionButton}>
               <FontAwesome5 name="plus" size={14} color={COLORS.textPrimary} />
             </View>
             <View style={styles.topActionButton}>
               <FontAwesome5 name="bell" size={14} color={COLORS.textPrimary} />
             </View>
-          </View>
+          </View> */}
         </View>
 
         <View style={styles.content}>
@@ -117,7 +117,7 @@ const MiningScreen = () => {
             <View style={styles.coinBaseGlow} />
           </View>
 
-          <Text style={styles.rateText}>0.02083 Kryptons/hour</Text>
+          {/* <Text style={styles.rateText}>0.02083 Kryptons/hour</Text> */}
           <Text style={styles.amountText}>${earned.toFixed(6)}</Text>
 
           <View style={styles.ringSection}>

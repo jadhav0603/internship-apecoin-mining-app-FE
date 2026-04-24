@@ -157,7 +157,7 @@ const MiningTimeSelectionPopup = () => {
 
           <TouchableOpacity activeOpacity={0.9} onPress={handleConfirm}>
             <LinearGradient
-              colors={['#FFB24A', '#FF7C1F']}
+              colors={['#46a152ff', '#256326ff']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.confirmBtn}

@@ -59,23 +59,23 @@ const HomeScreen = () => {
         >
           <View>
             <View style={styles.adContainer}>
-                <BannerAd
-                  unitId={AD_UNITS.BANNER_HOME}
-                  size={BannerAdSize.BANNER}
-                />
-              </View>
-              <Text style={styles.title}>Launch the mining Dashboard</Text>
-              <Text style={styles.subtitle}>
+              <BannerAd
+                unitId={AD_UNITS.BANNER_HOME}
+                size={BannerAdSize.BANNER}
+              />
+            </View>
+            <Text style={styles.title}>Launch the mining Dashboard</Text>
+            {/* <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
                 room above and below.
-              </Text>
+              </Text> */}
 
-              <View style={styles.buttonContainer}>
-                <MiningButton />
-              </View>
-
-              <MiningTimeSelectionPopup />
+            <View style={styles.buttonContainer}>
+              <MiningButton />
             </View>
+
+            <MiningTimeSelectionPopup />
+          </View>
 
           <ClaimRewardModal />
 
