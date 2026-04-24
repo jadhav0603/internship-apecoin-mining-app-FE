@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
   Animated,
+  ImageSourcePropType,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,25 +19,13 @@ import { RootStackParamList } from '../../navigation/types';
 import { COLORS } from '../../constants/COLORS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { authService } from '../../services/authService';
+import { userService } from '../../services/userService';
 import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
 import MyProfileModal from '../../components/profile/MyProfileModal';
 import ConfirmModal from '../../components/ConfirmModal';
+import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
+import { PROFILE_THEME, resolveProfileName, buildHandle } from '../../components/profile/profileTheme';
 
-const MenuItem = ({ icon, title, onPress, isLast = false, color = COLORS.textPrimary }: any) => (
-  <TouchableOpacity 
-    style={[styles.menuItem, isLast && styles.lastMenuItem]} 
-    onPress={onPress}
-    activeOpacity={0.7}
-  >
-    <View style={styles.menuItemLeft}>
-      <View style={[styles.iconWrapper, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={22} color={color} />
-      </View>
-      <Text style={[styles.menuItemTitle, { color }]}>{title}</Text>
-    </View>
-    <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.2)" />
-  </TouchableOpacity>
-);
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -44,10 +33,12 @@ const ProfileScreen = () => {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [myProfileVisible, setMyProfileVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const username = getUserDisplayName(user);
-  const email = user?.email ?? '';
-  const avatarUri = user?.photoURL ?? '';
+  const [username, setUsername] = useState(getUserDisplayName(user));
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
 
   const handleLogout = async () => {
     setLogoutVisible(false);
@@ -60,15 +51,17 @@ const ProfileScreen = () => {
 
   const confirmLogout = () => {
     if (isLoggingOut) return;
-    setIsLogoutModalVisible(true);
+    setLogoutVisible(true);
   };
 
   const menuItems = useMemo(
     () => [
       { id: 'account', label: 'My Account', icon: 'person-outline' as const, iconBg: '#1a3a1a', active: true },
-      { id: 'report_issue', label: 'Report & Issues', icon: 'alert-circle-outline' as const, iconBg: '#2a3517', active: false },
+      { id: 'progress', label: 'My Progress', icon: 'stats-chart-outline' as const, iconBg: '#1a3a1a', active: false },
       { id: 'referral', label: 'Refer and Earn', icon: 'people-outline' as const, iconBg: '#1a1a3a', active: false },
       { id: 'leaderboard', label: 'Leader Board', icon: 'trophy-outline' as const, iconBg: '#3a3114', active: false },
+      { id: 'report_issue', label: 'Report & Issues', icon: 'alert-circle-outline' as const, iconBg: '#2a3517', active: false },
+      { id: 'about', label: 'About Us', icon: 'information-circle-outline' as const, iconBg: '#1a3a1a', active: false },
       { id: 'logout', label: 'Log Out', icon: 'log-out-outline' as const, iconBg: PROFILE_THEME.dangerBg, active: false, tone: 'danger' as const },
     ],
     []
@@ -170,59 +163,8 @@ const ProfileScreen = () => {
 
         {/* Main Menu */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>MAIN MENU</Text>
-          <View style={styles.menuCard}>
-            <MenuItem 
-              icon="stats-chart-outline" 
-              title="My Progress" 
-              color="#c8ff14ff"
-              onPress={() => navigation.navigate('MyProgress')}
-            />
-            <MenuItem 
-              icon="people-outline" 
-              title="Refer and Earn" 
-              color="#14ffe4"
-              onPress={() => navigation.navigate('ReferAndEarn')}
-            />
-            <MenuItem 
-              icon="person-outline" 
-              title="My Profile" 
-              color="#299422ff"
-              onPress={() => setMyProfileVisible(true)}
-            />
-            <MenuItem 
-              icon="trophy-outline" 
-              title="Leaderboard" 
-              color="#FFD700"
-              isLast
-              onPress={() => navigation.navigate('Leaderboard')}
-            />
-          </View>
-        </View>
-
-        {/* Support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>SUPPORT</Text>
-          <View style={styles.menuCard}>
-            <MenuItem 
-              icon="bug-outline" 
-              title="Report Issue" 
-              onPress={() => navigation.navigate('ReportIssue')}
-            />
-            <MenuItem 
-              icon="information-circle-outline" 
-              title="About Us" 
-              onPress={() => navigation.navigate('AboutUs')}
-            />
-            <MenuItem 
-              icon="log-out-outline" 
-              title="Logout" 
-              color="#FF4B4B"
-              isLast
-              onPress={() => setLogoutVisible(true)}
-            />
-          </View>
-z          {menuItems.map((item, index) => (
+          <Text style={styles.sectionLabel}>ACCOUNT & ACTIVITY</Text>
+          {menuItems.map((item, index) => (
             <Animated.View
               key={item.id}
               style={{
@@ -240,13 +182,17 @@ z          {menuItems.map((item, index) => (
                 icon={item.icon}
                 iconBg={item.iconBg}
                 active={item.active}
-                tone={item.tone}
+                tone={item.tone as any}
                 disabled={item.id === 'logout' && isLoggingOut}
                 onPress={() => {
-                  if (item.id === 'account') { openAccountModal(); return; }
+                  if (item.id === 'account') { setMyProfileVisible(true); return; }
                   if (item.id === 'logout') { confirmLogout(); return; }
+                  if (item.id === 'progress') {
+                    navigation.navigate('MyProgress');
+                    return;
+                  }
                   if (item.id === 'referral') {
-                    navigation.navigate('ReferAndEarn', { email, username });
+                    navigation.navigate('ReferAndEarn');
                     return;
                   }
                   if (item.id === 'report_issue') {
@@ -254,10 +200,13 @@ z          {menuItems.map((item, index) => (
                     return;
                   }
                   if (item.id === 'leaderboard') {
-                    navigation.navigate('Leaderboard', { email, username, avatarUri });
+                    navigation.navigate('Leaderboard');
                     return;
                   }
-                  handleComingSoon(item.label);
+                  if (item.id === 'about') {
+                    navigation.navigate('AboutUs');
+                    return;
+                  }
                 }}
               />
             </Animated.View>
@@ -372,33 +321,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     letterSpacing: 1,
   },
-  menuCard: {
-    backgroundColor: 'rgba(18, 26, 18, 0.6)',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-  },
-  lastMenuItem: { borderBottomWidth: 0 },
-  menuItemLeft: { flexDirection: 'row', alignItems: 'center' },
-  iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  menuItemTitle: { fontSize: 16, fontWeight: '600' },
 });
 
 export default ProfileScreen;
