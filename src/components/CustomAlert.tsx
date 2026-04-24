@@ -219,13 +219,20 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
                     isSecondary
                       ? [
                           styles.secondaryButton,
-                          { borderColor: palette.secondaryBorder },
+                          {
+                            backgroundColor:
+                              resolvedTheme === 'dark'
+                                ? withOpacity(COLORS.primary, 0.12)
+                                : withOpacity(COLORS.primaryDark, 0.1),
+                            borderColor: COLORS.primary,
+                          },
                         ]
                       : [
                           styles.primaryButton,
                           {
-                            backgroundColor: accentColor,
-                            borderColor: accentColor,
+                            backgroundColor: COLORS.primary,
+                            borderColor: COLORS.primary,
+                            shadowColor: COLORS.primary,
                           },
                         ],
                     pressed && styles.buttonPressed,
@@ -236,7 +243,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({
                       styles.buttonText,
                       {
                         color: isSecondary
-                          ? palette.secondaryText
+                          ? COLORS.primary
                           : palette.primaryText,
                       },
                     ]}
@@ -274,16 +281,16 @@ const getIconName = (
 const getAccentColor = (type: AlertType) => {
   switch (type) {
     case 'success':
-      return '#7CFC00';
+      return COLORS.primary;
     case 'error':
-      return '#FF5C5C';
+      return COLORS.primary;
     case 'warning':
-      return '#F59E0B';
+      return COLORS.primary;
     case 'confirm':
-      return '#6BCBFF';
+      return COLORS.primary;
     case 'info':
     default:
-      return '#3B82F6';
+      return COLORS.primary;
   }
 };
 
@@ -308,8 +315,8 @@ const getAlertPalette = (theme: AlertTheme): AlertPalette => {
       borderBase: 'rgba(17, 24, 39, 0.08)',
       title: '#111827',
       message: '#4B5563',
-      secondaryBorder: 'rgba(17, 24, 39, 0.12)',
-      secondaryText: '#111827',
+      secondaryBorder: 'rgba(166, 255, 0, 0.3)',
+      secondaryText: COLORS.primaryDark,
       primaryText: '#081106',
       shadowColor: '#0F172A',
     };
@@ -323,8 +330,8 @@ const getAlertPalette = (theme: AlertTheme): AlertPalette => {
     borderBase: COLORS.glassBorder,
     title: COLORS.textPrimary,
     message: COLORS.whiteSoft,
-    secondaryBorder: 'rgba(205, 255, 124, 0.14)',
-    secondaryText: COLORS.textPrimary,
+    secondaryBorder: withOpacity(COLORS.primary, 0.26),
+    secondaryText: COLORS.primary,
     primaryText: '#081106',
     shadowColor: COLORS.primary,
   };

@@ -20,7 +20,6 @@ import AttachmentUploadBox, {
   type TicketAttachmentItem,
 } from '../../components/tickets/AttachmentUploadBox';
 import PrioritySelector from '../../components/tickets/PrioritySelector';
-import TicketCard from '../../components/tickets/TicketCard';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import {
   ISSUE_CATEGORIES,
@@ -35,6 +34,18 @@ import { RootStackParamList } from '../../navigation/types';
 import { ticketService, type TicketItem, type TicketPriority } from '../../services/ticketService';
 
 const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+const formatCompactDate = (value?: string) => {
+  if (!value) {
+    return '';
+  }
+
+  return new Date(value).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
 
 const ReportIssueScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -54,9 +65,19 @@ const ReportIssueScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
   const [isRefreshingReports, setIsRefreshingReports] = useState(false);
+  const [isPreviousReportsExpanded, setIsPreviousReportsExpanded] = useState(false);
   const [recentTickets, setRecentTickets] = useState<TicketItem[]>([]);
 
-  const previousReports = useMemo(() => recentTickets.slice(0, 2), [recentTickets]);
+  const previousReports = useMemo(
+    () =>
+      [...recentTickets]
+        .sort(
+          (first, second) =>
+            new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+        )
+        .slice(0, 2),
+    [recentTickets],
+  );
 
   const fetchRecentTickets = useCallback(async (showRefresh = false) => {
     try {
@@ -293,6 +314,90 @@ const ReportIssueScreen = () => {
           </View>
         </View>
 
+        <View style={styles.previousReportsCard}>
+          <Pressable
+            style={styles.previousReportsHeader}
+            onPress={() => setIsPreviousReportsExpanded(current => !current)}
+          >
+            <Text style={styles.previousReportsTitle}>Previous Reports</Text>
+
+            <View style={styles.previousReportsActions}>
+              <Pressable
+                hitSlop={8}
+                onPress={() => setIsPreviousReportsExpanded(current => !current)}
+                style={styles.expandIconWrap}
+              >
+                <Ionicons
+                  name={isPreviousReportsExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={TICKET_THEME.textSecondary}
+                />
+              </Pressable>
+
+              {isPreviousReportsExpanded ? (
+                <Pressable
+                  hitSlop={8}
+                  onPress={() => navigation.navigate('TicketList')}
+                  style={styles.viewAllButton}
+                >
+                  <Text style={styles.viewAllButtonText}>View All</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </Pressable>
+
+          {isPreviousReportsExpanded ? (
+            <View style={styles.previousReportsContent}>
+              {isLoadingReports ? (
+                <View style={styles.compactState}>
+                  <ActivityIndicator color={TICKET_THEME.accent} />
+                </View>
+              ) : previousReports.length ? (
+                <View style={styles.reportPreviewList}>
+                  {previousReports.map(ticket => (
+                    <Pressable
+                      key={ticket.ticketId}
+                      onPress={() =>
+                        navigation.navigate('TicketDetail', {ticketId: ticket.ticketId})
+                      }
+                      style={styles.reportPreviewItem}
+                    >
+                      <View style={styles.reportPreviewTopRow}>
+                        <Text style={styles.reportPreviewCategory} numberOfLines={1}>
+                          {ticket.category}
+                        </Text>
+                        <Text style={styles.reportPreviewStatus}>{ticket.status}</Text>
+                      </View>
+
+                      <Text style={styles.reportPreviewDescription} numberOfLines={2}>
+                        {ticket.description}
+                      </Text>
+
+                      <View style={styles.reportPreviewFooter}>
+                        <Text style={styles.reportPreviewMeta}>
+                          {ticket.ticketId} • {formatCompactDate(ticket.createdAt)}
+                        </Text>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color={TICKET_THEME.textMuted}
+                        />
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.compactState}>
+                  <Text style={styles.emptyTitle}>No reports yet</Text>
+                  <Text style={styles.emptyDescription}>
+                    Your submitted tickets will appear here.
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : null}
+        </View>
+
         <Text style={styles.label}>Category</Text>
         <Pressable style={styles.selector} onPress={() => setIsCategoryModalVisible(true)}>
           <Text style={[styles.selectorText, !category && styles.placeholderText]}>
@@ -378,36 +483,6 @@ const ReportIssueScreen = () => {
             <Text style={styles.submitButtonText}>Submit Report</Text>
           )}
         </Pressable>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Previous Reports</Text>
-          <Pressable onPress={() => navigation.navigate('TicketList')}>
-            <Text style={styles.viewAllText}>View All</Text>
-          </Pressable>
-        </View>
-
-        {isLoadingReports ? (
-          <View style={styles.stateCard}>
-            <ActivityIndicator color={TICKET_THEME.accent} />
-          </View>
-        ) : previousReports.length ? (
-          <View style={styles.reportList}>
-            {previousReports.map(ticket => (
-              <TicketCard
-                key={ticket.ticketId}
-                ticket={ticket}
-                onPress={() => navigation.navigate('TicketDetail', { ticketId: ticket.ticketId })}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.stateCard}>
-            <Text style={styles.emptyTitle}>No reports yet</Text>
-            <Text style={styles.emptyDescription}>
-              Your submitted tickets will appear here.
-            </Text>
-          </View>
-        )}
       </ScrollView>
 
       <Modal
@@ -484,6 +559,119 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: 6,
+  },
+  previousReportsCard: {
+    marginBottom: 6,
+    backgroundColor: TICKET_THEME.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: TICKET_THEME.cardBorder,
+    overflow: 'hidden',
+
+  },
+  previousReportsHeader: {
+    minHeight: 72,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  previousReportsTitle: {
+    color: TICKET_THEME.textPrimary,
+    fontSize: 17,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    flex: 1,
+    paddingTop: 6,
+    paddingRight: 16,
+  },
+  previousReportsActions: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  expandIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: TICKET_THEME.input,
+  },
+  viewAllButton: {
+    minHeight: 24,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewAllButtonText: {
+    color: TICKET_THEME.accent,
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+  },
+  previousReportsContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  compactState: {
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    backgroundColor: TICKET_THEME.input,
+    borderWidth: 1,
+    borderColor: TICKET_THEME.inputBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportPreviewList: {
+    gap: 10,
+  },
+  reportPreviewItem: {
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: TICKET_THEME.input,
+    borderWidth: 1,
+    borderColor: TICKET_THEME.inputBorder,
+  },
+  reportPreviewTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  reportPreviewCategory: {
+    flex: 1,
+    color: TICKET_THEME.textPrimary,
+    fontSize: 15,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+  },
+  reportPreviewStatus: {
+    color: TICKET_THEME.pending,
+    fontSize: 11,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  reportPreviewDescription: {
+    marginTop: 8,
+    color: TICKET_THEME.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  reportPreviewFooter: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  reportPreviewMeta: {
+    flex: 1,
+    color: TICKET_THEME.textMuted,
+    fontSize: 12,
+    fontFamily: FONTS.medium,
   },
   label: {
     color: TICKET_THEME.textPrimary,
@@ -580,37 +768,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONTS.bold,
     fontWeight: '700',
-  },
-  sectionHeader: {
-    marginTop: 28,
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    color: TICKET_THEME.textPrimary,
-    fontSize: 22,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  viewAllText: {
-    color: TICKET_THEME.accent,
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
-  },
-  reportList: {
-    gap: 12,
-  },
-  stateCard: {
-    backgroundColor: TICKET_THEME.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: TICKET_THEME.cardBorder,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   emptyTitle: {
     color: TICKET_THEME.textPrimary,
