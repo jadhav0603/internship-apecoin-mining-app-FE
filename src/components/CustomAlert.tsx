@@ -316,17 +316,17 @@ const getAlertPalette = (theme: AlertTheme): AlertPalette => {
   }
 
   return {
-    backdrop: 'rgba(3, 5, 3, 0.78)',
+    backdrop: 'rgba(4, 7, 4, 0.82)',
     blurType: 'dark',
     blurFallback: 'rgba(5, 8, 5, 0.95)',
-    cardBackground: COLORS.cardStrong,
-    borderBase: 'rgba(255,255,255,0.08)',
+    cardBackground: '#10180F',
+    borderBase: COLORS.glassBorder,
     title: COLORS.textPrimary,
     message: COLORS.whiteSoft,
-    secondaryBorder: 'rgba(255,255,255,0.22)',
+    secondaryBorder: 'rgba(205, 255, 124, 0.14)',
     secondaryText: COLORS.textPrimary,
     primaryText: '#081106',
-    shadowColor: '#000000',
+    shadowColor: COLORS.primary,
   };
 };
 

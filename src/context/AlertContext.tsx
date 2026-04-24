@@ -64,6 +64,7 @@ const DEFAULT_PRESENTATION: CustomAlertPresentationOptions = {
   blurBackground: false,
   blurAmount: 12,
   dismissOnBackdropPress: true,
+  theme: 'dark',
 };
 
 const DEFAULT_ALERT_STATE: AlertState = {
