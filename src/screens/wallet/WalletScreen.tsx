@@ -256,7 +256,7 @@ const WalletScreen = () => {
               ) : (
                 <>
                   <Text style={styles.balanceAmount}>
-                    {Number(displayBalance)}
+                    {Number(displayBalance).toFixed(6)}
                     <Text style={styles.balanceUnit}> APE</Text>
                   </Text>
                   <Text style={styles.balanceCaption}>
