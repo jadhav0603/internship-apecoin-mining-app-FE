@@ -12,8 +12,8 @@ const styles = StyleSheet.create({
   card: {
     overflow: 'hidden',
     borderRadius: 32,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
+    // borderWidth: 1,
+    // borderColor: COLORS.glassBorder,
     paddingHorizontal: 24,
     paddingVertical: 28,
     alignItems: 'center',

@@ -218,9 +218,10 @@ const styles = StyleSheet.create({
   statsLabel: {
     color: COLORS.textMuted,
     fontFamily: FONTS.medium,
-    fontSize: 12,
+    fontSize: 16,
     letterSpacing: FONTS.letterSpacing.ultraWide,
-    marginBottom: 8,
+    marginBottom: 0-10,
+    marginTop: 8,
   },
   statsTitle: {
     color: COLORS.textPrimary,
@@ -253,6 +254,7 @@ const styles = StyleSheet.create({
   },
   metricBlock: {
     flex: 1,
+    alignItems: 'center',
   },
   metricValue: {
     color: COLORS.textPrimary,
@@ -260,12 +262,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     lineHeight: 26,
     marginBottom: 4,
+    textAlign: 'center',
   },
   metricCaption: {
     color: COLORS.textSecondary,
     fontFamily: FONTS.regular,
     fontSize: 12,
     lineHeight: 18,
+    textAlign: 'center',
   },
 });
 
