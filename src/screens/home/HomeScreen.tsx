@@ -8,6 +8,7 @@ import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
 import styles from './home.styles';
 import BalanceCard from '../../components/home/BalanceCard';
+import InfoSlider from '../../components/home/InfoSlider';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
@@ -59,6 +60,8 @@ const HomeScreen = () => {
               <MiningButton />
             </View>
 
+            <InfoSlider />
+
             <MiningTimeSelectionPopup />
           </View>
 
@@ -78,7 +81,7 @@ const HomeScreen = () => {
               </Text>
             </LinearGradient> */}
 
-            <LinearGradient
+            {/* <LinearGradient
               colors={['rgba(44, 60, 16, 0.9)', 'rgba(13, 19, 9, 0.96)']}
               start={{ x: 0.1, y: 0 }}
               end={{ x: 0.9, y: 1 }}
@@ -89,7 +92,7 @@ const HomeScreen = () => {
               <Text style={styles.analyticsBody}>
                 Best projected swap depth for the next reward unlock cycle.
               </Text>
-            </LinearGradient>
+            </LinearGradient> */}
           </View>
         </ScrollView>
       </SafeAreaView>
