@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
+  Alert,
   Animated,
   Image,
   Pressable,
@@ -10,7 +11,6 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import LinearGradient from 'react-native-linear-gradient';
 import {
   SafeAreaView,
@@ -33,9 +33,9 @@ const MENU_ANIMATION_MS = 300;
 const Menu = () => {
   const navigation = useNavigation<MenuNavigationProp>();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
   const menuAnim = useRef(new Animated.Value(0)).current;
 
   const closeMenu = () => {
@@ -82,6 +82,30 @@ const Menu = () => {
     setLogoutVisible(true);
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleteAccountVisible(false);
+
+    try {
+      await authService.deleteAccount();
+      Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Unable to delete your account right now.';
+
+      Alert.alert('Delete Failed', message);
+    }
+  };
+
+  const handleDeleteAccountPress = () => {
+    if (menuOpen) {
+      closeMenu();
+    }
+
+    setDeleteAccountVisible(true);
+  };
+
   const handleTransactionHistory = () => {
     closeMenu();
     navigation.navigate('TransactionHistory');
@@ -103,7 +127,12 @@ const Menu = () => {
     { label: 'FAQ', icon: 'help-circle-outline' },
     { label: 'Terms & Conditions', icon: 'document-text-outline' },
     { label: 'Connect Us', icon: 'chatbubbles-outline' },
-    { label: 'Delete Account', icon: 'trash-outline', tone: 'danger' },
+    {
+      label: 'Delete Account',
+      icon: 'trash-outline',
+      tone: 'danger',
+      onPress: handleDeleteAccountPress,
+    },
   ];
 
   const menuAnimatedStyle = {
@@ -183,10 +212,7 @@ const Menu = () => {
                 styles.centerWrap,
                 {
                   paddingTop: Math.max(insets.top, 10),
-                  paddingBottom: Math.max(
-                    tabBarHeight + 18,
-                    insets.bottom + 24,
-                  ),
+                  paddingBottom: Math.max(insets.bottom + 24, 40),
                 },
               ]}
             >
@@ -303,6 +329,16 @@ const Menu = () => {
         tone="danger"
         onConfirm={handleLogout}
         onCancel={() => setLogoutVisible(false)}
+      />
+      <ConfirmModal
+        visible={deleteAccountVisible}
+        title="Delete Account"
+        message="This will permanently remove your account and related data. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        tone="danger"
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setDeleteAccountVisible(false)}
       />
     </>
   );
