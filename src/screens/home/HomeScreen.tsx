@@ -59,28 +59,28 @@ const HomeScreen = () => {
         >
           <View>
             <View style={styles.adContainer}>
-                <BannerAd
-                  unitId={AD_UNITS.BANNER_HOME}
-                  size={BannerAdSize.BANNER}
-                />
-              </View>
-              <Text style={styles.title}>Launch the mining Dashboard</Text>
-              <Text style={styles.subtitle}>
+              <BannerAd
+                unitId={AD_UNITS.BANNER_HOME}
+                size={BannerAdSize.BANNER}
+              />
+            </View>
+            <Text style={styles.title}>Launch the mining Dashboard</Text>
+            {/* <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
                 room above and below.
-              </Text>
+              </Text> */}
 
-              <View style={styles.buttonContainer}>
-                <MiningButton />
-              </View>
-
-              <MiningTimeSelectionPopup />
+            <View style={styles.buttonContainer}>
+              <MiningButton />
             </View>
+
+            <MiningTimeSelectionPopup />
+          </View>
 
           <ClaimRewardModal />
 
           <View style={styles.analyticsGrid}>
-            <LinearGradient
+            {/* <LinearGradient
               colors={['rgba(22, 33, 11, 0.94)', 'rgba(11, 16, 9, 0.98)']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -91,7 +91,7 @@ const HomeScreen = () => {
               <Text style={styles.analyticsBody}>
                 Allocation is balanced across mining, staking, and rewards.
               </Text>
-            </LinearGradient>
+            </LinearGradient> */}
 
             <LinearGradient
               colors={['rgba(44, 60, 16, 0.9)', 'rgba(13, 19, 9, 0.96)']}

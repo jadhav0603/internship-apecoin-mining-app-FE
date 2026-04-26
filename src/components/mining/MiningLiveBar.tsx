@@ -43,8 +43,6 @@
 
 // export default MiningLiveBar;
 
-
-
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useMining } from '../../context/MiningContext';
@@ -59,14 +57,14 @@ const MiningLiveBar = () => {
   if (!isMining) return null;
 
   const formatTime = (totalSeconds: number) => {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
+    const pad = (n: number) => n.toString().padStart(2, '0');
 
-  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-};
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  };
 
   return (
     <View
@@ -91,9 +89,7 @@ const MiningLiveBar = () => {
     >
       {/* LEFT CONTENT */}
       <View>
-        <Text style={{ color: '#aaa', fontSize: 12 }}>
-          Mining in progress
-        </Text>
+        <Text style={{ color: '#aaa', fontSize: 12 }}>Mining in progress</Text>
 
         <Text
           style={{
@@ -103,7 +99,7 @@ const MiningLiveBar = () => {
             marginTop: 2,
           }}
         >
-         ⏱ {formatTime(secondsLeft)}   •   💰 {earned.toFixed(4)}
+          ⏱ {formatTime(secondsLeft)} • 💰 {earned.toFixed(11)}
         </Text>
       </View>
 
@@ -111,7 +107,7 @@ const MiningLiveBar = () => {
       <Pressable
         onPress={() => navigation.navigate('Mining')}
         style={({ pressed }) => ({
-          backgroundColor: '#00E676',
+          backgroundColor: '#40a920ff',
           paddingVertical: 8,
           paddingHorizontal: 16,
           borderRadius: 20,
