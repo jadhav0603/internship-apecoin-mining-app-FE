@@ -263,14 +263,12 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginBottom: 4,
     textAlign: 'center',
-    marginLeft:-20,
   },
   metricCaption: {
     color: COLORS.textSecondary,
     fontFamily: FONTS.regular,
     fontSize: 12,
     lineHeight: 18,
-    marginLeft:-20,
     textAlign: 'center',
   },
 });

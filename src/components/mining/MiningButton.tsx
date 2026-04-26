@@ -153,7 +153,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
         {/* Border Beam Animation */}
         <Animated.View style={[{ position: 'absolute', width: '300%', height: '300%', top: '-100%', left: '-100%' }, animatedBorderStyle]}>
           <LinearGradient
-            colors={[COLORS.primary, 'transparent', '#28ac5aff', 'transparent', COLORS.success, 'transparent']}
+            colors={[COLORS.primary, 'transparent', '#10e830ff', 'transparent', COLORS.success, 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{ flex: 1 }}
@@ -205,14 +205,14 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
                   />
                 </Animated.View>
 
-                {!isMining && (
+                {/* {!isMining && (
                    <FontAwesome5
                     name="play"
                     size={18}
                     color={COLORS.textPrimary}
                     style={styles.playIcon}
                   />
-                )}
+                )} */}
               </View>
             </LinearGradient>
           </SegmentedRing>

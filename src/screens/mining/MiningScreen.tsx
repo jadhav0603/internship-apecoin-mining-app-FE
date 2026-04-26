@@ -16,11 +16,19 @@ import styles from './mining.styles';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { LAYOUT } from '../../constants/LAYOUT';
+import MiningActionButton from '../../components/mining/MiningActionButton';
+import MultiplierUpgradeModal from '../../components/mining/MultiplierUpgradeModal';
+import { useTimeModal } from '../../context/TimeModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MiningScreen = () => {
   const { earned, secondsLeft, hours, miningData, multiplier, multipliers, setMultiplier } =
     useMining();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { setShowModal } = useTimeModal();
+  const [multiplierModalVisible, setMultiplierModalVisible] = React.useState(false);
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -155,89 +163,24 @@ const MiningScreen = () => {
             marginVertical: 15,
           }}
         >
-          {/*   
-  {multipliers.map(m => {
-    const isActive = multiplier === m;
-
-    return (
-      <Pressable
-        key={m}
-        onPress={() => setMultiplier(m)}
-        style={({ pressed }) => ({
-          paddingVertical: 10,
-          paddingHorizontal: 18,
-          margin: 6,
-          borderRadius: 25,
-          backgroundColor: isActive ? '#00E676' : '#1E1E1E',
-          borderWidth: isActive ? 0 : 1,
-          borderColor: '#333',
-          transform: [{ scale: pressed ? 0.95 : 1 }],
-          shadowColor: isActive ? '#00E676' : '#000',
-          shadowOpacity: isActive ? 0.6 : 0.2,
-          shadowRadius: 6,
-          elevation: isActive ? 6 : 2,
-        })}
-      >
-        <Text style={{
-          color: isActive ? '#000' : '#fff',
-          fontWeight: '600',
-          fontSize: 14
-        }}>
-          {m}x
-        </Text>
-      </Pressable>
-    );
-  })} */}
-
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-            {/* MULTIPLIER SECTION */}
-            <View
-              style={{
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                {multipliers.map(m => {
-                  const isActive = multiplier === m;
-
-                  return (
-                    <Pressable
-                      key={m}
-                      onPress={() => setMultiplier(m)}
-                      style={({ pressed }) => ({
-                        paddingVertical: 10,
-                        paddingHorizontal: 16,
-                        margin: 5,
-                        borderRadius: 22,
-                        backgroundColor: isActive ? '#00E676' : '#1E1E1E',
-                        borderWidth: 1,
-                        borderColor: isActive ? '#00E676' : '#333',
-                        transform: [{ scale: pressed ? 0.95 : 1 }],
-                      })}
-                    >
-                      <Text
-                        style={{
-                          color: isActive ? '#000' : '#fff',
-                          fontWeight: '600',
-                        }}
-                      >
-                        {m}x
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+            {/* ACTION BUTTONS */}
+            <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16 }}>
+              <MiningActionButton
+                label="Purchase Speed"
+                icon="bolt"
+                accentColor="#00E5FF"
+                onPress={() => setShowModal(true)}
+              />
+              <MiningActionButton
+                label="Upgrade Multiplier"
+                icon="rocket"
+                accentColor={COLORS.primary}
+                onPress={() => setMultiplierModalVisible(true)}
+              />
             </View>
 
             {/* STATS CARD */}
-
             <LinearGradient
               colors={['rgba(39, 57, 15, 0.9)', 'rgba(10, 15, 8, 0.96)']}
               start={{ x: 0.1, y: 0 }}
@@ -267,11 +210,21 @@ const MiningScreen = () => {
                   </Text>
                   <Text style={styles.metricCaption}>Mined Balance</Text>
                 </View>
+                <View style={styles.metricBlock}>
+                  <Text style={[styles.metricValue, { color: COLORS.primary }]}>
+                    {multiplier}x
+                  </Text>
+                  <Text style={styles.metricCaption}>Multiplier</Text>
+                </View>
               </View>
             </LinearGradient>
           </View>
         </View>
       </SafeAreaView>
+      <MultiplierUpgradeModal
+        visible={multiplierModalVisible}
+        onClose={() => setMultiplierModalVisible(false)}
+      />
     </LinearGradient>
   );
 };
