@@ -10,19 +10,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  avatarContainer: {
+  width: 60,
+  height: 60,
+  borderRadius: 30,
+  overflow: 'hidden',
+  borderWidth: 2,
+  borderColor: '#39FF14',
+  marginRight: 12,
+},
+
+avatar: {
+  width: '100%',
+  height: '100%',
+},
+
+avatarFallback: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+avatarText: {
+  color: '#fff',
+  fontSize: 22,
+  fontWeight: 'bold',
+},
+
   left: {
     flexDirection: 'row',
     alignItems: 'center',
   },
 
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-    borderWidth: 2,
-    borderColor: '#A6FF00',
-  },
+  // avatar: {
+  //   width: 50,
+  //   height: 50,
+  //   borderRadius: 25,
+  //   marginRight: 12,
+  //   borderWidth: 2,
+  //   borderColor: '#A6FF00',
+  // },
 
   row: {
     flexDirection: 'row',

@@ -9,7 +9,6 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import { authService } from '../../services/authService';
 import { userService } from '../../services/userService';
 
@@ -28,6 +28,7 @@ interface MyProfileModalProps {
 
 const MyProfileModal: React.FC<MyProfileModalProps> = ({ visible, onClose }) => {
   const { user, setUser } = useUser();
+  const { showError, showSuccess } = useAlert();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -61,7 +62,7 @@ const MyProfileModal: React.FC<MyProfileModalProps> = ({ visible, onClose }) => 
 
   const handleSave = async () => {
     if (!displayName.trim()) {
-      Alert.alert('Error', 'Name cannot be empty');
+      showError('Name cannot be empty');
       return;
     }
 
@@ -96,10 +97,10 @@ const MyProfileModal: React.FC<MyProfileModalProps> = ({ visible, onClose }) => 
       } : null);
 
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
+      showSuccess('Profile updated successfully');
     } catch (error) {
       console.error('Update profile error:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      showError('Failed to update profile');
     } finally {
       setLoading(false);
     }

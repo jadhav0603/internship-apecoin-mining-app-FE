@@ -1,6 +1,5 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FONTS } from '../../constants/FONTS';
 import { THEME } from './theme';
 
@@ -19,149 +18,144 @@ export type WalletTransaction = {
 type TransactionItemProps = {
   item: WalletTransaction;
   onPress?: (item: WalletTransaction) => void;
+  showConnector?: boolean;
 };
 
-const TRANSACTION_META: Record<
-  WalletTransaction['type'],
-  {
-    icon: string;
-    iconColor: string;
-    iconBackground: string;
-  }
-> = {
-  'Mining Reward': {
-    icon: 'pickaxe',
-    iconColor: THEME.neonGreen,
-    iconBackground: 'rgba(170, 255, 0, 0.12)',
-  },
-  'Referral Bonus': {
-    icon: 'account-multiple-outline',
-    iconColor: THEME.iconBlue,
-    iconBackground: 'rgba(97, 168, 255, 0.14)',
-  },
-  'Daily Reward': {
-    icon: 'gift-outline',
-    iconColor: THEME.gold,
-    iconBackground: 'rgba(255, 215, 0, 0.14)',
-  },
-  'Withdraw Request': {
-    icon: 'cash-fast',
-    iconColor: THEME.neonGreen,
-    iconBackground: 'rgba(170, 255, 0, 0.12)',
-  },
-};
-
-const TransactionItem = ({ item, onPress }: TransactionItemProps) => {
-  const meta = TRANSACTION_META[item.type];
+const TransactionItem = ({
+  item,
+  onPress,
+  showConnector = false,
+}: TransactionItemProps) => {
   const isPending = item.status === 'pending';
 
   return (
-    <Pressable
-      style={styles.transactionCard}
-      onPress={() => onPress?.(item)}
-    >
-      <View style={styles.leftContent}>
-        <View style={[styles.txIcon, { backgroundColor: meta.iconBackground }]}>
-          <MaterialCommunityIcons
-            name={meta.icon}
-            size={20}
-            color={meta.iconColor}
-          />
-        </View>
-
-        <View>
-          <Text style={styles.txType}>{item.type}</Text>
-          <Text style={styles.txDate}>{item.date}</Text>
-        </View>
+    <View style={styles.row}>
+      <View style={styles.timelineColumn}>
+        <View style={[styles.timelineDot, isPending ? styles.pendingDot : styles.paidDot]} />
+        {showConnector ? <View style={styles.timelineConnector} /> : null}
       </View>
 
-      <View style={styles.rightContent}>
-        <Text style={styles.txAmount}>{item.amount}</Text>
-        <View style={isPending ? styles.pendingBadge : styles.paidBadge}>
-          <Text style={isPending ? styles.pendingBadgeText : styles.paidBadgeText}>
-            {isPending ? 'PENDING' : 'PAID'}
-          </Text>
+      <Pressable style={styles.card} onPress={() => onPress?.(item)}>
+        <View style={styles.leftColumn}>
+          <Text style={styles.amountText}>{item.amount}</Text>
+          <Text style={styles.dateText}>{item.date}</Text>
         </View>
-      </View>
-    </Pressable>
+
+        <View style={styles.centerColumn}>
+          <View style={isPending ? styles.pendingBadge : styles.paidBadge}>
+            <Text style={isPending ? styles.pendingBadgeText : styles.paidBadgeText}>
+              {isPending ? 'Pending' : 'Paid'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.rightColumn}>
+          <Text style={styles.amountText}>{item.amount}</Text>
+          <Text style={styles.dateText}>{item.date}</Text>
+        </View>
+      </Pressable>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  transactionCard: {
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: THEME.cardBg,
-    borderRadius: 12,
-    padding: 14,
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: THEME.borderMuted,
+    alignItems: 'stretch',
+    marginBottom: 16,
   },
-  leftContent: {
-    flexDirection: 'row',
+  timelineColumn: {
+    width: 34,
     alignItems: 'center',
+  },
+  timelineDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginTop: 22,
+    borderWidth: 3,
+  },
+  pendingDot: {
+    backgroundColor: '#7DF35F',
+    borderColor: 'rgba(125,243,95,0.28)',
+  },
+  paidDot: {
+    backgroundColor: '#82EFCB',
+    borderColor: 'rgba(130,239,203,0.28)',
+  },
+  timelineConnector: {
     flex: 1,
-    marginRight: 12,
+    width: 2,
+    marginTop: 8,
+    marginBottom: -8,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
-  txIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+  card: {
+    flex: 1,
+    minHeight: 108,
+    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(10, 55, 28, 0.84)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(173, 242, 106, 0.38)',
+    shadowColor: 'rgba(170,255,0,0.18)',
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
   },
-  txType: {
-    color: THEME.white,
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
+  leftColumn: {
+    flex: 1.2,
   },
-  txDate: {
-    color: '#666666',
-    fontSize: 12,
-    marginTop: 2,
+  centerColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
-  rightContent: {
+  rightColumn: {
+    flex: 1,
     alignItems: 'flex-end',
   },
-  txAmount: {
-    color: THEME.neonGreen,
-    fontSize: 15,
+  amountText: {
+    color: THEME.white,
+    fontSize: 18,
     fontFamily: FONTS.bold,
     fontWeight: '800',
-    textAlign: 'right',
+  },
+  dateText: {
+    marginTop: 8,
+    color: 'rgba(255,255,255,0.74)',
+    fontSize: 12,
+    fontFamily: FONTS.medium,
   },
   pendingBadge: {
-    backgroundColor: '#3a2a00',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    backgroundColor: 'rgba(158, 191, 60, 0.18)',
     borderWidth: 1,
-    borderColor: THEME.gold,
-    marginTop: 8,
+    borderColor: 'rgba(202,239,103,0.52)',
   },
   pendingBadgeText: {
-    color: THEME.gold,
-    fontSize: 10,
+    color: '#F1FFC8',
+    fontSize: 12,
     fontFamily: FONTS.bold,
     fontWeight: '700',
   },
   paidBadge: {
-    backgroundColor: '#0a2a0a',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    backgroundColor: 'rgba(105, 240, 174, 0.14)',
     borderWidth: 1,
-    borderColor: THEME.neonGreen,
-    marginTop: 8,
+    borderColor: 'rgba(130,239,203,0.46)',
   },
   paidBadgeText: {
-    color: THEME.neonGreen,
-    fontSize: 10,
+    color: '#D8FFF0',
+    fontSize: 12,
     fontFamily: FONTS.bold,
     fontWeight: '700',
   },

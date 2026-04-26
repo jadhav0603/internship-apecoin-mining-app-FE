@@ -7,7 +7,6 @@ import {
   TextInput,
   Image,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,12 +15,15 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../constants/COLORS';
+import AppBackButton from '../../components/navigation/AppBackButton';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import { userService } from '../../services/userService';
 
 const ProfileDetailsScreen = () => {
   const navigation = useNavigation();
   const { user, setUser } = useUser();
+  const { showError, showSuccess } = useAlert();
   const [username, setUsername] = useState(getUserDisplayName(user));
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const [isUpdating, setIsUpdating] = useState(false);
@@ -29,17 +31,17 @@ const ProfileDetailsScreen = () => {
 
   const handleSave = async () => {
     if (!username.trim()) {
-      Alert.alert('Error', 'Username cannot be empty');
+      showError('Username cannot be empty');
       return;
     }
 
     setIsUpdating(true);
     try {
       await userService.updateProfile(username.trim());
-      Alert.alert('Success', 'Profile updated successfully!');
+      showSuccess('Profile updated successfully!');
       navigation.goBack();
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message ?? 'Failed to update profile');
+      showError(err?.response?.data?.message ?? 'Failed to update profile');
     } finally {
       setIsUpdating(false);
     }
@@ -54,7 +56,8 @@ const ProfileDetailsScreen = () => {
         maxHeight: 1024,
       });
 
-      if (result.didCancel || result.errorCode || !result.assets?.[0]?.uri) return;
+      if (result.didCancel || result.errorCode || !result.assets?.[0]?.uri)
+        return;
 
       const asset = result.assets[0];
       setIsUploading(true);
@@ -62,32 +65,32 @@ const ProfileDetailsScreen = () => {
       const response = await userService.uploadProfileImage(
         asset.uri!,
         asset.type ?? 'image/jpeg',
-        asset.fileName ?? 'avatar.jpg'
+        asset.fileName ?? 'avatar.jpg',
       );
 
       setAvatarUri(response.imageUrl);
-      Alert.alert('Success', 'Profile photo updated!');
-    } catch (err: any) {
-      Alert.alert('Error', 'Failed to upload photo');
+      setUser(prev => (prev ? { ...prev, photoURL: response.imageUrl } : prev));
+      showSuccess('Profile photo updated!');
+    } catch {
+      showError('Failed to upload photo');
     } finally {
       setIsUploading(false);
     }
-  }, []);
+  }, [setUser, showError, showSuccess]);
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={[COLORS.backgroundGradientStart, COLORS.backgroundGradientMid, COLORS.backgroundGradientEnd]}
+        colors={[
+          COLORS.backgroundGradientStart,
+          COLORS.backgroundGradientMid,
+          COLORS.backgroundGradientEnd,
+        ]}
         style={StyleSheet.absoluteFill}
       />
 
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} 
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
-        </TouchableOpacity>
+        <AppBackButton onPress={() => navigation.goBack()} iconSize={24} />
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={isUpdating}>
           {isUpdating ? (
@@ -101,8 +104,12 @@ const ProfileDetailsScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatarWrapper}>
-             <Image
-               source={avatarUri ? { uri: avatarUri } : require('../../assets/images/splashScreen-1.webp')}
+            <Image
+              source={
+                avatarUri
+                  ? { uri: avatarUri }
+                  : require('../../assets/images/splashScreen-1.webp')
+              }
               style={styles.avatar}
             />
             {isUploading && (
@@ -110,7 +117,10 @@ const ProfileDetailsScreen = () => {
                 <ActivityIndicator color={COLORS.primary} />
               </View>
             )}
-            <TouchableOpacity style={styles.cameraButton} onPress={handleChangePhoto}>
+            <TouchableOpacity
+              style={styles.cameraButton}
+              onPress={handleChangePhoto}
+            >
               <Ionicons name="camera" size={20} color="#000" />
             </TouchableOpacity>
           </View>
@@ -121,7 +131,12 @@ const ProfileDetailsScreen = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>DISPLAY NAME</Text>
             <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={COLORS.textMuted}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 value={username}
@@ -135,7 +150,12 @@ const ProfileDetailsScreen = () => {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>EMAIL ADDRESS</Text>
             <View style={[styles.inputWrapper, styles.disabledInput]}>
-              <Ionicons name="mail-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color={COLORS.textMuted}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={[styles.input, { color: COLORS.textMuted }]}
                 value={user?.email}
@@ -160,7 +180,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
   saveText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 30 },
@@ -194,10 +213,21 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: COLORS.background,
   },
-  changePhotoText: { color: COLORS.primary, marginTop: 15, fontSize: 14, fontWeight: '600' },
+  changePhotoText: {
+    color: COLORS.primary,
+    marginTop: 15,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   form: { width: '100%' },
   inputGroup: { marginBottom: 25 },
-  label: { color: COLORS.textMuted, fontSize: 12, fontWeight: 'bold', marginBottom: 10, letterSpacing: 1 },
+  label: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    letterSpacing: 1,
+  },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -211,7 +241,12 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 12 },
   input: { flex: 1, color: COLORS.textPrimary, fontSize: 16 },
   disabledInput: { backgroundColor: 'rgba(255,255,255,0.02)' },
-  helperText: { color: COLORS.textMuted, fontSize: 12, marginTop: 8, fontStyle: 'italic' },
+  helperText: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
 });
 
 export default ProfileDetailsScreen;

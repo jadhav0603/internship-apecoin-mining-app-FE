@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   RefreshControl,
@@ -21,7 +20,6 @@ import AttachmentUploadBox, {
   type TicketAttachmentItem,
 } from '../../components/tickets/AttachmentUploadBox';
 import PrioritySelector from '../../components/tickets/PrioritySelector';
-import TicketCard from '../../components/tickets/TicketCard';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import {
   ISSUE_CATEGORIES,
@@ -30,16 +28,40 @@ import {
   TICKET_THEME,
 } from '../../components/tickets/ticketTheme';
 import { useUser } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
-import { ticketService, type TicketItem, type TicketPriority } from '../../services/ticketService';
+import {
+  ticketService,
+  type TicketItem,
+  type TicketPriority,
+} from '../../services/ticketService';
 
-const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_ATTACHMENT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+
+const formatCompactDate = (value?: string) => {
+  if (!value) {
+    return '';
+  }
+
+  return new Date(value).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
 
 const ReportIssueScreen = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const { showConfirm, showError, showWarning } = useAlert();
 
   const [category, setCategory] = useState<string>('');
   const [priority, setPriority] = useState<TicketPriority | ''>('');
@@ -53,62 +75,80 @@ const ReportIssueScreen = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
   const [isRefreshingReports, setIsRefreshingReports] = useState(false);
+  const [isPreviousReportsExpanded, setIsPreviousReportsExpanded] =
+    useState(false);
   const [recentTickets, setRecentTickets] = useState<TicketItem[]>([]);
 
-  const previousReports = useMemo(() => recentTickets.slice(0, 2), [recentTickets]);
+  const previousReports = useMemo(
+    () =>
+      [...recentTickets]
+        .sort(
+          (first, second) =>
+            new Date(second.createdAt).getTime() -
+            new Date(first.createdAt).getTime(),
+        )
+        .slice(0, 2),
+    [recentTickets],
+  );
 
-  const fetchRecentTickets = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) {
-        setIsRefreshingReports(true);
-      } else {
-        setIsLoadingReports(true);
-      }
+  const fetchRecentTickets = useCallback(
+    async (showRefresh = false) => {
+      try {
+        if (showRefresh) {
+          setIsRefreshingReports(true);
+        } else {
+          setIsLoadingReports(true);
+        }
 
-      const tickets = await ticketService.getTickets();
-      setRecentTickets(tickets);
-    } catch (error: any) {
-      if (!showRefresh) {
-        Alert.alert(
-          'Unable to Load Reports',
-          error?.response?.data?.message ?? 'Please try again in a moment.'
-        );
+        const tickets = await ticketService.getTickets();
+        setRecentTickets(tickets);
+      } catch (error: any) {
+        if (!showRefresh) {
+          showError(
+            error?.response?.data?.message ?? 'Please try again in a moment.',
+            'Unable to Load Reports',
+          );
+        }
+      } finally {
+        setIsLoadingReports(false);
+        setIsRefreshingReports(false);
       }
-    } finally {
-      setIsLoadingReports(false);
-      setIsRefreshingReports(false);
-    }
-  }, []);
+    },
+    [showError],
+  );
 
   useFocusEffect(
     useCallback(() => {
       fetchRecentTickets();
-    }, [fetchRecentTickets])
+    }, [fetchRecentTickets]),
   );
 
   const validateForm = () => {
     if (!category) {
-      Alert.alert('Validation', 'Please select a category.');
+      showWarning('Please select a category.', 'Validation');
       return false;
     }
 
     if (!priority) {
-      Alert.alert('Validation', 'Please select a priority.');
+      showWarning('Please select a priority.', 'Validation');
       return false;
     }
 
     if (!description.trim()) {
-      Alert.alert('Validation', 'Please enter a description.');
+      showWarning('Please enter a description.', 'Validation');
       return false;
     }
 
     if (allowContact && !contactEmail.trim() && !contactPhone.trim()) {
-      Alert.alert('Validation', 'Please enter an email or phone number.');
+      showWarning('Please enter an email or phone number.', 'Validation');
       return false;
     }
 
     if (attachments.some(item => !item.url)) {
-      Alert.alert('Validation', 'Please wait for all attachments to finish uploading.');
+      showWarning(
+        'Please wait for all attachments to finish uploading.',
+        'Validation',
+      );
       return false;
     }
 
@@ -117,11 +157,14 @@ const ReportIssueScreen = () => {
 
   const handleAttachmentPick = useCallback(async () => {
     if (attachments.length >= MAX_TICKET_ATTACHMENTS) {
-      Alert.alert('Attachment limit', `You can upload up to ${MAX_TICKET_ATTACHMENTS} files.`);
+      showWarning(
+        `You can upload up to ${MAX_TICKET_ATTACHMENTS} files.`,
+        'Attachment limit',
+      );
       return;
     }
 
-      const result = await new Promise<{
+    const result = await new Promise<{
       assets?: Asset[];
       didCancel?: boolean;
       errorCode?: string;
@@ -133,7 +176,7 @@ const ReportIssueScreen = () => {
           selectionLimit: MAX_TICKET_ATTACHMENTS - attachments.length,
           quality: 0.8,
         },
-        resolve
+        resolve,
       );
     });
 
@@ -142,7 +185,10 @@ const ReportIssueScreen = () => {
     }
 
     if (result.errorCode) {
-      Alert.alert('Upload Failed', result.errorMessage ?? 'Unable to select images.');
+      showError(
+        result.errorMessage ?? 'Unable to select images.',
+        'Upload Failed',
+      );
       return;
     }
 
@@ -152,17 +198,17 @@ const ReportIssueScreen = () => {
       }
 
       if ((asset.fileSize ?? 0) > MAX_TICKET_ATTACHMENT_SIZE_BYTES) {
-        Alert.alert(
+        showWarning(
+          `${asset.fileName ?? 'One file'} exceeds the 5MB size limit.`,
           'File too large',
-          `${asset.fileName ?? 'One file'} exceeds the 5MB size limit.`
         );
         return false;
       }
 
       if (asset.type && !ALLOWED_ATTACHMENT_TYPES.includes(asset.type)) {
-        Alert.alert(
+        showWarning(
+          'Please upload JPG, PNG, WEBP, or GIF images only.',
           'Unsupported file type',
-          'Please upload JPG, PNG, WEBP, or GIF images only.'
         );
         return false;
       }
@@ -193,19 +239,25 @@ const ReportIssueScreen = () => {
       try {
         const url = await ticketService.uploadAttachment(asset);
         setAttachments(current =>
-          current.map(item => (item.id === pendingItem.id ? { ...item, url, uploading: false } : item))
+          current.map(item =>
+            item.id === pendingItem.id
+              ? { ...item, url, uploading: false }
+              : item,
+          ),
         );
       } catch (error: any) {
-        setAttachments(current => current.filter(item => item.id !== pendingItem.id));
-        Alert.alert(
+        setAttachments(current =>
+          current.filter(item => item.id !== pendingItem.id),
+        );
+        showError(
+          error?.message ?? 'Please try again with another image.',
           'Attachment Upload Failed',
-          error?.message ?? 'Please try again with another image.'
         );
       }
     }
 
     setIsUploadingAttachments(false);
-  }, [attachments.length]);
+  }, [attachments.length, showError, showWarning]);
 
   const handleRemoveAttachment = (id: string) => {
     setAttachments(current => current.filter(item => item.id !== id));
@@ -233,29 +285,32 @@ const ReportIssueScreen = () => {
         category,
         priority,
         description: description.trim(),
-        attachments: attachments.map(item => item.url).filter(Boolean) as string[],
+        attachments: attachments
+          .map(item => item.url)
+          .filter(Boolean) as string[],
         allowContact,
-        contactEmail: allowContact && contactEmail.trim() ? contactEmail.trim() : null,
-        contactPhone: allowContact && contactPhone.trim() ? contactPhone.trim() : null,
+        contactEmail:
+          allowContact && contactEmail.trim() ? contactEmail.trim() : null,
+        contactPhone:
+          allowContact && contactPhone.trim() ? contactPhone.trim() : null,
       });
 
       resetForm();
       await fetchRecentTickets();
 
-      Alert.alert('Report Submitted', `Your report ${ticket.ticketId} has been created.`, [
-        {
-          text: 'View Details',
-          onPress: () => navigation.navigate('TicketDetail', { ticketId: ticket.ticketId }),
-        },
-        {
-          text: 'OK',
-          style: 'cancel',
-        },
-      ]);
+      showConfirm({
+        title: 'Report Submitted',
+        message: `Your report ${ticket.ticketId} has been created.`,
+        confirmText: 'View Details',
+        cancelText: 'OK',
+        onConfirm: () =>
+          navigation.navigate('TicketDetail', { ticketId: ticket.ticketId }),
+      });
     } catch (error: any) {
-      Alert.alert(
+      showError(
+        error?.response?.data?.message ??
+          'Unable to submit your report right now.',
         'Submission Failed',
-        error?.response?.data?.message ?? 'Unable to submit your report right now.'
       );
     } finally {
       setIsSubmitting(false);
@@ -281,26 +336,142 @@ const ReportIssueScreen = () => {
           />
         }
       >
-        <TicketHeader title="Report an Issue" onBack={() => navigation.goBack()} />
+        <TicketHeader
+          title="Report an Issue"
+          onBack={() => navigation.goBack()}
+        />
 
         <View style={styles.helpCard}>
           <View style={styles.helpIconWrap}>
-            <Ionicons name="shield-checkmark-outline" size={22} color={TICKET_THEME.accent} />
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={22}
+              color={TICKET_THEME.accent}
+            />
           </View>
           <View style={styles.helpTextWrap}>
             <Text style={styles.helpTitle}>Need help?</Text>
             <Text style={styles.helpDescription}>
-              Describe your issue clearly and we will review it as soon as possible.
+              Describe your issue clearly and we will review it as soon as
+              possible.
             </Text>
           </View>
         </View>
 
+        <View style={styles.previousReportsCard}>
+          <Pressable
+            style={styles.previousReportsHeader}
+            onPress={() => setIsPreviousReportsExpanded(current => !current)}
+          >
+            <Text style={styles.previousReportsTitle}>Previous Reports</Text>
+
+            <View style={styles.previousReportsActions}>
+              <Pressable
+                hitSlop={8}
+                onPress={() =>
+                  setIsPreviousReportsExpanded(current => !current)
+                }
+                style={styles.expandIconWrap}
+              >
+                <Ionicons
+                  name={
+                    isPreviousReportsExpanded ? 'chevron-up' : 'chevron-down'
+                  }
+                  size={18}
+                  color={TICKET_THEME.textSecondary}
+                />
+              </Pressable>
+
+              {isPreviousReportsExpanded ? (
+                <Pressable
+                  hitSlop={8}
+                  onPress={() => navigation.navigate('TicketList')}
+                  style={styles.viewAllButton}
+                >
+                  <Text style={styles.viewAllButtonText}>View All</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </Pressable>
+
+          {isPreviousReportsExpanded ? (
+            <View style={styles.previousReportsContent}>
+              {isLoadingReports ? (
+                <View style={styles.compactState}>
+                  <ActivityIndicator color={TICKET_THEME.accent} />
+                </View>
+              ) : previousReports.length ? (
+                <View style={styles.reportPreviewList}>
+                  {previousReports.map(ticket => (
+                    <Pressable
+                      key={ticket.ticketId}
+                      onPress={() =>
+                        navigation.navigate('TicketDetail', {
+                          ticketId: ticket.ticketId,
+                        })
+                      }
+                      style={styles.reportPreviewItem}
+                    >
+                      <View style={styles.reportPreviewTopRow}>
+                        <Text
+                          style={styles.reportPreviewCategory}
+                          numberOfLines={1}
+                        >
+                          {ticket.category}
+                        </Text>
+                        <Text style={styles.reportPreviewStatus}>
+                          {ticket.status}
+                        </Text>
+                      </View>
+
+                      <Text
+                        style={styles.reportPreviewDescription}
+                        numberOfLines={2}
+                      >
+                        {ticket.description}
+                      </Text>
+
+                      <View style={styles.reportPreviewFooter}>
+                        <Text style={styles.reportPreviewMeta}>
+                          {ticket.ticketId} •{' '}
+                          {formatCompactDate(ticket.createdAt)}
+                        </Text>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color={TICKET_THEME.textMuted}
+                        />
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.compactState}>
+                  <Text style={styles.emptyTitle}>No reports yet</Text>
+                  <Text style={styles.emptyDescription}>
+                    Your submitted tickets will appear here.
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : null}
+        </View>
+
         <Text style={styles.label}>Category</Text>
-        <Pressable style={styles.selector} onPress={() => setIsCategoryModalVisible(true)}>
-          <Text style={[styles.selectorText, !category && styles.placeholderText]}>
+        <Pressable
+          style={styles.selector}
+          onPress={() => setIsCategoryModalVisible(true)}
+        >
+          <Text
+            style={[styles.selectorText, !category && styles.placeholderText]}
+          >
             {category || 'Select a category'}
           </Text>
-          <Ionicons name="chevron-down" size={20} color={TICKET_THEME.textSecondary} />
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={TICKET_THEME.textSecondary}
+          />
         </Pressable>
 
         <Text style={styles.label}>Priority</Text>
@@ -342,7 +513,10 @@ const ReportIssueScreen = () => {
                 }
               }}
               thumbColor={allowContact ? TICKET_THEME.accent : '#f4f3f4'}
-              trackColor={{ false: '#3A4035', true: `${TICKET_THEME.accent}66` }}
+              trackColor={{
+                false: '#3A4035',
+                true: `${TICKET_THEME.accent}66`,
+              }}
             />
           </View>
 
@@ -370,7 +544,10 @@ const ReportIssueScreen = () => {
         </View>
 
         <Pressable
-          style={[styles.submitButton, (isSubmitting || isUploadingAttachments) && styles.buttonDisabled]}
+          style={[
+            styles.submitButton,
+            (isSubmitting || isUploadingAttachments) && styles.buttonDisabled,
+          ]}
           onPress={handleSubmit}
           disabled={isSubmitting || isUploadingAttachments}
         >
@@ -380,36 +557,6 @@ const ReportIssueScreen = () => {
             <Text style={styles.submitButtonText}>Submit Report</Text>
           )}
         </Pressable>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Previous Reports</Text>
-          <Pressable onPress={() => navigation.navigate('TicketList')}>
-            <Text style={styles.viewAllText}>View All</Text>
-          </Pressable>
-        </View>
-
-        {isLoadingReports ? (
-          <View style={styles.stateCard}>
-            <ActivityIndicator color={TICKET_THEME.accent} />
-          </View>
-        ) : previousReports.length ? (
-          <View style={styles.reportList}>
-            {previousReports.map(ticket => (
-              <TicketCard
-                key={ticket.ticketId}
-                ticket={ticket}
-                onPress={() => navigation.navigate('TicketDetail', { ticketId: ticket.ticketId })}
-              />
-            ))}
-          </View>
-        ) : (
-          <View style={styles.stateCard}>
-            <Text style={styles.emptyTitle}>No reports yet</Text>
-            <Text style={styles.emptyDescription}>
-              Your submitted tickets will appear here.
-            </Text>
-          </View>
-        )}
       </ScrollView>
 
       <Modal
@@ -435,7 +582,11 @@ const ReportIssueScreen = () => {
               >
                 <Text style={styles.modalOptionText}>{item}</Text>
                 {category === item ? (
-                  <Ionicons name="checkmark" size={18} color={TICKET_THEME.accent} />
+                  <Ionicons
+                    name="checkmark"
+                    size={18}
+                    color={TICKET_THEME.accent}
+                  />
                 ) : null}
               </Pressable>
             ))}
@@ -486,6 +637,118 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginTop: 6,
+  },
+  previousReportsCard: {
+    marginBottom: 6,
+    backgroundColor: TICKET_THEME.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: TICKET_THEME.cardBorder,
+    overflow: 'hidden',
+  },
+  previousReportsHeader: {
+    minHeight: 72,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  previousReportsTitle: {
+    color: TICKET_THEME.textPrimary,
+    fontSize: 17,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    flex: 1,
+    paddingTop: 6,
+    paddingRight: 16,
+  },
+  previousReportsActions: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  expandIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: TICKET_THEME.input,
+  },
+  viewAllButton: {
+    minHeight: 24,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewAllButtonText: {
+    color: TICKET_THEME.accent,
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+  },
+  previousReportsContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  compactState: {
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    backgroundColor: TICKET_THEME.input,
+    borderWidth: 1,
+    borderColor: TICKET_THEME.inputBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportPreviewList: {
+    gap: 10,
+  },
+  reportPreviewItem: {
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: TICKET_THEME.input,
+    borderWidth: 1,
+    borderColor: TICKET_THEME.inputBorder,
+  },
+  reportPreviewTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  reportPreviewCategory: {
+    flex: 1,
+    color: TICKET_THEME.textPrimary,
+    fontSize: 15,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+  },
+  reportPreviewStatus: {
+    color: TICKET_THEME.pending,
+    fontSize: 11,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  reportPreviewDescription: {
+    marginTop: 8,
+    color: TICKET_THEME.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  reportPreviewFooter: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  reportPreviewMeta: {
+    flex: 1,
+    color: TICKET_THEME.textMuted,
+    fontSize: 12,
+    fontFamily: FONTS.medium,
   },
   label: {
     color: TICKET_THEME.textPrimary,
@@ -582,37 +845,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: FONTS.bold,
     fontWeight: '700',
-  },
-  sectionHeader: {
-    marginTop: 28,
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    color: TICKET_THEME.textPrimary,
-    fontSize: 22,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  viewAllText: {
-    color: TICKET_THEME.accent,
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
-  },
-  reportList: {
-    gap: 12,
-  },
-  stateCard: {
-    backgroundColor: TICKET_THEME.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: TICKET_THEME.cardBorder,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   emptyTitle: {
     color: TICKET_THEME.textPrimary,

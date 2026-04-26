@@ -1,36 +1,21 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import {
-  CompositeNavigationProp,
-  useNavigation,
-} from '@react-navigation/native';
-import {
-  BottomTabNavigationProp,
-  useBottomTabBarHeight,
-} from '@react-navigation/bottom-tabs';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
-import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
 import styles from './home.styles';
 import BalanceCard from '../../components/home/BalanceCard';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
-
-type HomeScreenNavigationProp = CompositeNavigationProp<
-  BottomTabNavigationProp<BottomTabParamList, 'Home'>,
-  NativeStackNavigationProp<RootStackParamList>
->;
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 
 const HomeScreen = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
-  const tabBarHeight = useBottomTabBarHeight();
+  const bottomContentPadding = useBottomOverlayPadding(36);
 
   return (
     <LinearGradient
@@ -54,7 +39,7 @@ const HomeScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: tabBarHeight + 36 },
+            { paddingBottom: bottomContentPadding },
           ]}
         >
           <View>

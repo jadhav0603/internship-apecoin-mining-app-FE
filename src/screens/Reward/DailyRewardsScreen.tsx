@@ -5,19 +5,20 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   ImageBackground,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../../api/apiClient';
 import { authService } from '../../services/authService';
 import ClaimPopupModal from '../../components/ClaimPopupModal';
 import SuccessOverlay from '../../components/SuccessOverlay';
 import RewardsGridSection from '../../components/RewardsGridSection';
+import { useAlert } from '../../context/AlertContext';
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 // import { useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 // import { AD_UNITS } from '../../constants/AD_UNITS';
 
@@ -74,10 +75,13 @@ const formatTime = (seconds: number) => {
 };
 
 const DailyRewardsScreen = () => {
+  const { showError } = useAlert();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = useBottomOverlayPadding(24);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSuccess] = useState(false);
   const [rewards, setRewards] = useState<RewardItem[]>([]);
   const [currentDay, setCurrentDay] = useState(1);
   const [currency, setCurrency] = useState('APE');
@@ -142,11 +146,11 @@ const DailyRewardsScreen = () => {
           baseURL: axios.isAxiosError(error) ? error.config?.baseURL || apiClient.defaults.baseURL : undefined,
         });
       }
-      Alert.alert('Rewards unavailable', message);
+      showError(message, 'Rewards unavailable');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -203,7 +207,7 @@ const DailyRewardsScreen = () => {
         });
       }
 
-      Alert.alert('Claim Failed', msg);
+      showError(msg, 'Claim Failed');
     } finally {
       setClaiming(false);
     }
@@ -243,7 +247,13 @@ const DailyRewardsScreen = () => {
         resizeMode="cover"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top,
+              paddingBottom: bottomContentPadding,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
         >
         {/* Floating Title */}

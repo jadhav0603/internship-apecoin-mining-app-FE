@@ -17,6 +17,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import styles from './Menu.styles';
 import { COLORS } from '../../constants/COLORS';
 import { authService } from '../../services/authService';
+import ConfirmModal from '../ConfirmModal';
 import UserHeader from './UserHeader';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -27,6 +28,7 @@ type MenuNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const Menu = () => {
   const navigation = useNavigation<MenuNavigationProp>();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [logoutVisible, setLogoutVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   const toggleMenu = () => {
@@ -47,11 +49,21 @@ const Menu = () => {
   };
 
   const handleLogout = async () => {
+    setLogoutVisible(false);
+
     try {
       await authService.signOut();
     } catch (err) {
       console.log("Logout error", err);
     }
+  };
+
+  const handleLogoutPress = () => {
+    if (menuOpen) {
+      toggleMenu();
+    }
+
+    setLogoutVisible(true);
   };
 
   const handleTransactionHistory = () => {
@@ -135,7 +147,7 @@ const Menu = () => {
                   </TouchableOpacity>
                 ))}
 
-                <TouchableOpacity style={styles.menuItemBox} onPress={handleLogout}>
+                <TouchableOpacity style={styles.menuItemBox} onPress={handleLogoutPress}>
                   <Text style={[styles.menuItem, localStyles.logoutText]}>
                     Logout
                   </Text>
@@ -146,6 +158,17 @@ const Menu = () => {
           </ImageBackground>
         </View>
       </Animated.View>
+
+      <ConfirmModal
+        visible={logoutVisible}
+        title="Logout"
+        message="Are you sure you want to logout of your account?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        tone="danger"
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutVisible(false)}
+      />
     </>
   );
 };

@@ -1,9 +1,9 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/COLORS';
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 import styles from './tabScene.styles';
 
 type SceneMetric = {
@@ -30,7 +30,7 @@ const TabScene = ({
   cardBody,
   children,
 }: TabSceneProps) => {
-  const tabBarHeight = useBottomTabBarHeight();
+  const bottomContentPadding = useBottomOverlayPadding(36);
 
   return (
     <LinearGradient
@@ -50,7 +50,7 @@ const TabScene = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: tabBarHeight + 36 },
+            { paddingBottom: bottomContentPadding },
           ]}>
           <LinearGradient
             colors={['rgba(31, 44, 13, 0.94)', 'rgba(11, 16, 8, 0.98)']}

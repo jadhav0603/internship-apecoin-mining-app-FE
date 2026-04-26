@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
+import AppBackButton from '../navigation/AppBackButton';
 import { TICKET_THEME } from './ticketTheme';
 
 type TicketHeaderProps = {
@@ -18,9 +18,7 @@ const TicketHeader = ({
   onRightActionPress,
 }: TicketHeaderProps) => (
   <View style={styles.container}>
-    <Pressable onPress={onBack} style={styles.iconButton}>
-      <Ionicons name="chevron-back" size={22} color={TICKET_THEME.textPrimary} />
-    </Pressable>
+    <AppBackButton onPress={onBack} />
 
     <Text style={styles.title} numberOfLines={1}>
       {title}
@@ -42,14 +40,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: TICKET_THEME.input,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
     flex: 1,
