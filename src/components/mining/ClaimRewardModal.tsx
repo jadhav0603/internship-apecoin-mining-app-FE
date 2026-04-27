@@ -5,7 +5,7 @@ import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
 import API from '../../services/api';
-import { useInterstitialAd } from 'react-native-google-mobile-ads';
+import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
@@ -22,8 +22,8 @@ const ClaimRewardModal = () => {
   } = useMining();
   const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_CLAIM,
+  const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
+    AD_UNITS.REWARDED_CLAIM,
     { requestNonPersonalizedAdsOnly: true }
   );
 
@@ -34,10 +34,11 @@ const ClaimRewardModal = () => {
   useEffect(() => {
     if (isClosed) {
       load();
-      // Proceed with claim logic if ad was shown and closed
-      // This is handled via handleClaim's state or simply by allowing it to proceed
+      if (isEarnedReward) {
+        executeClaim();
+      }
     }
-  }, [isClosed, load]);
+  }, [isClosed, load, isEarnedReward]);
 
   useEffect(() => {
     if (isMining) {
@@ -74,8 +75,14 @@ const ClaimRewardModal = () => {
   const handleClaim = async () => {
     if (isLoaded) {
       show();
+      return;
     }
     
+    // If ad not loaded, allow direct claim as fallback
+    await executeClaim();
+  };
+
+  const executeClaim = async () => {
     try {
       const response = await API.post('/mining/claim');
       setBalanceFromServer(response.data?.balance ?? 0);
