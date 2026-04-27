@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
   },
   adContainer: {
     alignItems: 'center',
-    marginTop:  10,
-    marginBottom: 10,
+    marginTop:-15,
+    marginBottom: 2,
     width: '100%',
   },
 });

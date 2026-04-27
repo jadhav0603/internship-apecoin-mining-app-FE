@@ -1,21 +1,32 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
 import styles from './home.styles';
 import BalanceCard from '../../components/home/BalanceCard';
+import InfoSlider from '../../components/home/InfoSlider';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import { useWallet } from '../../context/WalletContext';
 
 const HomeScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(36);
+  const { refreshBalance } = useWallet();
+
+  // ✅ Refresh balance & data each time home screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      void refreshBalance();
+    }, [refreshBalance])
+  );
 
   return (
     <LinearGradient
@@ -29,6 +40,13 @@ const HomeScreen = () => {
       style={styles.background}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.adContainer}>
+          <BannerAd
+            unitId={AD_UNITS.BANNER_HOME}
+            size={BannerAdSize.BANNER}
+          />
+        </View>
+
         <View style={styles.primaryGlow} />
         <View style={styles.secondaryGlow} />
 
@@ -43,12 +61,6 @@ const HomeScreen = () => {
           ]}
         >
           <View>
-            <View style={styles.adContainer}>
-              <BannerAd
-                unitId={AD_UNITS.BANNER_HOME}
-                size={BannerAdSize.BANNER}
-              />
-            </View>
             <Text style={styles.title}>Launch the mining Dashboard</Text>
             {/* <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
@@ -58,6 +70,8 @@ const HomeScreen = () => {
             <View style={styles.buttonContainer}>
               <MiningButton />
             </View>
+
+            <InfoSlider />
 
             <MiningTimeSelectionPopup />
           </View>
@@ -78,7 +92,7 @@ const HomeScreen = () => {
               </Text>
             </LinearGradient> */}
 
-            <LinearGradient
+            {/* <LinearGradient
               colors={['rgba(44, 60, 16, 0.9)', 'rgba(13, 19, 9, 0.96)']}
               start={{ x: 0.1, y: 0 }}
               end={{ x: 0.9, y: 1 }}
@@ -89,7 +103,7 @@ const HomeScreen = () => {
               <Text style={styles.analyticsBody}>
                 Best projected swap depth for the next reward unlock cycle.
               </Text>
-            </LinearGradient>
+            </LinearGradient> */}
           </View>
         </ScrollView>
       </SafeAreaView>
