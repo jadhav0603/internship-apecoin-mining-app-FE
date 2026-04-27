@@ -141,13 +141,13 @@ const styles = StyleSheet.create({
     fontSize: 42,
     lineHeight: 46,
     letterSpacing: FONTS.letterSpacing.tight,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   ringSection: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
+    marginBottom: 50,
   },
   timerCore: {
     width: 190,
