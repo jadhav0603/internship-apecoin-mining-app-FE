@@ -2,10 +2,8 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated as RNAnimated,
   Dimensions,
-  type DimensionValue,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -28,10 +26,11 @@ import { useMiningWalletData } from '../../hooks/useMiningWalletData';
 import { useReferralData } from '../../hooks/useReferralData';
 import { useRewardsData } from '../../hooks/useRewardsData';
 import { RootStackParamList } from '../../navigation/types';
+import AppBackButton from '../../components/navigation/AppBackButton';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_HEIGHT = 150; // Reduced height for simplified content
 const CARD_SPACING = 16;
 const CARD_FULL_SIZE = CARD_HEIGHT + CARD_SPACING;
@@ -410,12 +409,7 @@ const MyProgressScreen = () => {
       />
 
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 10) }]}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
-        </TouchableOpacity>
+        <AppBackButton onPress={() => navigation.goBack()} />
 
         <View style={styles.headerCopy}>
           <Text style={styles.headerEyebrow}>Performance Overview</Text>
@@ -493,16 +487,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SIDE_PADDING,
-  },
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerCopy: {
     alignItems: 'center',

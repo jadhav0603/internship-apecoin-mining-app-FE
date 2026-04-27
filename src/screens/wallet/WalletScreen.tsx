@@ -1,41 +1,189 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   ImageBackground,
   Pressable,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  useNavigation,
+  type NavigationProp,
+  type ParamListBase,
+} from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
-import RevenueChart from '../../components/wallet/RevenueChart';
-import { THEME, formatAmount } from '../../components/wallet/theme';
-import { FONTS } from '../../constants/FONTS';
-import { useMiningWalletData } from '../../hooks/useMiningWalletData';
-import { useReferralData } from '../../hooks/useReferralData';
-import { useRewardsData } from '../../hooks/useRewardsData';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import LinearGradient from 'react-native-linear-gradient';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
+import WithdrawDetailsSheet from '../../components/wallet/WithdrawDetailsSheet';
+import type { WalletTransaction } from '../../components/wallet/TransactionItem';
+import WithdrawSuccessModal from '../../components/wallet/WithdrawSuccessModal';
+import { THEME, formatAmount } from '../../components/wallet/theme';
 import { AD_UNITS } from '../../constants/AD_UNITS';
+import type { RootStackParamList } from '../../navigation/types';
+import { useUser } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
+import { useLiquidBalance } from '../../hooks/useLiquidBalance';
+import {
+  withdrawService,
+  type WithdrawRecord,
+} from '../../services/withdrawService';
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import styles from './wallet.styles';
 
 const WalletScreen = () => {
-  const tabBarHeight = useBottomTabBarHeight();
-  const insets = useSafeAreaInsets();
-
-  const { totalCollected, weekData, loading } = useRewardsData();
-  const { miningTotal, miningHistory, loading: miningLoading } = useMiningWalletData();
+  const bottomContentPadding = useBottomOverlayPadding(44);
+  const navigation =
+    useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
+  const { user } = useUser();
+  const { showError } = useAlert();
+  const buttonFloat = useRef(new Animated.Value(0)).current;
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
+    useState(false);
+  const [selectedWithdrawRecord, setSelectedWithdrawRecord] =
+    useState<WalletTransaction | null>(null);
   const {
+    totalCollected,
+    miningTotal,
     referralEarnings,
-    weekData: referralWeekData,
-    loading: referralLoading,
-  } = useReferralData();
+    pendingRecords,
+    paidRecords,
+    liquidBalance,
+    loading: isBalanceLoading,
+    withdrawLoading: withdrawDataLoading,
+    error: withdrawDataError,
+    refreshWithdrawRecords,
+  } = useLiquidBalance();
 
-  const totalBalance = totalCollected + miningTotal + referralEarnings;
-  const isBalanceLoading = loading || miningLoading || referralLoading;
+  const rawBalance = Number.isFinite(liquidBalance) ? liquidBalance : 0;
+  const displayBalance = Number(rawBalance.toFixed(6));
+  const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(buttonFloat, {
+          toValue: 1,
+          duration: 1700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonFloat, {
+          toValue: 0,
+          duration: 1700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [buttonFloat]);
+
+  const mapWithdrawRecordToTransaction = (
+    item: WithdrawRecord,
+  ): WalletTransaction => ({
+    id: item._id || item.id || `${item.userId}-${item.withdrawalDate}`,
+    type: 'Withdraw Request',
+    amount: `${formatAmount(item.amount)} APE`,
+    amountValue: item.amount,
+    date: new Date(item.withdrawalDate).toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }),
+    status: item.status,
+    miningEarnings: item.miningEarnings ?? 0,
+    referralEarnings: item.referralEarnings ?? 0,
+    dailyRewards: item.dailyRewards ?? 0,
+  });
+
+  const pendingWithdrawItems = pendingRecords.map(
+    mapWithdrawRecordToTransaction,
+  );
+  const paidWithdrawItems = paidRecords.map(mapWithdrawRecordToTransaction);
+
+  const withdrawFloatStyle = {
+    transform: [
+      {
+        translateY: buttonFloat.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -3],
+        }),
+      },
+    ],
+  };
+
+  const overviewCards = [
+    {
+      key: 'mining',
+      label: 'Mining',
+      value: formatAmount(miningTotal),
+      iconFamily: 'material' as const,
+      icon: 'pickaxe',
+      iconColor: '#9AFB65',
+      iconBackground: 'rgba(154, 251, 101, 0.12)',
+    },
+    {
+      key: 'rewards',
+      label: 'Rewards',
+      value: formatAmount(totalCollected),
+      iconFamily: 'ionicon' as const,
+      icon: 'gift-outline',
+      iconColor: '#C5F96C',
+      iconBackground: 'rgba(197, 249, 108, 0.12)',
+    },
+    {
+      key: 'referrals',
+      label: 'Referrals',
+      value: formatAmount(referralEarnings),
+      iconFamily: 'material' as const,
+      icon: 'vector-link',
+      iconColor: '#79F1C7',
+      iconBackground: 'rgba(121, 241, 199, 0.12)',
+    },
+  ] as const;
+
+  const handleWithdrawPress = async () => {
+    if (isWithdrawDisabled) {
+      return;
+    }
+
+    if (!user?.uid || !user?.email) {
+      showError(
+        'User details are missing for this withdrawal request.',
+        'Unable to continue',
+      );
+      return;
+    }
+
+    try {
+      setWithdrawLoading(true);
+
+      await withdrawService.requestWithdraw({
+        userId: user.uid,
+        email: user.email,
+        amount: rawBalance,
+      });
+
+      await refreshWithdrawRecords();
+      setShowWithdrawSuccessModal(true);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        'Failed to submit withdrawal request.';
+
+      showError(message, 'Request Failed');
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -43,60 +191,34 @@ const WalletScreen = () => {
       style={styles.background}
       resizeMode="cover"
     >
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="light-content"
+      />
       <View style={styles.overlay} />
       <View style={styles.topGlow} />
       <View style={styles.bottomGlow} />
 
-      <View style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: Math.max(100, tabBarHeight + 28) },
+            { paddingBottom: bottomContentPadding },
           ]}
         >
-          <View
-            style={[
-              styles.headerRow,
-              { paddingTop: Math.max(insets.top + 10, 50) },
-            ]}
-          >
+          <View style={[styles.headerRow, styles.headerRowSafe]}>
             <Text style={styles.walletTitle}>Wallet</Text>
 
-            <Pressable style={styles.bellButton}>
-              <Ionicons
-                name="wallet-outline"
-                size={22}
-                color={THEME.white}
-              />
+            <Pressable
+              style={styles.receiptButton}
+              onPress={() => navigation.navigate('TransactionHistory')}
+            >
+              <Ionicons name="receipt-outline" size={22} color={THEME.white} />
             </Pressable>
           </View>
 
-          <View style={styles.totalSection}>
-            <View style={styles.totalLabelRow}>
-              <Ionicons
-                name="wallet-outline"
-                size={16}
-                color={THEME.textMuted}
-                style={styles.totalLabelIcon}
-              />
-              <Text style={styles.totalLabel}>Total Balance</Text>
-            </View>
-
-            {isBalanceLoading ? (
-              <ActivityIndicator
-                size="large"
-                color={THEME.neonGreen}
-                style={styles.loadingIndicator}
-              />
-            ) : (
-              <Text style={styles.totalAmount}>
-                {formatAmount(totalBalance)}
-                <Text style={styles.apcLabel}> APE</Text>
-              </Text>
-            )}
-          </View>
           <View style={styles.adContainer}>
             <BannerAd
               unitId={AD_UNITS.BANNER_WALLET}
@@ -104,167 +226,179 @@ const WalletScreen = () => {
             />
           </View>
 
-          <RevenueChart
-            weekData={weekData}
-            totalCollected={totalCollected}
-            miningHistory={miningHistory}
-            miningTotal={miningTotal}
-            referralWeekData={referralWeekData}
-            referralEarnings={referralEarnings}
-            loading={loading}
-            miningLoading={miningLoading}
-            referralLoading={referralLoading}
-          />
+          <LinearGradient
+            colors={['rgba(14, 54, 29, 0.96)', 'rgba(7, 22, 11, 0.96)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.liquidWalletCard}
+          >
+            <View style={styles.heroGlowPrimary} />
+            <View style={styles.heroGlowSecondary} />
+            {/* <View style={styles.heroBorderOverlay} /> */}
 
-          <PendingPaidTabs />
+            <View style={styles.liquidWalletBadge}>
+              <Ionicons
+                name="wallet-outline"
+                size={16}
+                color={THEME.neonGreen}
+                style={styles.badgeIcon}
+              />
+              <Text style={styles.liquidWalletBadgeText}>Wallet Balance</Text>
+            </View>
+
+            <View style={styles.balanceBlock}>
+              {isBalanceLoading ? (
+                <View style={styles.balanceSkeletonWrap}>
+                  <View style={styles.balanceSkeletonAmount} />
+                  <View style={styles.balanceSkeletonCaption} />
+                  <View style={styles.balanceSkeletonPill} />
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.balanceAmount}>
+                    {Number(displayBalance).toFixed(6)}
+                    <Text style={styles.balanceUnit}> APE</Text>
+                  </Text>
+                  <Text style={styles.balanceCaption}>
+                    Withdrawable balance available now
+                  </Text>
+                  {/* <View style={styles.pendingPill}>
+                    <Text style={styles.pendingPillText}>
+                      {pendingCount} {pendingCount === 1 ? 'item' : 'items'} pending
+                    </Text>
+                  </View> */}
+                </>
+              )}
+            </View>
+
+            <Animated.View
+              style={[styles.withdrawActionWrap, withdrawFloatStyle]}
+            >
+              <Pressable
+                style={({ pressed }) => [
+                  styles.withdrawAction,
+                  pressed && styles.withdrawActionPressed,
+                  isWithdrawDisabled && styles.withdrawActionDisabled,
+                ]}
+                onPress={handleWithdrawPress}
+                disabled={isWithdrawDisabled}
+              >
+                <LinearGradient
+                  colors={[
+                    'rgba(86, 120, 101, 0.92)',
+                    'rgba(20, 63, 42, 0.98)',
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.withdrawActionGradient}
+                >
+                  {withdrawLoading ? (
+                    <ActivityIndicator size="small" color={THEME.white} />
+                  ) : (
+                    <>
+                      <View style={styles.withdrawActionIconBox}>
+                        <Ionicons
+                          name="wallet-outline"
+                          size={28}
+                          color={THEME.neonGreen}
+                        />
+                      </View>
+
+                      <View style={styles.withdrawActionCopy}>
+                        <Text style={styles.withdrawActionTitle}>WITHDRAW</Text>
+                        <Text style={styles.withdrawActionSubtitle}>
+                          Withdraw to your account
+                        </Text>
+                      </View>
+
+                      <View style={styles.withdrawActionArt}>
+                        <MaterialCommunityIcons
+                          name="cash-multiple"
+                          size={36}
+                          color="#6EF37F"
+                        />
+                      </View>
+                    </>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
+          </LinearGradient>
+
+          <View style={styles.overviewSection}>
+            <Text style={styles.overviewTitle}>TOTAL OVERVIEW</Text>
+
+            <View style={styles.overviewGrid}>
+              {overviewCards.map((card, index) => (
+                <LinearGradient
+                  key={card.key}
+                  colors={['rgba(18, 56, 34, 0.95)', 'rgba(8, 24, 13, 0.96)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[
+                    styles.overviewCard,
+                    index < overviewCards.length - 1 &&
+                      styles.overviewCardSpacing,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.overviewIconWrap,
+                      { backgroundColor: card.iconBackground },
+                    ]}
+                  >
+                    {card.iconFamily === 'ionicon' ? (
+                      <Ionicons
+                        name={card.icon}
+                        size={24}
+                        color={card.iconColor}
+                      />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name={card.icon}
+                        size={24}
+                        color={card.iconColor}
+                      />
+                    )}
+                  </View>
+
+                  <Text style={styles.overviewLabel}>{card.label}</Text>
+
+                  {isBalanceLoading ? (
+                    <View style={styles.overviewSkeletonLine} />
+                  ) : (
+                    <Text style={styles.overviewValue}>
+                      {card.value} <Text style={styles.overviewUnit}>APE</Text>
+                    </Text>
+                  )}
+                </LinearGradient>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.withdrawalsSection}>
+            <PendingPaidTabs
+              pendingItems={pendingWithdrawItems}
+              paidItems={paidWithdrawItems}
+              loading={withdrawDataLoading}
+              error={withdrawDataError}
+              onRecordPress={setSelectedWithdrawRecord}
+            />
+          </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
+
+      <WithdrawSuccessModal
+        visible={showWithdrawSuccessModal}
+        onClose={() => setShowWithdrawSuccessModal(false)}
+      />
+      <WithdrawDetailsSheet
+        visible={selectedWithdrawRecord !== null}
+        record={selectedWithdrawRecord}
+        onClose={() => setSelectedWithdrawRecord(null)}
+      />
     </ImageBackground>
   );
 };
-
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: THEME.bg,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: THEME.overlay,
-  },
-  topGlow: {
-    position: 'absolute',
-    top: 80,
-    right: -40,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(170, 255, 0, 0.08)',
-  },
-  bottomGlow: {
-    position: 'absolute',
-    bottom: 160,
-    left: -30,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255, 215, 0, 0.04)',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 4,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  walletTitle: {
-    color: THEME.white,
-    fontSize: 28,
-    fontFamily: FONTS.black,
-    fontWeight: '800',
-  },
-  bellButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#2a2a2a',
-    borderWidth: 1,
-    borderColor: '#3a3a3a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  totalSection: {
-    alignItems: 'center',
-    marginTop: 24,
-    paddingHorizontal: 20,
-    minHeight: 80,
-    justifyContent: 'center',
-  },
-  totalLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  totalLabelIcon: {
-    marginRight: 6,
-  },
-  totalLabel: {
-    color: THEME.textMuted,
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  totalAmount: {
-    color: THEME.white,
-    fontSize: 44,
-    fontFamily: FONTS.black,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginTop: 4,
-    letterSpacing: 1,
-  },
-  apcLabel: {
-    color: THEME.neonGreen,
-    fontSize: 22,
-    fontFamily: FONTS.regular,
-    fontWeight: '400',
-  },
-  loadingIndicator: {
-    marginTop: 8,
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    marginTop: 24,
-    paddingHorizontal: 16,
-  },
-  breakdownCard: {
-    flex: 1,
-    minHeight: 120,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: THEME.borderMuted,
-    backgroundColor: 'rgba(28, 32, 24, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    justifyContent: 'center',
-  },
-  breakdownCardSpacing: {
-    marginRight: 12,
-  },
-  breakdownHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  breakdownLabel: {
-    marginLeft: 8,
-    color: THEME.textMuted,
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  breakdownValue: {
-    marginTop: 10,
-    color: THEME.white,
-    fontSize: 28,
-    fontFamily: FONTS.black,
-    fontWeight: '800',
-  },
-  breakdownUnit: {
-    color: THEME.neonGreen,
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    fontWeight: '600',
-  },
-  breakdownLoader: {
-    marginTop: 18,
-  },
-  adContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-    width: '100%',
-  },
-});
 
 export default WalletScreen;

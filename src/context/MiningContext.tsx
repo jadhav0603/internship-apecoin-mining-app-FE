@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { io as socketIO, Socket } from 'socket.io-client';
 import auth from '@react-native-firebase/auth';
 import API from '../services/api';
 import { API_CONFIG } from '../api/config';
+import { useWallet } from './WalletContext';
 
 export interface MiningData {
   email: string;
@@ -52,7 +59,9 @@ const deriveStateFromDB = (data: MiningData) => {
       remaining: Math.max(0, data.remainingSeconds),
       earnedCoins: data.currentMiningPoints ?? 0,
       isComplete:
-        data.remainingSeconds <= 0 || data.status !== 'mining' || !data.isActive,
+        data.remainingSeconds <= 0 ||
+        data.status !== 'mining' ||
+        !data.isActive,
     };
   }
 
@@ -66,7 +75,7 @@ const deriveStateFromDB = (data: MiningData) => {
 
   const totalSeconds = (data.selectedHour ?? 1) * 3600;
   const rawElapsed = Math.floor(
-    (Date.now() - new Date(data.miningStartTime).getTime()) / 1000
+    (Date.now() - new Date(data.miningStartTime).getTime()) / 1000,
   );
   const remaining = Math.max(0, totalSeconds - rawElapsed);
 
@@ -86,12 +95,15 @@ export const MiningProvider = ({ children }: any) => {
   const [multiplier, setMultiplierState] = useState(1);
   const [earned, setEarned] = useState(0);
   const [miningData, setMiningData] = useState<MiningData | null>(null);
-  const [multipliers, setMultipliers] = useState<number[]>([1, 2, 4, 8, 10, 12]);
+  const [multipliers, setMultipliers] = useState<number[]>([
+    1, 2, 4, 8, 10, 15, 20, 25,
+  ]);
   const [showClaimPopup, setShowClaimPopup] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
+  const { refreshBalance } = useWallet();
 
   useEffect(() => {
     multiplierRef.current = multiplier;
@@ -102,10 +114,10 @@ export const MiningProvider = ({ children }: any) => {
   }, [miningData]);
 
   const applyMiningData = (data: MiningData, stats?: any) => {
-    const updatedData = { 
-      ...data, 
+    const updatedData = {
+      ...data,
       ...(stats || {}),
-      apeDollarValue: stats?.apeDollarValue ?? data.apeDollarValue ?? 0.1 
+      apeDollarValue: stats?.apeDollarValue ?? data.apeDollarValue ?? 0.1,
     };
 
     if (stats?.miningMultipliers) {
@@ -116,7 +128,8 @@ export const MiningProvider = ({ children }: any) => {
     setMultiplierState(updatedData.multiplier ?? 1);
     setHours(updatedData.selectedHour ?? 1);
 
-    const { remaining, earnedCoins, isComplete } = deriveStateFromDB(updatedData);
+    const { remaining, earnedCoins, isComplete } =
+      deriveStateFromDB(updatedData);
 
     if (!isComplete) {
       setIsMining(true);
@@ -159,7 +172,10 @@ export const MiningProvider = ({ children }: any) => {
       });
 
       socket.on('mining_update', (data: MiningData) => {
-        console.log('[socket.io] mining_update received, miningStartTime:', data.miningStartTime);
+        console.log(
+          '[socket.io] mining_update received, miningStartTime:',
+          data.miningStartTime,
+        );
         applyMiningData(data);
       });
 
@@ -181,7 +197,10 @@ export const MiningProvider = ({ children }: any) => {
             ...response.data.mining,
             ...(response.data.stats ?? {}),
           };
-          console.log('[mining] restored from backend:', restoredMining.miningStartTime);
+          console.log(
+            '[mining] restored from backend:',
+            restoredMining.miningStartTime,
+          );
           applyMiningData(restoredMining, response.data.stats);
 
           const { isComplete } = deriveStateFromDB(restoredMining);
@@ -195,7 +214,7 @@ export const MiningProvider = ({ children }: any) => {
                 duration: (restoredMining.selectedHour ?? 1) * 3600,
                 multiplier: restoredMining.multiplier ?? 1,
                 earned: 0,
-              })
+              }),
             );
           }
         }
@@ -237,7 +256,7 @@ export const MiningProvider = ({ children }: any) => {
         duration: totalSeconds,
         multiplier: 1,
         earned: 0,
-      })
+      }),
     );
 
     try {
@@ -253,7 +272,7 @@ export const MiningProvider = ({ children }: any) => {
             ...response.data.mining,
             ...(response.data.stats ?? {}),
           },
-          response.data.stats
+          response.data.stats,
         );
       }
     } catch (err) {
@@ -274,7 +293,7 @@ export const MiningProvider = ({ children }: any) => {
               ...response.data.mining,
               ...(response.data.stats ?? {}),
             },
-            response.data.stats
+            response.data.stats,
           );
         }
       } catch (e: any) {
@@ -303,10 +322,12 @@ export const MiningProvider = ({ children }: any) => {
             canClaim: false,
             shouldShowClaimPopup: false,
           }
-        : prev
+        : prev,
     );
     setShowClaimPopup(false);
     await AsyncStorage.removeItem(MINING_STORAGE_KEY);
+    // ✅ Immediately refresh wallet balance so it doesn't reset to 0 on page load
+    void refreshBalance();
   };
 
   const setMultiplier = async (m: number) => {
@@ -324,7 +345,7 @@ export const MiningProvider = ({ children }: any) => {
             ...response.data.mining,
             ...(response.data.stats ?? {}),
           },
-          response.data.apeDollarValue
+          response.data.apeDollarValue,
         );
       }
       console.log('[mining] multiplier updated to', m);
@@ -335,7 +356,7 @@ export const MiningProvider = ({ children }: any) => {
             ...err.response.data.mining,
             ...(err.response.data.stats ?? {}),
           },
-          err.response.data.apeDollarValue
+          err.response.data.apeDollarValue,
         );
       }
       console.error('[mining] failed to update multiplier:', err);
@@ -359,7 +380,7 @@ export const MiningProvider = ({ children }: any) => {
       const base = d?.baseDollarValue ?? 0.002;
       const apeValue = d?.apeDollarValue ?? 0.1;
       const m = multiplierRef.current;
-      
+
       const apePerHour = (base / apeValue) * m;
       const apePerSecond = apePerHour / 3600;
 

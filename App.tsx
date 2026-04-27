@@ -8,6 +8,7 @@ import { UserProvider } from './src/context/UserContext';
 import { TimeModalProvider } from './src/context/TimeModal';
 import { MiningProvider } from './src/context/MiningContext';
 import { WalletProvider } from './src/context/WalletContext';
+import { AlertProvider } from './src/context/AlertContext';
 import mobileAds from 'react-native-google-mobile-ads';
 
 mobileAds()
@@ -23,13 +24,15 @@ function App(): React.JSX.Element {
         <TimeModalProvider>
           <MiningProvider>
             <WalletProvider>
-              <SafeAreaProvider>
-                <StatusBar
-                  barStyle="light-content"
-                  backgroundColor={COLORS.backgroundDeep}
-                />
-                <AppNavigator />
-              </SafeAreaProvider>
+              <AlertProvider>
+                <SafeAreaProvider>
+                  <StatusBar
+                    barStyle="light-content"
+                    backgroundColor={COLORS.backgroundDeep}
+                  />
+                  <AppNavigator />
+                </SafeAreaProvider>
+              </AlertProvider>
             </WalletProvider>
           </MiningProvider>
         </TimeModalProvider>

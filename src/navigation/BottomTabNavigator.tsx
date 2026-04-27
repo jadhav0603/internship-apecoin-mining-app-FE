@@ -10,6 +10,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../constants/COLORS';
 import { FONTS } from '../constants/FONTS';
+import {
+  FLOATING_TAB_BAR_BASE_HEIGHT,
+  FLOATING_TAB_BAR_BOTTOM_OFFSET,
+} from '../constants/bottomLayout';
 import BottomTab from '../components/bottomTab/BottomTab';
 import HomeScreen from '../screens/home/HomeScreen';
 import WalletScreen from '../screens/wallet/WalletScreen';
@@ -21,7 +25,6 @@ import MiningLiveBar from '../components/mining/MiningLiveBar';
 
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
-const TAB_BAR_BASE_HEIGHT = 74;
 const renderTabBarButton = (props: React.ComponentProps<typeof BottomTab>) => (
   <BottomTab {...props} />
 );
@@ -31,7 +34,7 @@ const styles = StyleSheet.create({
   position: 'absolute',
   left: 16,
   right: 16,
-  bottom: 12,
+  bottom: FLOATING_TAB_BAR_BOTTOM_OFFSET,
   borderTopWidth: 0,
   borderRadius: 28,
   backgroundColor: 'rgba(7, 12, 6, 0.96)',
@@ -103,7 +106,7 @@ const BottomTabNavigator = () => {
     tabBarStyle: [
       styles.tabBar,
       {
-        height: TAB_BAR_BASE_HEIGHT + insets.bottom,
+        height: FLOATING_TAB_BAR_BASE_HEIGHT + insets.bottom,
         paddingTop: 10,
         paddingBottom: Math.max(insets.bottom, 10),
       },

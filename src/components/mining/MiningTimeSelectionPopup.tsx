@@ -9,6 +9,8 @@ import styles from './miningTimeSelectionPopup.styles';
 import { useTimeModal } from '../../context/TimeModal';
 import { useMining } from '../../context/MiningContext';
 import { RootStackParamList } from '../../navigation/types';
+import { useInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 type MiningPopupNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -27,6 +29,7 @@ const DURATION_OPTIONS: DurationOption[] = [
   { hours: 4, label: '4 hr', unlocked: false },
   { hours: 8, label: '8 hr', unlocked: false },
   { hours: 12, label: '12 hr', unlocked: false },
+
 ];
 
 const MiningTimeSelectionPopup = () => {
@@ -40,12 +43,30 @@ const MiningTimeSelectionPopup = () => {
     [selectedHours],
   );
 
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_MINING,
+    { requestNonPersonalizedAdsOnly: true }
+  );
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  React.useEffect(() => {
+    if (isClosed) {
+      load();
+    }
+  }, [isClosed, load]);
+
   const handleClose = () => {
     setShowModal(false);
     setSelectedHours(1);
   };
 
   const handleConfirm = async () => {
+    if (isLoaded) {
+      show();
+    }
     setShowModal(false);
     await startMining(selectedHours);
     navigation.navigate('Mining', { time: selectedHours });
@@ -157,7 +178,7 @@ const MiningTimeSelectionPopup = () => {
 
           <TouchableOpacity activeOpacity={0.9} onPress={handleConfirm}>
             <LinearGradient
-              colors={['#FFB24A', '#FF7C1F']}
+              colors={['#46a152ff', '#256326ff']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.confirmBtn}

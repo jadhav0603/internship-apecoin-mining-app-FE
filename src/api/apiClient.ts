@@ -96,6 +96,37 @@ apiClient.interceptors.response.use(
       });
     }
     const isNetworkError = !error?.response;
+    const isUnauthorized = error?.response?.status === 401;
+
+    if (isUnauthorized || isNetworkError) {
+      // ✅ Handle critical connectivity/auth failures
+      const { Alert } = require('react-native');
+      const { authService } = require('../services/authService');
+
+      const { EVENT_NAMES, globalEvents } = require('../utils/GlobalEventEmitter');
+
+      if (isUnauthorized) {
+        globalEvents.emit(EVENT_NAMES.SHOW_CONFIRM, {
+          title: 'Session Expired',
+          message: 'Your session has expired. Please login again to continue.',
+          confirmText: 'Login Again',
+          cancelText: 'Dismiss',
+          onConfirm: () => authService.signOut(),
+          onCancel: () => authService.signOut()
+        });
+      } else {
+        globalEvents.emit(EVENT_NAMES.SHOW_CONFIRM, {
+          title: 'Connection Lost',
+          message: 'Network connection lost. Please login again.',
+          confirmText: 'Login Again',
+          cancelText: 'Dismiss',
+          onConfirm: () => authService.signOut(),
+          onCancel: () => authService.signOut()
+        });
+      }
+      return Promise.reject(error);
+    }
+
     const config = error?.config as any;
 
     if (!isNetworkError || !config || config.__devFallbackTried || !__DEV__) {

@@ -8,6 +8,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    marginTop:-10,
   },
   primaryGlow: {
     position: 'absolute',
@@ -193,8 +194,8 @@ const styles = StyleSheet.create({
   },
   adContainer: {
     alignItems: 'center',
-    marginTop:  10,
-    marginBottom: 10,
+    marginTop:10,
+    marginBottom: 2,
     width: '100%',
   },
 });

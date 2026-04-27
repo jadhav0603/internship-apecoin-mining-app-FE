@@ -5,21 +5,22 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   ImageBackground,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../../api/apiClient';
 import { authService } from '../../services/authService';
 import ClaimPopupModal from '../../components/ClaimPopupModal';
 import SuccessOverlay from '../../components/SuccessOverlay';
 import RewardsGridSection from '../../components/RewardsGridSection';
-// import { useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
-// import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAlert } from '../../context/AlertContext';
+import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import { BannerAd, BannerAdSize, useRewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const { width } = Dimensions.get('window');
 
@@ -66,38 +67,41 @@ const buildRewards = (
   });
 
 const formatTime = (seconds: number) => {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+  const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const secs = (seconds % 60).toString().padStart(2, '0');
 
-  return `${hrs}h ${mins}m ${secs}s`;
+  return `${hrs}:${mins}:${secs}`;
 };
 
 const DailyRewardsScreen = () => {
+  const { showError } = useAlert();
+  const insets = useSafeAreaInsets();
+  const bottomContentPadding = useBottomOverlayPadding(24);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSuccess] = useState(false);
   const [rewards, setRewards] = useState<RewardItem[]>([]);
   const [currentDay, setCurrentDay] = useState(1);
   const [currency, setCurrency] = useState('APE');
   const [isAvailable, setIsAvailable] = useState(false);
   const [balance, setBalance] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
-  // const { isLoaded, isClosed, load, show } = useInterstitialAd(
-  //   AD_UNITS.INTERSTITIAL_CLAIM,
-  //   { requestNonPersonalizedAdsOnly: true }
-  // );
+  const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
+    AD_UNITS.REWARDED_DAILY,
+    { requestNonPersonalizedAdsOnly: true }
+  );
 
-  // useEffect(() => {
-  //   load();
-  // }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  // useEffect(() => {
-  //   if (isClosed) {
-  //     load();
-  //   }
-  // }, [isClosed, load]);
+  useEffect(() => {
+    if (isClosed) {
+      load();
+    }
+  }, [isClosed, load]);
 
   const fetchRewards = useCallback(async () => {
     try {
@@ -142,11 +146,11 @@ const DailyRewardsScreen = () => {
           baseURL: axios.isAxiosError(error) ? error.config?.baseURL || apiClient.defaults.baseURL : undefined,
         });
       }
-      Alert.alert('Rewards unavailable', message);
+      showError(message, 'Rewards unavailable');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useFocusEffect(
     useCallback(() => {
@@ -165,11 +169,16 @@ const DailyRewardsScreen = () => {
   }, [isAvailable]);
 
   const handleClaim = async () => {
-    // if (isLoaded) {
-    //   show();
-    // }
+    if (isLoaded) {
+      show();
+      return; // Stop here, the effect below will catch isEarnedReward
+    }
     
-    // 1. Keep modal open so the flip animation can run inside it
+    // If ad not loaded, claim directly (fallback)
+    await executeClaim();
+  };
+
+  const executeClaim = async () => {
     setClaiming(true);
     try {
       const user = authService.getCurrentUser();
@@ -203,11 +212,22 @@ const DailyRewardsScreen = () => {
         });
       }
 
-      Alert.alert('Claim Failed', msg);
+      showError(msg, 'Claim Failed');
     } finally {
       setClaiming(false);
     }
   };
+
+  // Effect to handle reward after ad completion
+  useEffect(() => {
+    if (isEarnedReward && isClosed) {
+      executeClaim();
+    } else if (isClosed && !isEarnedReward) {
+        // User closed ad without finishing
+        // We might want to show an alert or just let them try again
+        // For now, let's just do nothing, they can click claim again.
+    }
+  }, [isEarnedReward, isClosed]);
 
   const handleAnimationFinish = () => {
     // This was previously used for the fullscreen success overlay
@@ -243,7 +263,13 @@ const DailyRewardsScreen = () => {
         resizeMode="cover"
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingTop: insets.top,
+              paddingBottom: bottomContentPadding,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
         >
         {/* Floating Title */}
@@ -261,6 +287,13 @@ const DailyRewardsScreen = () => {
             style={styles.lottieFile}
           />
         </View> */}
+
+        <View style={styles.adContainer}>
+          <BannerAd
+            unitId={AD_UNITS.BANNER_HOME}
+            size={BannerAdSize.BANNER}
+          />
+        </View>
 
         <Image
           source={require('../../assets/images/daily_rewards.webp')}
@@ -316,6 +349,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#060f06',
+  },
+  adContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 0,
+    marginTop: -60,
+    marginBottom: 0,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     alignItems: 'center',

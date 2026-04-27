@@ -5,8 +5,8 @@ import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
 import API from '../../services/api';
-// import { useInterstitialAd } from 'react-native-google-mobile-ads';
-// import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useRewardedAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
   const {
@@ -22,20 +22,23 @@ const ClaimRewardModal = () => {
   } = useMining();
   const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
-  // const { isLoaded, isClosed, load, show } = useInterstitialAd(
-  //   AD_UNITS.INTERSTITIAL_CLAIM,
-  //   { requestNonPersonalizedAdsOnly: true }
-  // );
+  const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
+    AD_UNITS.REWARDED_CLAIM,
+    { requestNonPersonalizedAdsOnly: true }
+  );
 
-  // useEffect(() => {
-  //   load();
-  // }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  // useEffect(() => {
-  //   if (isClosed) {
-  //     load();
-  //   }
-  // }, [isClosed, load]);
+  useEffect(() => {
+    if (isClosed) {
+      load();
+      if (isEarnedReward) {
+        executeClaim();
+      }
+    }
+  }, [isClosed, load, isEarnedReward]);
 
   useEffect(() => {
     if (isMining) {
@@ -70,10 +73,17 @@ const ClaimRewardModal = () => {
   }
 
   const handleClaim = async () => {
+    if (isLoaded) {
+      show();
+      return;
+    }
+    
+    // If ad not loaded, allow direct claim as fallback
+    await executeClaim();
+  };
+
+  const executeClaim = async () => {
     try {
-      // if (isLoaded) {
-      //   show();
-      // }
       const response = await API.post('/mining/claim');
       setBalanceFromServer(response.data?.balance ?? 0);
       setVisible(false);
@@ -87,11 +97,12 @@ const ClaimRewardModal = () => {
     }
   };
 
-  const formatTime = (sec: number) => {
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = sec % 60;
-    return `${h}h ${m}m ${s}s`;
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const secs = (seconds % 60).toString().padStart(2, '0');
+
+    return `${hrs}:${mins}:${secs}`;
   };
 
   return (

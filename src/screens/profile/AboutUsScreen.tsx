@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';
+import AppBackButton from '../../components/navigation/AppBackButton';
 
 const AboutUsScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -26,14 +27,9 @@ const AboutUsScreen = () => {
       />
 
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={28} color={COLORS.textPrimary} />
-        </TouchableOpacity>
+        <AppBackButton onPress={() => navigation.goBack()} />
         <Text style={styles.headerTitle}>About Us</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 42 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -115,7 +111,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
   logoSection: { alignItems: 'center', marginBottom: 40 },

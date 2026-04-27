@@ -17,7 +17,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppBackButton from '../../components/navigation/AppBackButton';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import MultiLineChart, {
@@ -54,7 +54,7 @@ const ACTIVE_MONTH_INDEX = 3;
 const formatAmount = (amount: number) =>
   amount.toLocaleString('en-US', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 3,
   });
 
 const formatTransactionAmount = (amount: number) =>
@@ -260,28 +260,27 @@ const TransactionHistoryScreen = () => {
       <View
         style={[styles.headerRow, { paddingTop: Math.max(insets.top + 4, 18) }]}
       >
-        <Pressable
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={22} color={COLORS.textPrimary} />
-        </Pressable>
+        <AppBackButton onPress={() => navigation.goBack()} />
 
         <Text style={styles.headerTitle}>My Transactions</Text>
 
-        {user?.photoURL ? (
-          <Image
-            source={{ uri: user.photoURL }}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarInitial}>
-              {getUserDisplayName(user).charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <Pressable
+          onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
+        >
+          {user?.photoURL ? (
+            <Image
+              source={{ uri: user.photoURL }}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitial}>
+                {getUserDisplayName(user).charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       <MultiLineChart
@@ -418,17 +417,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontWeight: '700',
     marginHorizontal: 12,
-  },
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    color: '#FFFFFF',
-    backgroundColor: COLORS.cardStrong,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatar: {
     width: 44,
