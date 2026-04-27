@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -52,21 +52,17 @@ const ProfileScreen = () => {
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const profileAura = useRef(new Animated.Value(0)).current;
-  const hasRequestedProfileAd = useRef(false);
 
   const { isLoaded, load, show } = useInterstitialAd(AD_UNITS.INTERSTITIAL_PROFILE, {
     requestNonPersonalizedAdsOnly: true,
   });
   const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
 
-  useEffect(() => {
-    if (hasRequestedProfileAd.current) {
-      return;
-    }
-
-    hasRequestedProfileAd.current = true;
-    startAd();
-  }, [startAd]);
+  useFocusEffect(
+    useCallback(() => {
+      startAd();
+    }, [startAd]),
+  );
 
   const handleLogout = async () => {
     setLogoutVisible(false);
