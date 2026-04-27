@@ -132,7 +132,7 @@ const BalanceCard = () => {
               <View style={styles.metricContent}>
                 <Text style={styles.metricLabel}>Liquid Balance</Text>
                 <Text style={styles.metricValue}>
-                  {formatAmount(liquidBalance)} APE
+                  {Number(liquidBalance).toFixed(6)} APE
                 </Text>
               </View>
             </Pressable>

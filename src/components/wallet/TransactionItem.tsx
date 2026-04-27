@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
 import { THEME } from './theme';
 
@@ -27,6 +28,8 @@ const TransactionItem = ({
   showConnector = false,
 }: TransactionItemProps) => {
   const isPending = item.status === 'pending';
+  const statusLabel = isPending ? 'Awaiting review' : 'Transfer completed';
+  const statusIcon = isPending ? 'time-outline' : 'checkmark-done-outline';
 
   return (
     <View style={styles.row}>
@@ -36,22 +39,37 @@ const TransactionItem = ({
       </View>
 
       <Pressable style={styles.card} onPress={() => onPress?.(item)}>
-        <View style={styles.leftColumn}>
-          <Text style={styles.amountText}>{item.amount}</Text>
-          <Text style={styles.dateText}>{item.date}</Text>
-        </View>
-
-        <View style={styles.centerColumn}>
-          <View style={isPending ? styles.pendingBadge : styles.paidBadge}>
-            <Text style={isPending ? styles.pendingBadgeText : styles.paidBadgeText}>
-              {isPending ? 'Pending' : 'Paid'}
-            </Text>
+        <View style={styles.contentColumn}>
+          <View style={styles.topRow}>
+            <Text style={styles.typeText}>{item.type}</Text>
+            <View style={isPending ? styles.pendingBadge : styles.paidBadge}>
+              <Text style={isPending ? styles.pendingBadgeText : styles.paidBadgeText}>
+                {isPending ? 'Pending' : 'Paid'}
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.rightColumn}>
           <Text style={styles.amountText}>{item.amount}</Text>
-          <Text style={styles.dateText}>{item.date}</Text>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="rgba(255,255,255,0.62)"
+              />
+              <Text style={styles.metaText}>{item.date}</Text>
+            </View>
+
+            <View style={styles.metaItem}>
+              <Ionicons
+                name={statusIcon}
+                size={14}
+                color={isPending ? '#E7F6A2' : '#B8FFE8'}
+              />
+              <Text style={styles.metaText}>{statusLabel}</Text>
+            </View>
+          </View>
         </View>
       </Pressable>
     </View>
@@ -92,7 +110,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    minHeight: 108,
+    minHeight: 110,
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 16,
@@ -104,29 +122,43 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
+  },
+  contentColumn: {
+    flex: 1,
+  },
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  leftColumn: {
-    flex: 1.2,
-  },
-  centerColumn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  rightColumn: {
+  typeText: {
     flex: 1,
-    alignItems: 'flex-end',
+    color: 'rgba(255,255,255,0.72)',
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    marginRight: 10,
   },
   amountText: {
+    marginTop: 10,
     color: THEME.white,
     fontSize: 18,
     fontFamily: FONTS.bold,
     fontWeight: '800',
   },
-  dateText: {
-    marginTop: 8,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 12,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+    marginBottom: 4,
+  },
+  metaText: {
+    marginLeft: 6,
     color: 'rgba(255,255,255,0.74)',
     fontSize: 12,
     fontFamily: FONTS.medium,

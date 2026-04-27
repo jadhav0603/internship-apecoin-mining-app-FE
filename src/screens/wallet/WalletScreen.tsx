@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -25,7 +24,6 @@ import WithdrawDetailsSheet from '../../components/wallet/WithdrawDetailsSheet';
 import type { WalletTransaction } from '../../components/wallet/TransactionItem';
 import WithdrawSuccessModal from '../../components/wallet/WithdrawSuccessModal';
 import { THEME, formatAmount } from '../../components/wallet/theme';
-import { FONTS } from '../../constants/FONTS';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import type { RootStackParamList } from '../../navigation/types';
 import { useUser } from '../../context/UserContext';
@@ -36,6 +34,7 @@ import {
   type WithdrawRecord,
 } from '../../services/withdrawService';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import styles from './wallet.styles';
 
 const WalletScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(44);
@@ -63,7 +62,7 @@ const WalletScreen = () => {
   } = useLiquidBalance();
 
   const rawBalance = Number.isFinite(liquidBalance) ? liquidBalance : 0;
-  const displayBalance = Number(rawBalance.toFixed(2));
+  const displayBalance = Number(rawBalance.toFixed(6));
   const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
 
   useEffect(() => {
@@ -257,7 +256,7 @@ const WalletScreen = () => {
               ) : (
                 <>
                   <Text style={styles.balanceAmount}>
-                    {formatAmount(displayBalance)}
+                    {Number(displayBalance).toFixed(6)}
                     <Text style={styles.balanceUnit}> APE</Text>
                   </Text>
                   <Text style={styles.balanceCaption}>
@@ -401,317 +400,5 @@ const WalletScreen = () => {
     </ImageBackground>
   );
 };
-
-const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    backgroundColor: THEME.bg,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(3, 8, 4, 0.58)',
-  },
-  topGlow: {
-    position: 'absolute',
-    top: 90,
-    right: -32,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(83, 255, 149, 0.08)',
-  },
-  bottomGlow: {
-    position: 'absolute',
-    bottom: 160,
-    left: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(170, 255, 0, 0.08)',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 4,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  headerRowSafe: {
-    paddingTop: 12,
-  },
-  walletTitle: {
-    color: THEME.white,
-    fontSize: 30,
-    fontFamily: FONTS.black,
-    fontWeight: '800',
-  },
-  receiptButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adContainer: {
-    alignItems: 'center',
-    marginVertical: 16,
-    width: '100%',
-  },
-  liquidWalletCard: {
-    marginHorizontal: 18,
-    borderRadius: 32,
-    borderWidth: 1.5,
-    borderColor: 'rgba(164, 242, 92, 0.64)',
-    overflow: 'hidden',
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 18,
-    shadowColor: 'rgba(170,255,0,0.55)',
-    shadowOpacity: 0.22,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 18,
-  },
-  heroGlowPrimary: {
-    position: 'absolute',
-    top: -36,
-    right: -24,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(140, 255, 134, 0.12)',
-  },
-  heroGlowSecondary: {
-    position: 'absolute',
-    bottom: -36,
-    left: -28,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: 'rgba(87, 255, 197, 0.07)',
-  },
-  heroBorderOverlay: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(215,255,154,0.12)',
-  },
-  liquidWalletBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(17, 39, 21, 0.62)',
-    borderWidth: 1,
-    borderColor: 'rgba(178, 245, 110, 0.18)',
-  },
-  badgeIcon: {
-    marginRight: 6,
-  },
-  liquidWalletBadgeText: {
-    color: '#B9EC66',
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    fontWeight: '600',
-  },
-  balanceBlock: {
-    minHeight: 164,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 10,
-  },
-  balanceAmount: {
-    color: THEME.white,
-    fontSize: 60,
-    lineHeight: 74,
-    fontFamily: FONTS.black,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  balanceUnit: {
-    color: THEME.neonGreen,
-    fontSize: 30,
-    fontFamily: FONTS.regular,
-  },
-  balanceCaption: {
-    marginTop: 8,
-    color: 'rgba(255,255,255,0.86)',
-    fontSize: 15,
-    fontFamily: FONTS.medium,
-    textAlign: 'center',
-  },
-  pendingPill: {
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(54, 66, 57, 0.78)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  pendingPillText: {
-    color: 'rgba(255,255,255,0.84)',
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  balanceSkeletonWrap: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  balanceSkeletonAmount: {
-    width: 220,
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  balanceSkeletonCaption: {
-    width: 190,
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  balanceSkeletonPill: {
-    width: 126,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  withdrawActionWrap: {
-    marginTop: 8,
-  },
-  withdrawAction: {
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  withdrawActionPressed: {
-    opacity: 0.94,
-  },
-  withdrawActionDisabled: {
-    opacity: 0.6,
-  },
-  withdrawActionGradient: {
-    minHeight: 96,
-    paddingHorizontal: 16,
-    borderRadius: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(172, 245, 111, 0.2)',
-  },
-  withdrawActionIconBox: {
-    width: 62,
-    height: 62,
-    borderRadius: 18,
-    backgroundColor: 'rgba(14, 36, 20, 0.64)',
-    borderWidth: 1,
-    borderColor: 'rgba(170,255,0,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  withdrawActionCopy: {
-    flex: 1,
-    paddingHorizontal: 14,
-  },
-  withdrawActionTitle: {
-    color: THEME.white,
-    fontSize: 20,
-    fontFamily: FONTS.black,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  withdrawActionSubtitle: {
-    marginTop: 4,
-    color: 'rgba(255,255,255,0.72)',
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  withdrawActionArt: {
-    width: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overviewSection: {
-    marginTop: 18,
-    paddingHorizontal: 18,
-  },
-  overviewTitle: {
-    color: THEME.white,
-    fontSize: 22,
-    fontFamily: FONTS.black,
-    fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: 0.8,
-  },
-  overviewGrid: {
-    flexDirection: 'row',
-    marginTop: 14,
-  },
-  overviewCard: {
-    flex: 1,
-    borderRadius: 24,
-    paddingHorizontal: 12,
-    paddingVertical: 18,
-    alignItems: 'center',
-    borderWidth: 1.2,
-    borderColor: 'rgba(165,243,96,0.38)',
-    shadowColor: 'rgba(170,255,0,0.24)',
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
-  },
-  overviewCardSpacing: {
-    marginRight: 10,
-  },
-  overviewIconWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  overviewLabel: {
-    color: 'rgba(255,255,255,0.82)',
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-  },
-  overviewValue: {
-    marginTop: 8,
-    color: THEME.white,
-    fontSize: 15,
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  overviewUnit: {
-    color: THEME.neonGreen,
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-  },
-  overviewSkeletonLine: {
-    width: '82%',
-    height: 16,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginTop: 8,
-  },
-  withdrawalsSection: {
-    marginTop: 20,
-    marginBottom: 4,
-  },
-});
 
 export default WalletScreen;

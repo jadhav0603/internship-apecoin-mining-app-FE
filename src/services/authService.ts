@@ -237,6 +237,11 @@ export const authService = {
     return signOutFromProviders();
   },
 
+  async deleteAccount() {
+    await apiClient.delete('/users/me');
+    await signOutFromProviders();
+  },
+
   /**
    * Update the current user's profile information
    */
