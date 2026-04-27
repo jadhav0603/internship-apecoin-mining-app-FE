@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   Modal,
   StyleSheet,
@@ -6,27 +6,23 @@ import {
   View,
   Pressable,
   Dimensions,
-  Platform,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
-  withDelay,
   Easing,
-  interpolate,
-  runOnJS,
 } from 'react-native-reanimated';
-import BlurView from '../layout/BlurView'; // Assuming a BlurView component exists or we use a semi-transparent background
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useMining } from '../../context/MiningContext';
-import { useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const WHEEL_SIZE = width * 0.85;
 const CENTER_SIZE = 80;
 
@@ -51,25 +47,11 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
   const boostScale = useSharedValue(1);
   const [isPendingUpgrade, setIsPendingUpgrade] = React.useState(false);
 
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_BOOST,
+  const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
+    AD_UNITS.REWARDED_BOOST,
     { requestNonPersonalizedAdsOnly: true }
   );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    if (isClosed) {
-      load();
-      if (isPendingUpgrade) {
-        // The actual upgrade happens after ad close
-        performUpgrade();
-        setIsPendingUpgrade(false);
-      }
-    }
-  }, [isClosed, isPendingUpgrade]);
+  const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
 
   useEffect(() => {
     if (visible) {
@@ -87,7 +69,7 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
       }, 250);
       return () => clearTimeout(timer);
     }
-  }, [visible]);
+  }, [opacity, rotation, scale, visible]);
 
   const handleClose = () => {
     // Trigger the exit animation by letting the parent update the visible prop
@@ -99,11 +81,24 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
     opacity: opacity.value,
   }));
 
-  const handleSelect = async (m: number) => {
-    // Selection disabled as per user request
-  };
+  const performUpgrade = useCallback(async () => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < multipliers.length) {
+      const nextMultiplier = multipliers[nextIndex];
+      await setMultiplier(nextMultiplier);
+    }
+  }, [currentIndex, multipliers, setMultiplier]);
 
-  const handleBoost = async () => {
+  useEffect(() => {
+    if (isClosed && isPendingUpgrade) {
+      setIsPendingUpgrade(false);
+      if (isEarnedReward) {
+        performUpgrade();
+      }
+    }
+  }, [isClosed, isEarnedReward, isPendingUpgrade, performUpgrade]);
+
+  const handleBoost = () => {
     const nextIndex = currentIndex + 1;
     if (nextIndex < multipliers.length) {
       // Animation
@@ -111,21 +106,9 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
         boostScale.value = withSpring(1);
       });
 
-      if (isLoaded) {
-        setIsPendingUpgrade(true);
-        show();
-      } else {
-        // Fallback if ad not loaded
-        await performUpgrade();
-      }
-    }
-  };
-
-  const performUpgrade = async () => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < multipliers.length) {
-      const nextMultiplier = multipliers[nextIndex];
-      await setMultiplier(nextMultiplier);
+      startAd({
+        onAdShown: () => setIsPendingUpgrade(true),
+      });
     }
   };
 
@@ -173,8 +156,9 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
   };
 
   return (
-    <Modal visible={shouldRender} transparent animationType="none" onRequestClose={handleClose}>
-      <View style={styles.overlay}>
+    <>
+      <Modal visible={shouldRender} transparent animationType="none" onRequestClose={handleClose}>
+        <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         
         <Animated.View style={[styles.modalContainer, animatedContainerStyle]}>
@@ -217,8 +201,10 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
             <Ionicons name="close" size={28} color="#fff" />
           </Pressable>
         </Animated.View>
-      </View>
-    </Modal>
+        </View>
+      </Modal>
+      {adLoadingModal}
+    </>
   );
 };
 

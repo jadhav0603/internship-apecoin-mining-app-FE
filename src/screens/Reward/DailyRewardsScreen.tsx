@@ -19,8 +19,9 @@ import SuccessOverlay from '../../components/SuccessOverlay';
 import RewardsGridSection from '../../components/RewardsGridSection';
 import { useAlert } from '../../context/AlertContext';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
-import { BannerAd, BannerAdSize, useRewardedAd, RewardedAdEventType } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 
 const { width } = Dimensions.get('window');
 
@@ -81,6 +82,7 @@ const DailyRewardsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [claimComplete, setClaimComplete] = useState(false);
   const [showSuccess] = useState(false);
   const [rewards, setRewards] = useState<RewardItem[]>([]);
   const [currentDay, setCurrentDay] = useState(1);
@@ -88,20 +90,12 @@ const DailyRewardsScreen = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [balance, setBalance] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [isPendingReward, setIsPendingReward] = useState(false);
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
     AD_UNITS.REWARDED_DAILY,
     { requestNonPersonalizedAdsOnly: true }
   );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    if (isClosed) {
-      load();
-    }
-  }, [isClosed, load]);
+  const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
 
   const fetchRewards = useCallback(async () => {
     try {
@@ -128,6 +122,7 @@ const DailyRewardsScreen = () => {
 
       // Auto-open modal if reward is claimable today
       if (data.isAvailable) {
+        setClaimComplete(false);
         setModalVisible(true);
       }
     } catch (error: unknown) {
@@ -168,17 +163,13 @@ const DailyRewardsScreen = () => {
     }
   }, [isAvailable]);
 
-  const handleClaim = async () => {
-    if (isLoaded) {
-      show();
-      return; // Stop here, the effect below will catch isEarnedReward
-    }
-    
-    // If ad not loaded, claim directly (fallback)
-    await executeClaim();
+  const handleClaim = () => {
+    startAd({
+      onAdShown: () => setIsPendingReward(true),
+    });
   };
 
-  const executeClaim = async () => {
+  const executeClaim = useCallback(async () => {
     setClaiming(true);
     try {
       const user = authService.getCurrentUser();
@@ -198,6 +189,7 @@ const DailyRewardsScreen = () => {
         )
       );
       setIsAvailable(false);
+      setClaimComplete(true);
       setTimeLeft(0);
     } catch (error: any) {
       // If claim fails, close modal to show error
@@ -216,18 +208,17 @@ const DailyRewardsScreen = () => {
     } finally {
       setClaiming(false);
     }
-  };
+  }, [currentDay, showError]);
 
   // Effect to handle reward after ad completion
   useEffect(() => {
-    if (isEarnedReward && isClosed) {
-      executeClaim();
-    } else if (isClosed && !isEarnedReward) {
-        // User closed ad without finishing
-        // We might want to show an alert or just let them try again
-        // For now, let's just do nothing, they can click claim again.
+    if (isClosed && isPendingReward) {
+      setIsPendingReward(false);
+      if (isEarnedReward) {
+        executeClaim();
+      }
     }
-  }, [isEarnedReward, isClosed]);
+  }, [executeClaim, isEarnedReward, isClosed, isPendingReward]);
 
   const handleAnimationFinish = () => {
     // This was previously used for the fullscreen success overlay
@@ -237,9 +228,7 @@ const DailyRewardsScreen = () => {
 
   const handleOpenModal = () => {
     if (isAvailable) {
-      // if (isLoaded) {
-      //   show();
-      // }
+      setClaimComplete(false);
       setModalVisible(true);
     }
   };
@@ -330,8 +319,10 @@ const DailyRewardsScreen = () => {
         currency={currency}
         balance={balance}
         claiming={claiming}
+        claimComplete={claimComplete}
         onClaim={handleClaim}
         onClose={() => {
+          setClaimComplete(false);
           setModalVisible(false);
         }}
       />
@@ -341,6 +332,7 @@ const DailyRewardsScreen = () => {
         visible={showSuccess}
         onFinish={handleAnimationFinish}
       />
+      {adLoadingModal}
     </SafeAreaView>
   );
 };
