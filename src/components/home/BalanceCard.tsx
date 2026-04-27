@@ -58,9 +58,10 @@ import { useLiquidBalance } from '../../hooks/useLiquidBalance';
 import { formatAmount } from '../wallet/theme';
 
 const BalanceCard = () => {
-  const { earned, hours, hasUnclaimedReward, openClaimPopup } = useMining();
+  const { earned, claimRewardAmount, hours, hasUnclaimedReward, openClaimPopup } = useMining();
   const navigation = useNavigation<any>();
   const { liquidBalance } = useLiquidBalance();
+  const displayEarned = hasUnclaimedReward ? claimRewardAmount || earned : earned;
 
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -116,7 +117,7 @@ const BalanceCard = () => {
               </View>
               <View style={styles.metricContent}>
                 <Text style={styles.metricLabel}>Mining Power</Text>
-                <Text style={styles.metricValue}>{earned.toFixed(6)} APC</Text>
+                <Text style={styles.metricValue}>{displayEarned.toFixed(6)} APC</Text>
               </View>
             </Pressable>
 
