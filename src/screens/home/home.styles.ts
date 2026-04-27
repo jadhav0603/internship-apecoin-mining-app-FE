@@ -183,6 +183,30 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: '100%',
   },
+  claimBanner: {
+    marginTop: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(173, 255, 102, 0.25)',
+    backgroundColor: 'rgba(31, 45, 15, 0.92)',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 6,
+  },
+  claimBannerPressed: {
+    opacity: 0.9,
+  },
+  claimBannerLabel: {
+    color: COLORS.success,
+    fontFamily: FONTS.semibold,
+    fontSize: 12,
+    letterSpacing: FONTS.letterSpacing.wide,
+  },
+  claimBannerValue: {
+    color: COLORS.textPrimary,
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+  },
   footerText: {
     marginTop: 18,
     color: COLORS.textMuted,

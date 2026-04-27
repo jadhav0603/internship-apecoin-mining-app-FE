@@ -34,13 +34,16 @@ type MiningContextType = {
   hours: number;
   multiplier: number;
   earned: number;
+  claimRewardAmount: number;
   miningData: MiningData | null;
   multipliers: number[];
   showClaimPopup: boolean;
+  hasUnclaimedReward: boolean;
   startMining: (h: number) => Promise<void>;
   stopMining: () => Promise<void>;
   setMultiplier: (m: number) => Promise<void>;
   dismissClaimPopup: () => void;
+  openClaimPopup: () => void;
 };
 
 const MINING_STORAGE_KEY = 'MINING_DATA';
@@ -77,11 +80,25 @@ const getLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
   return getElapsedSeconds(data, now) * apePerSecond;
 };
 
+const getDisplayEarnedCoins = (data: MiningData) => {
+  const canClaimReward = Boolean(data.canClaim) && data.status !== 'claimed';
+
+  if (data.miningStartTime && (data.status === 'mining' || canClaimReward)) {
+    return getLiveEarnedCoins(data);
+  }
+
+  if (canClaimReward) {
+    return data.currentMiningPoints ?? 0;
+  }
+
+  return 0;
+};
+
 const deriveStateFromDB = (data: MiningData) => {
   if (typeof data.remainingSeconds === 'number') {
     return {
       remaining: Math.max(0, data.remainingSeconds),
-      earnedCoins: getLiveEarnedCoins(data),
+      earnedCoins: getDisplayEarnedCoins(data),
       isComplete:
         data.remainingSeconds <= 0 || data.status !== 'mining' || !data.isActive,
     };
@@ -90,7 +107,7 @@ const deriveStateFromDB = (data: MiningData) => {
   if (data.status !== 'mining' || !data.miningStartTime) {
     return {
       remaining: 0,
-      earnedCoins: data.currentMiningPoints ?? 0,
+      earnedCoins: getDisplayEarnedCoins(data),
       isComplete: true,
     };
   }
@@ -100,7 +117,7 @@ const deriveStateFromDB = (data: MiningData) => {
 
   return {
     remaining,
-    earnedCoins: getLiveEarnedCoins(data),
+    earnedCoins: getDisplayEarnedCoins(data),
     isComplete: remaining <= 0,
   };
 };
@@ -113,13 +130,17 @@ export const MiningProvider = ({ children }: any) => {
   const [hours, setHours] = useState(1);
   const [multiplier, setMultiplierState] = useState(1);
   const [earned, setEarned] = useState(0);
+  const [claimRewardAmount, setClaimRewardAmount] = useState(0);
   const [miningData, setMiningData] = useState<MiningData | null>(null);
   const [multipliers, setMultipliers] = useState<number[]>([1, 2, 4, 8, 10, 12]);
   const [showClaimPopup, setShowClaimPopup] = useState(false);
+  const [hasUnclaimedReward, setHasUnclaimedReward] = useState(false);
+  const [pendingClaimCoins, setPendingClaimCoins] = useState<number | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
+  const lastAutoShownClaimKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     multiplierRef.current = multiplier;
@@ -128,6 +149,20 @@ export const MiningProvider = ({ children }: any) => {
   useEffect(() => {
     miningDataRef.current = miningData;
   }, [miningData]);
+
+  const resetMiningState = () => {
+    setIsMining(false);
+    setSecondsLeft(0);
+    setHours(1);
+    setMultiplierState(1);
+    setEarned(0);
+    setClaimRewardAmount(0);
+    setMiningData(null);
+    setShowClaimPopup(false);
+    setHasUnclaimedReward(false);
+    setPendingClaimCoins(null);
+    lastAutoShownClaimKeyRef.current = null;
+  };
 
   const applyMiningData = (data: MiningData, stats?: any) => {
     const updatedData = { 
@@ -145,19 +180,59 @@ export const MiningProvider = ({ children }: any) => {
     setHours(updatedData.selectedHour ?? 1);
 
     const { remaining, earnedCoins, isComplete } = deriveStateFromDB(updatedData);
+    const claimKey =
+      updatedData.sessionEndTime ??
+      updatedData.miningStartTime ??
+      `${updatedData.email}-${updatedData.selectedHour}`;
+    const canClaimReward =
+      isComplete &&
+      Boolean(updatedData.miningStartTime) &&
+      updatedData.status !== 'claimed';
 
     if (!isComplete) {
       setIsMining(true);
       setSecondsLeft(remaining);
       setEarned(earnedCoins);
+      setClaimRewardAmount(0);
+      setHasUnclaimedReward(false);
       setShowClaimPopup(false);
+      setPendingClaimCoins(null);
+      lastAutoShownClaimKeyRef.current = null;
     } else {
       setIsMining(false);
       setSecondsLeft(0);
       setEarned(earnedCoins);
-      setShowClaimPopup(Boolean(updatedData.shouldShowClaimPopup));
+      setClaimRewardAmount(canClaimReward ? earnedCoins : 0);
+      setHasUnclaimedReward(canClaimReward);
+
+      if (canClaimReward && lastAutoShownClaimKeyRef.current !== claimKey) {
+        setShowClaimPopup(false);
+        setPendingClaimCoins(earnedCoins);
+        lastAutoShownClaimKeyRef.current = claimKey;
+      } else if (!canClaimReward) {
+        setShowClaimPopup(false);
+        setPendingClaimCoins(null);
+        lastAutoShownClaimKeyRef.current = null;
+      }
     }
   };
+
+  useEffect(() => {
+    if (pendingClaimCoins === null || !hasUnclaimedReward) {
+      return;
+    }
+
+    if (Math.abs(earned - pendingClaimCoins) > 0.0000001) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setShowClaimPopup(true);
+      setPendingClaimCoins(null);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [pendingClaimCoins, hasUnclaimedReward, earned]);
 
   useEffect(() => {
     let socket: Socket | null = null;
@@ -226,10 +301,14 @@ export const MiningProvider = ({ children }: any) => {
               })
             );
           }
+        } else {
+          resetMiningState();
+          await AsyncStorage.removeItem(MINING_STORAGE_KEY);
         }
       } catch {
         const saved = await AsyncStorage.getItem(MINING_STORAGE_KEY);
         if (!saved) {
+          resetMiningState();
           return;
         }
 
@@ -251,6 +330,11 @@ export const MiningProvider = ({ children }: any) => {
   }, []);
 
   const startMining = async (h: number) => {
+    if (hasUnclaimedReward) {
+      setShowClaimPopup(true);
+      return;
+    }
+
     const totalSeconds = h * 3600;
     setIsMining(true);
     setHours(h);
@@ -321,7 +405,9 @@ export const MiningProvider = ({ children }: any) => {
     setIsMining(false);
     setSecondsLeft(0);
     setEarned(0);
+    setClaimRewardAmount(0);
     setMultiplierState(1);
+    setHasUnclaimedReward(false);
     setMiningData(prev =>
       prev
         ? {
@@ -334,6 +420,8 @@ export const MiningProvider = ({ children }: any) => {
         : prev
     );
     setShowClaimPopup(false);
+    setPendingClaimCoins(null);
+    lastAutoShownClaimKeyRef.current = null;
     await AsyncStorage.removeItem(MINING_STORAGE_KEY);
   };
 
@@ -407,13 +495,16 @@ export const MiningProvider = ({ children }: any) => {
         hours,
         multiplier,
         earned,
+        claimRewardAmount,
         miningData,
         multipliers,
         showClaimPopup,
+        hasUnclaimedReward,
         startMining,
         stopMining,
         setMultiplier,
         dismissClaimPopup: () => setShowClaimPopup(false),
+        openClaimPopup: () => setShowClaimPopup(true),
       }}
     >
       {children}

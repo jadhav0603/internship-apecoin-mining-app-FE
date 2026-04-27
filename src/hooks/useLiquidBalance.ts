@@ -3,8 +3,10 @@ import { useMiningWalletData } from './useMiningWalletData';
 import { useReferralData } from './useReferralData';
 import { useRewardsData } from './useRewardsData';
 import { useWithdrawData } from './useWithdrawData';
+import { useMining } from '../context/MiningContext';
 
 export const useLiquidBalance = () => {
+  const { hasUnclaimedReward, earned } = useMining();
   const {
     totalCollected,
     weekData,
@@ -31,7 +33,9 @@ export const useLiquidBalance = () => {
     refreshWithdrawRecords,
   } = useWithdrawData();
 
-  const totalEarnedBalance = totalCollected + miningTotal + referralEarnings;
+  const pendingUnclaimedMiningReward = hasUnclaimedReward ? earned : 0;
+  const settledMiningTotal = Math.max(0, miningTotal - pendingUnclaimedMiningReward);
+  const totalEarnedBalance = totalCollected + settledMiningTotal + referralEarnings;
   const pendingWithdrawAmount = useMemo(
     () => pendingRecords.reduce((sum, item) => sum + (item.amount ?? 0), 0),
     [pendingRecords],
@@ -41,7 +45,7 @@ export const useLiquidBalance = () => {
   return {
     totalCollected,
     weekData,
-    miningTotal,
+    miningTotal: settledMiningTotal,
     miningHistory,
     referralEarnings,
     referralWeekData,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -13,9 +13,11 @@ import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import { useMining } from '../../context/MiningContext';
 
 const HomeScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(36);
+  const { hasUnclaimedReward, openClaimPopup, earned } = useMining();
 
   return (
     <LinearGradient
@@ -58,6 +60,21 @@ const HomeScreen = () => {
             <View style={styles.buttonContainer}>
               <MiningButton />
             </View>
+
+            {hasUnclaimedReward ? (
+              <Pressable
+                onPress={openClaimPopup}
+                style={({ pressed }) => [
+                  styles.claimBanner,
+                  pressed && styles.claimBannerPressed,
+                ]}
+              >
+                <Text style={styles.claimBannerLabel}>Reward Ready</Text>
+                <Text style={styles.claimBannerValue}>
+                  Claim {earned.toFixed(6)} APE
+                </Text>
+              </Pressable>
+            ) : null}
 
             <MiningTimeSelectionPopup />
           </View>

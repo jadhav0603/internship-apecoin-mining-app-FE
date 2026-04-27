@@ -58,7 +58,7 @@ import { useLiquidBalance } from '../../hooks/useLiquidBalance';
 import { formatAmount } from '../wallet/theme';
 
 const BalanceCard = () => {
-  const { earned, hours } = useMining();
+  const { earned, hours, hasUnclaimedReward, openClaimPopup } = useMining();
   const navigation = useNavigation<any>();
   const { liquidBalance } = useLiquidBalance();
 
@@ -98,9 +98,14 @@ const BalanceCard = () => {
             {/* 🔥 Mining Power (LIVE) */}
             <Pressable
               style={styles.metricCard}
-              onPress={() =>
-                navigation.navigate('Mining', { time: hours || 1 })
-              }
+              onPress={() => {
+                if (hasUnclaimedReward) {
+                  openClaimPopup();
+                  return;
+                }
+
+                navigation.navigate('Mining', { time: hours || 1 });
+              }}
             >
               <View style={styles.metricIconWrap}>
                 <MaterialCommunityIcons

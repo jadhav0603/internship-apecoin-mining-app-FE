@@ -25,6 +25,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const MiningScreen = () => {
   const {
     earned,
+    claimRewardAmount,
+    hasUnclaimedReward,
     secondsLeft,
     hours,
     miningData,
@@ -37,6 +39,7 @@ const MiningScreen = () => {
   const { setShowModal } = useTimeModal();
   const [multiplierModalVisible, setMultiplierModalVisible] =
     React.useState(false);
+  const displayEarned = hasUnclaimedReward ? claimRewardAmount || earned : earned;
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -126,7 +129,7 @@ const MiningScreen = () => {
           </View>
 
           {/* <Text style={styles.rateText}>0.02083 Kryptons/hour</Text> */}
-          <Text style={styles.amountText}>{earned.toFixed(6)} APE</Text>
+          <Text style={styles.amountText}>{displayEarned.toFixed(6)} APE</Text>
 
           <View style={styles.ringSection}>
             <SegmentedRing

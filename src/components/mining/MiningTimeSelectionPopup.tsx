@@ -32,7 +32,7 @@ const DURATION_OPTIONS: DurationOption[] = [
 const MiningTimeSelectionPopup = () => {
   const navigation = useNavigation<MiningPopupNavigationProp>();
   const { showModal, setShowModal } = useTimeModal();
-  const { startMining } = useMining();
+  const { startMining, hasUnclaimedReward, openClaimPopup } = useMining();
   const [selectedHours, setSelectedHours] = useState(1);
 
   const activeIndex = useMemo(
@@ -46,6 +46,12 @@ const MiningTimeSelectionPopup = () => {
   };
 
   const handleConfirm = async () => {
+    if (hasUnclaimedReward) {
+      setShowModal(false);
+      openClaimPopup();
+      return;
+    }
+
     setShowModal(false);
     await startMining(selectedHours);
     navigation.navigate('Mining', { time: selectedHours });
