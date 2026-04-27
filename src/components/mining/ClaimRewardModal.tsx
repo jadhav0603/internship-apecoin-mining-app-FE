@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Modal, Pressable, Text, View, Animated, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useMining } from '../../context/MiningContext';
@@ -10,6 +10,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 // import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 
 const ClaimRewardModal = () => {
   const {
@@ -26,23 +27,19 @@ const ClaimRewardModal = () => {
     dismissClaimPopup,
   } = useMining();
   const { setBalanceFromServer } = useWallet();
+  const [visible, setVisible] = useState(true);
+  const [isPendingReward, setIsPendingReward] = useState(false);
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
     AD_UNITS.REWARDED_CLAIM,
     { requestNonPersonalizedAdsOnly: true }
   );
+  const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
 
   useEffect(() => {
-    load();
-  }, [load]);
-
-  useEffect(() => {
-    if (isClosed) {
-      load();
-      if (isEarnedReward) {
-        executeClaim();
-      }
+    if (isMining) {
+      setVisible(true);
     }
-  }, [isClosed, load, isEarnedReward]);
+  }, [isMining]);
 
   const isClaimAvailable =
     showClaimPopup &&
@@ -67,33 +64,36 @@ const ClaimRewardModal = () => {
     outputRange: ['0deg', '360deg'],
   });
 
-  if (isMining || !isClaimAvailable) {
-    return null;
-  }
-
-  const handleClaim = async () => {
-    if (isLoaded) {
-      show();
-      return;
-    }
-    
-    // If ad not loaded, allow direct claim as fallback
-    await executeClaim();
+  const handleClaim = () => {
+    startAd({
+      onAdShown: () => setIsPendingReward(true),
+    });
   };
 
-  const executeClaim = async () => {
+  const executeClaim = useCallback(async () => {
     try {
       const response = await API.post('/mining/claim');
       setBalanceFromServer(response.data?.balance ?? 0);
 
       setTimeout(() => {
-        void stopMining();
+        stopMining().catch(error => {
+          console.error('[mining] failed to stop after claim:', error);
+        });
         dismissClaimPopup();
       }, 300);
     } catch (err) {
       console.error('[mining] claim failed:', err);
     }
-  };
+  }, [dismissClaimPopup, setBalanceFromServer, stopMining]);
+
+  useEffect(() => {
+    if (isClosed && isPendingReward) {
+      setIsPendingReward(false);
+      if (isEarnedReward) {
+        executeClaim();
+      }
+    }
+  }, [executeClaim, isClosed, isEarnedReward, isPendingReward]);
 
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -103,16 +103,21 @@ const ClaimRewardModal = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
+  if (isMining || !visible || !isClaimAvailable) {
+    return null;
+  }
+
   return (
-    <Modal transparent animationType="fade">
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.7)',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
+    <>
+      <Modal transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
         <View
           style={{
             width: 300,
@@ -214,8 +219,10 @@ const ClaimRewardModal = () => {
             </Pressable>
           </View>
         </View>
-      </View>
-    </Modal>
+        </View>
+      </Modal>
+      {adLoadingModal}
+    </>
   );
 };
 

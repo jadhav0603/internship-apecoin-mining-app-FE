@@ -281,8 +281,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ item, index, scrollY }) => 
           <View style={styles.iconWrap}>
             <LinearGradient
               colors={[`${item.accent}22`, `${item.accent}08`]}
-              style={StyleSheet.absoluteFill}
-              borderRadius={14}
+              style={[StyleSheet.absoluteFill, { borderRadius: 14 }]}
             />
             <Ionicons name={item.icon} size={26} color={item.accent} />
           </View>

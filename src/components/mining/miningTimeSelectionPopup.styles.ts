@@ -164,11 +164,18 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 8,
   },
+  confirmBtnDisabled: {
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   confirmText: {
     color: '#FFF8F0',
     fontSize: 16,
     fontFamily: FONTS.bold,
     letterSpacing: 0.3,
+  },
+  confirmTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.58)',
   },
 });
 

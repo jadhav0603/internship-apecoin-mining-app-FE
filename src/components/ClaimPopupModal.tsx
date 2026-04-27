@@ -15,7 +15,6 @@ import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const AnimatedGradient = Animated.createAnimatedComponent(LinearGradient);
 
 interface ClaimPopupModalProps {
   visible: boolean;
@@ -24,6 +23,7 @@ interface ClaimPopupModalProps {
   currency: string;
   balance: number;
   claiming: boolean;
+  claimComplete?: boolean;
   onClaim: () => void;
   onClose: () => void;
 }
@@ -35,6 +35,7 @@ const ClaimPopupModal: React.FC<ClaimPopupModalProps> = ({
   currency,
   balance,
   claiming,
+  claimComplete = false,
   onClaim,
   onClose,
 }) => {
@@ -82,7 +83,7 @@ const ClaimPopupModal: React.FC<ClaimPopupModalProps> = ({
         }),
       ).start();
     }
-  }, [visible]);
+  }, [flipAnim, opacityAnim, rotationAnim, scaleAnim, visible]);
 
   const rotate = rotationAnim.interpolate({
     inputRange: [0, 1],
@@ -112,23 +113,27 @@ const ClaimPopupModal: React.FC<ClaimPopupModalProps> = ({
   const lottieRef = useRef<LottieView>(null);
 
   useEffect(() => {
-    if (isFlipped) {
+    if (claimComplete) {
+      setIsFlipped(true);
+      Animated.spring(flipAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 60,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [claimComplete, flipAnim]);
+
+  useEffect(() => {
+    if (isFlipped && claimComplete) {
       setTimeout(() => {
         lottieRef.current?.play();
       }, 300);
     }
-  }, [isFlipped]);
+  }, [claimComplete, isFlipped]);
 
   const handleClaimClick = () => {
-    setIsFlipped(true);
     onClaim();
-    // Smooth flip instantly
-    Animated.spring(flipAnim, {
-      toValue: 1,
-      friction: 6,
-      tension: 60,
-      useNativeDriver: true,
-    }).start();
   };
 
   return (
