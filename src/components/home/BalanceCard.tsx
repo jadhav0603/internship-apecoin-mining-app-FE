@@ -95,7 +95,7 @@ const BalanceCard = () => {
         </Animated.View>
         <View style={styles.container}>
           <View style={styles.metricsRow}>
-            {/* 🔥 Mining Power (LIVE) */}
+            {/* 🔥 Live Mining Rewards */}
             <Pressable
               style={styles.metricCard}
               onPress={() =>
@@ -104,18 +104,18 @@ const BalanceCard = () => {
             >
               <View style={styles.metricIconWrap}>
                 <MaterialCommunityIcons
-                  name="flash-outline"
+                  name="pickaxe"
                   size={18}
                   color={COLORS.primary}
                 />
               </View>
               <View style={styles.metricContent}>
-                <Text style={styles.metricLabel}>Mining Power</Text>
-                <Text style={styles.metricValue}>{earned.toFixed(6)} APC</Text>
+                <Text style={styles.metricLabel}>Live Rewards</Text>
+                <Text style={styles.metricValue}>{earned.toFixed(6)} APE</Text>
               </View>
             </Pressable>
 
-            {/* 💰 Wallet (for now static / later dynamic) */}
+            {/* 💰 Wallet Balance */}
             <Pressable
               style={styles.metricCard}
               onPress={() =>

@@ -5,8 +5,8 @@ import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
 import API from '../../services/api';
-// import { useInterstitialAd } from 'react-native-google-mobile-ads';
-// import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
   const {
@@ -22,20 +22,22 @@ const ClaimRewardModal = () => {
   } = useMining();
   const { setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
-  // const { isLoaded, isClosed, load, show } = useInterstitialAd(
-  //   AD_UNITS.INTERSTITIAL_CLAIM,
-  //   { requestNonPersonalizedAdsOnly: true }
-  // );
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_CLAIM,
+    { requestNonPersonalizedAdsOnly: true }
+  );
 
-  // useEffect(() => {
-  //   load();
-  // }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  // useEffect(() => {
-  //   if (isClosed) {
-  //     load();
-  //   }
-  // }, [isClosed, load]);
+  useEffect(() => {
+    if (isClosed) {
+      load();
+      // Proceed with claim logic if ad was shown and closed
+      // This is handled via handleClaim's state or simply by allowing it to proceed
+    }
+  }, [isClosed, load]);
 
   useEffect(() => {
     if (isMining) {
@@ -70,10 +72,11 @@ const ClaimRewardModal = () => {
   }
 
   const handleClaim = async () => {
+    if (isLoaded) {
+      show();
+    }
+    
     try {
-      // if (isLoaded) {
-      //   show();
-      // }
       const response = await API.post('/mining/claim');
       setBalanceFromServer(response.data?.balance ?? 0);
       setVisible(false);

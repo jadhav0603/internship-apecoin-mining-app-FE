@@ -23,6 +23,8 @@ import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useMining } from '../../context/MiningContext';
+import { useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const { width, height } = Dimensions.get('window');
 const WHEEL_SIZE = width * 0.85;
@@ -33,18 +35,41 @@ interface MultiplierUpgradeModalProps {
   onClose: () => void;
 }
 
-const MULTIPLIERS = [1, 2, 4, 8, 10, 15, 20, 25];
+// MULTIPLIERS is now driven from MiningContext (backend GlobalSettings)
 
 const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { multiplier, setMultiplier } = useMining();
+  const { multiplier, multipliers, setMultiplier } = useMining();
+  const currentIndex = multipliers.indexOf(multiplier);
   const [shouldRender, setShouldRender] = React.useState(visible);
   
   const scale = useSharedValue(0.3);
   const opacity = useSharedValue(0);
   const rotation = useSharedValue(0);
+  const boostScale = useSharedValue(1);
+  const [isPendingUpgrade, setIsPendingUpgrade] = React.useState(false);
+
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_BOOST,
+    { requestNonPersonalizedAdsOnly: true }
+  );
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (isClosed) {
+      load();
+      if (isPendingUpgrade) {
+        // The actual upgrade happens after ad close
+        performUpgrade();
+        setIsPendingUpgrade(false);
+      }
+    }
+  }, [isClosed, isPendingUpgrade]);
 
   useEffect(() => {
     if (visible) {
@@ -75,35 +100,75 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
   }));
 
   const handleSelect = async (m: number) => {
-    await setMultiplier(m);
-    handleClose();
+    // Selection disabled as per user request
+  };
+
+  const handleBoost = async () => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < multipliers.length) {
+      // Animation
+      boostScale.value = withSpring(0.9, { damping: 10, stiffness: 100 }, () => {
+        boostScale.value = withSpring(1);
+      });
+
+      if (isLoaded) {
+        setIsPendingUpgrade(true);
+        show();
+      } else {
+        // Fallback if ad not loaded
+        await performUpgrade();
+      }
+    }
+  };
+
+  const performUpgrade = async () => {
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < multipliers.length) {
+      const nextMultiplier = multipliers[nextIndex];
+      await setMultiplier(nextMultiplier);
+    }
   };
 
   const renderMultiplierItem = (m: number, index: number) => {
-    const angle = (index * (360 / MULTIPLIERS.length)) - 90;
+    const angle = (index * (360 / multipliers.length)) - 90;
     const radius = WHEEL_SIZE / 2 - 40;
     const x = radius * Math.cos((angle * Math.PI) / 180);
     const y = radius * Math.sin((angle * Math.PI) / 180);
 
     const isActive = multiplier === m;
+    const targetIndex = multipliers.indexOf(m);
+    // Locked if more than one step ahead of current
+    const isLocked = targetIndex > currentIndex + 1;
 
     return (
-      <Pressable
+      <View
         key={m}
-        onPress={() => handleSelect(m)}
         style={[
           styles.multiplierItem,
           {
             transform: [{ translateX: x }, { translateY: y }],
-            backgroundColor: isActive ? COLORS.primary : 'rgba(30, 45, 25, 0.9)',
-            borderColor: isActive ? '#A6FF00' : 'rgba(166, 255, 0, 0.2)',
+            backgroundColor: isActive
+              ? COLORS.primary
+              : isLocked
+              ? 'rgba(20, 20, 20, 0.9)'
+              : 'rgba(30, 45, 25, 0.9)',
+            borderColor: isActive
+              ? '#A6FF00'
+              : isLocked
+              ? 'rgba(255, 255, 255, 0.08)'
+              : 'rgba(166, 255, 0, 0.2)',
+            opacity: isLocked ? 0.4 : 1,
           },
         ]}
       >
-        <Text style={[styles.multiplierText, isActive && styles.activeMultiplierText]}>
-          {m}x
-        </Text>
-      </Pressable>
+        {isLocked ? (
+          <FontAwesome5 name="lock" size={14} color="rgba(255,255,255,0.4)" />
+        ) : (
+          <Text style={[styles.multiplierText, isActive && styles.activeMultiplierText]}>
+            {m}x
+          </Text>
+        )}
+      </View>
     );
   };
 
@@ -119,15 +184,28 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
             <View style={styles.innerRing} />
             
             {/* Multiplier Items */}
-            {MULTIPLIERS.map((m, i) => renderMultiplierItem(m, i))}
+            {multipliers.map((m, i) => renderMultiplierItem(m, i))}
 
             {/* Center Core */}
-            <View style={styles.centerCore}>
-              <View style={styles.centerInner}>
-                <FontAwesome5 name="rocket" size={24} color={COLORS.primary} />
-                <Text style={styles.centerLabel}>BOOST</Text>
-              </View>
-            </View>
+            <Pressable 
+              onPress={handleBoost}
+              disabled={currentIndex >= multipliers.length - 1}
+              style={({ pressed }) => [
+                { transform: [{ scale: pressed ? 0.95 : 1 }] }
+              ]}
+            >
+              <Animated.View style={[
+                styles.centerCore,
+                useAnimatedStyle(() => ({
+                  transform: [{ scale: boostScale.value }]
+                }))
+              ]}>
+                <View style={styles.centerInner}>
+                  <FontAwesome5 name="rocket" size={24} color={COLORS.primary} />
+                  <Text style={styles.centerLabel}>BOOST</Text>
+                </View>
+              </Animated.View>
+            </Pressable>
           </View>
 
           <View style={styles.infoContainer}>

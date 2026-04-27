@@ -33,6 +33,8 @@ import {
 } from '../../components/profile/profileTheme';
 import AppBackButton from '../../components/navigation/AppBackButton';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import { BannerAd, BannerAdSize, useInterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ProfileScreen = () => {
   const navigation =
@@ -49,6 +51,20 @@ const ProfileScreen = () => {
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const profileAura = useRef(new Animated.Value(0)).current;
+
+  const { isLoaded, load, show } = useInterstitialAd(AD_UNITS.INTERSTITIAL_PROFILE, {
+    requestNonPersonalizedAdsOnly: true,
+  });
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (isLoaded) {
+      show();
+    }
+  }, [isLoaded]);
 
   const handleLogout = async () => {
     setLogoutVisible(false);
@@ -368,6 +384,13 @@ const ProfileScreen = () => {
             </View>
           </LinearGradient>
 
+          <View style={styles.adContainer}>
+            <BannerAd
+              unitId={AD_UNITS.BANNER_PROFILE}
+              size={BannerAdSize.BANNER}
+            />
+          </View>
+
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View>
@@ -478,6 +501,13 @@ const ProfileScreen = () => {
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
+  adContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 26,
+    marginTop: -10,
+  },
   container: { flex: 1 },
   primaryGlow: {
     position: 'absolute',

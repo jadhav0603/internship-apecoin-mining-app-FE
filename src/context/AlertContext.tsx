@@ -5,11 +5,13 @@ import React, {
   useMemo,
   useRef,
   useState,
+  useEffect,
 } from 'react';
 import CustomAlert, {
   type CustomAlertButton,
   type CustomAlertPresentationOptions,
 } from '../components/CustomAlert';
+import { EVENT_NAMES, globalEvents } from '../utils/GlobalEventEmitter';
 
 export type AlertType = 'success' | 'error' | 'warning' | 'info' | 'confirm';
 
@@ -53,10 +55,26 @@ type AlertState = QueuedAlert;
 
 type AlertContextValue = AlertState & {
   hideAlert: () => void;
-  showSuccess: (message: string, title?: string, options?: StandardAlertOptions) => void;
-  showError: (message: string, title?: string, options?: StandardAlertOptions) => void;
-  showWarning: (message: string, title?: string, options?: StandardAlertOptions) => void;
-  showInfo: (message: string, title?: string, options?: StandardAlertOptions) => void;
+  showSuccess: (
+    message: string,
+    title?: string,
+    options?: StandardAlertOptions,
+  ) => void;
+  showError: (
+    message: string,
+    title?: string,
+    options?: StandardAlertOptions,
+  ) => void;
+  showWarning: (
+    message: string,
+    title?: string,
+    options?: StandardAlertOptions,
+  ) => void;
+  showInfo: (
+    message: string,
+    title?: string,
+    options?: StandardAlertOptions,
+  ) => void;
   showConfirm: (options: ConfirmAlertOptions) => void;
 };
 
@@ -91,10 +109,12 @@ const ALERT_TITLES: Record<Exclude<AlertType, 'confirm'>, string> = {
 const createAlertId = () =>
   `alert-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-const getAlertSignature = (alert: Pick<
-  QueuedAlert,
-  'type' | 'title' | 'message' | 'confirmText' | 'cancelText' | 'dedupeKey'
->) =>
+const getAlertSignature = (
+  alert: Pick<
+    QueuedAlert,
+    'type' | 'title' | 'message' | 'confirmText' | 'cancelText' | 'dedupeKey'
+  >,
+) =>
   [
     alert.dedupeKey ?? '',
     alert.type,
@@ -104,7 +124,7 @@ const getAlertSignature = (alert: Pick<
     alert.cancelText ?? '',
   ].join('::');
 
-const AlertProvider = ({children}: {children: React.ReactNode}) => {
+const AlertProvider = ({ children }: { children: React.ReactNode }) => {
   const [alertState, setAlertState] = useState<AlertState>(DEFAULT_ALERT_STATE);
   const queueRef = useRef<QueuedAlert[]>([]);
 
@@ -112,7 +132,7 @@ const AlertProvider = ({children}: {children: React.ReactNode}) => {
     const nextAlert = queueRef.current.shift();
 
     if (nextAlert) {
-      setAlertState({...nextAlert, visible: true});
+      setAlertState({ ...nextAlert, visible: true });
       return;
     }
 
@@ -121,7 +141,7 @@ const AlertProvider = ({children}: {children: React.ReactNode}) => {
 
   const hideAlert = useCallback(() => {
     setAlertState(current =>
-      current.visible ? {...current, visible: false} : current,
+      current.visible ? { ...current, visible: false } : current,
     );
   }, []);
 
@@ -139,11 +159,11 @@ const AlertProvider = ({children}: {children: React.ReactNode}) => {
       }
 
       if (!alertState.visible && alertState.id === '') {
-        setAlertState({...nextAlert, visible: true});
+        setAlertState({ ...nextAlert, visible: true });
         return;
       }
 
-      queueRef.current.push({...nextAlert, visible: true});
+      queueRef.current.push({ ...nextAlert, visible: true });
     },
     [alertState],
   );
@@ -228,6 +248,22 @@ const AlertProvider = ({children}: {children: React.ReactNode}) => {
     [enqueueAlert],
   );
 
+  useEffect(() => {
+    const unsubAlert = globalEvents.on(EVENT_NAMES.SHOW_ALERT, (args: any) => {
+      const { type, message, title, options } = args;
+      showAlert(type, message, title, options);
+    });
+
+    const unsubConfirm = globalEvents.on(EVENT_NAMES.SHOW_CONFIRM, (args: any) => {
+      showConfirm(args);
+    });
+
+    return () => {
+      unsubAlert();
+      unsubConfirm();
+    };
+  }, [showAlert, showConfirm]);
+
   const handleConfirm = useCallback(() => {
     const onConfirm = alertState.callbacks.onConfirm;
     hideAlert();
@@ -296,8 +332,8 @@ const AlertProvider = ({children}: {children: React.ReactNode}) => {
           alertState.presentation.dismissOnBackdropPress === false
             ? undefined
             : isConfirm
-              ? handleCancel
-              : hideAlert
+            ? handleCancel
+            : hideAlert
         }
         onHidden={flushNextAlert}
       />
@@ -315,4 +351,4 @@ export const useAlert = () => {
   return context;
 };
 
-export {AlertProvider};
+export { AlertProvider };

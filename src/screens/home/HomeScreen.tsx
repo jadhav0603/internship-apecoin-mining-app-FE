@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
@@ -14,9 +15,18 @@ import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
+import { useWallet } from '../../context/WalletContext';
 
 const HomeScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(36);
+  const { refreshBalance } = useWallet();
+
+  // ✅ Refresh balance & data each time home screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      void refreshBalance();
+    }, [refreshBalance])
+  );
 
   return (
     <LinearGradient
@@ -30,6 +40,13 @@ const HomeScreen = () => {
       style={styles.background}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.adContainer}>
+          <BannerAd
+            unitId={AD_UNITS.BANNER_HOME}
+            size={BannerAdSize.BANNER}
+          />
+        </View>
+
         <View style={styles.primaryGlow} />
         <View style={styles.secondaryGlow} />
 
@@ -44,12 +61,6 @@ const HomeScreen = () => {
           ]}
         >
           <View>
-            <View style={styles.adContainer}>
-              <BannerAd
-                unitId={AD_UNITS.BANNER_HOME}
-                size={BannerAdSize.BANNER}
-              />
-            </View>
             <Text style={styles.title}>Launch the mining Dashboard</Text>
             {/* <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
