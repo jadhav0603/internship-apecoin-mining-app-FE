@@ -26,7 +26,6 @@ const ClaimRewardModal = () => {
     dismissClaimPopup,
   } = useMining();
   const { setBalanceFromServer } = useWallet();
-  const [visible, setVisible] = useState(true);
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
     AD_UNITS.REWARDED_CLAIM,
     { requestNonPersonalizedAdsOnly: true }
