@@ -17,19 +17,26 @@ import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
 import AppBackButton from '../../components/navigation/AppBackButton';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { LAYOUT } from '../../constants/LAYOUT';
 import MiningActionButton from '../../components/mining/MiningActionButton';
 import MultiplierUpgradeModal from '../../components/mining/MultiplierUpgradeModal';
 import { useTimeModal } from '../../context/TimeModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MiningScreen = () => {
-  const { earned, secondsLeft, hours, miningData, multiplier, multipliers, setMultiplier } =
-    useMining();
+  const {
+    earned,
+    secondsLeft,
+    hours,
+    miningData,
+    multiplier,
+    multipliers,
+    setMultiplier,
+  } = useMining();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { setShowModal } = useTimeModal();
-  const [multiplierModalVisible, setMultiplierModalVisible] = React.useState(false);
+  const [multiplierModalVisible, setMultiplierModalVisible] =
+    React.useState(false);
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -158,7 +165,13 @@ const MiningScreen = () => {
         >
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>
             {/* ACTION BUTTONS */}
-            <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                paddingHorizontal: 16,
+                marginBottom: 16,
+              }}
+            >
               <MiningActionButton
                 label="Purchase Speed"
                 icon="bolt"

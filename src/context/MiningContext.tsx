@@ -46,11 +46,42 @@ type MiningContextType = {
 const MINING_STORAGE_KEY = 'MINING_DATA';
 const getSocketUrl = () => API_CONFIG.BASE_URL.replace(/\/api$/, '');
 
+const getElapsedSeconds = (data: MiningData, now = Date.now()) => {
+  if (!data.miningStartTime) {
+    return 0;
+  }
+
+  const startTime = new Date(data.miningStartTime).getTime();
+
+  if (Number.isNaN(startTime)) {
+    return 0;
+  }
+
+  const rawElapsed = Math.floor((now - startTime) / 1000);
+  const totalSeconds = (data.selectedHour ?? 1) * 3600;
+
+  return Math.max(0, Math.min(rawElapsed, totalSeconds));
+};
+
+const getLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
+  if (data.status !== 'mining' || !data.miningStartTime || !data.isActive) {
+    return data.currentMiningPoints ?? 0;
+  }
+
+  const base = data.baseDollarValue ?? 0.002;
+  const apeValue = data.apeDollarValue && data.apeDollarValue > 0 ? data.apeDollarValue : 0.1;
+  const activeMultiplier = data.multiplier ?? 1;
+  const apePerHour = (base / apeValue) * activeMultiplier;
+  const apePerSecond = apePerHour / 3600;
+
+  return getElapsedSeconds(data, now) * apePerSecond;
+};
+
 const deriveStateFromDB = (data: MiningData) => {
   if (typeof data.remainingSeconds === 'number') {
     return {
       remaining: Math.max(0, data.remainingSeconds),
-      earnedCoins: data.currentMiningPoints ?? 0,
+      earnedCoins: getLiveEarnedCoins(data),
       isComplete:
         data.remainingSeconds <= 0 || data.status !== 'mining' || !data.isActive,
     };
@@ -65,14 +96,11 @@ const deriveStateFromDB = (data: MiningData) => {
   }
 
   const totalSeconds = (data.selectedHour ?? 1) * 3600;
-  const rawElapsed = Math.floor(
-    (Date.now() - new Date(data.miningStartTime).getTime()) / 1000
-  );
-  const remaining = Math.max(0, totalSeconds - rawElapsed);
+  const remaining = Math.max(0, totalSeconds - getElapsedSeconds(data));
 
   return {
     remaining,
-    earnedCoins: data.currentMiningPoints ?? 0,
+    earnedCoins: getLiveEarnedCoins(data),
     isComplete: remaining <= 0,
   };
 };
@@ -348,22 +376,24 @@ export const MiningProvider = ({ children }: any) => {
     }
 
     const interval = setInterval(() => {
-      setSecondsLeft(prev => {
-        if (prev <= 1) {
-          return 0;
-        }
-        return prev - 1;
-      });
-
       const d = miningDataRef.current;
-      const base = d?.baseDollarValue ?? 0.002;
-      const apeValue = d?.apeDollarValue ?? 0.1;
-      const m = multiplierRef.current;
-      
-      const apePerHour = (base / apeValue) * m;
-      const apePerSecond = apePerHour / 3600;
 
-      setEarned(prev => prev + apePerSecond);
+      if (!d) {
+        setSecondsLeft(prev => {
+          if (prev <= 1) {
+            return 0;
+          }
+          return prev - 1;
+        });
+        return;
+      }
+
+      const totalSeconds = (d.selectedHour ?? 1) * 3600;
+      const elapsedSeconds = getElapsedSeconds(d);
+      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+
+      setSecondsLeft(remaining);
+      setEarned(getLiveEarnedCoins({ ...d, multiplier: multiplierRef.current }));
     }, 1000);
 
     return () => clearInterval(interval);
