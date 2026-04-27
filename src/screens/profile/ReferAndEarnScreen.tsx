@@ -21,6 +21,7 @@ import AppBackButton from '../../components/navigation/AppBackButton';
 import { FONTS } from '../../constants/FONTS';
 import { getUserDisplayName, useUser } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
+import { useWallet } from '../../context/WalletContext';
 import { useReferralData } from '../../hooks/useReferralData';
 import { RootStackParamList } from '../../navigation/types';
 import { referralService } from '../../services/referralService';
@@ -53,6 +54,7 @@ const ReferAndEarnScreen = () => {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { showError, showSuccess } = useAlert();
+  const { refreshBalance } = useWallet();
   const [redeemCode, setRedeemCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -132,6 +134,9 @@ const ReferAndEarnScreen = () => {
 
       setRedeemCode('');
       refresh();
+      if (response.referralRewardApplied) {
+        await refreshBalance();
+      }
 
       showSuccess(
         response.referralRewardApplied

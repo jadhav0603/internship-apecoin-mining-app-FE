@@ -55,12 +55,12 @@ import { COLORS } from '../../constants/COLORS';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
 import { useLiquidBalance } from '../../hooks/useLiquidBalance';
-import { formatAmount } from '../wallet/theme';
 
 const BalanceCard = () => {
-  const { earned, hours } = useMining();
-  const navigation = useNavigation<any>();
+  const { earned, claimRewardAmount, hours, hasUnclaimedReward, openClaimPopup } = useMining();
   const { liquidBalance } = useLiquidBalance();
+  const navigation = useNavigation<any>();
+  const displayEarned = hasUnclaimedReward ? claimRewardAmount || earned : earned;
 
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -98,9 +98,14 @@ const BalanceCard = () => {
             {/* 🔥 Live Mining Rewards */}
             <Pressable
               style={styles.metricCard}
-              onPress={() =>
-                navigation.navigate('Mining', { time: hours || 1 })
-              }
+              onPress={() => {
+                if (hasUnclaimedReward) {
+                  openClaimPopup();
+                  return;
+                }
+
+                navigation.navigate('Mining', { time: hours || 1 });
+              }}
             >
               <View style={styles.metricIconWrap}>
                 <MaterialCommunityIcons
@@ -110,8 +115,8 @@ const BalanceCard = () => {
                 />
               </View>
               <View style={styles.metricContent}>
-                <Text style={styles.metricLabel}>Live Rewards</Text>
-                <Text style={styles.metricValue}>{earned.toFixed(6)} APE</Text>
+                <Text style={styles.metricLabel}>Mining Power</Text>
+                <Text style={styles.metricValue}>{displayEarned.toFixed(6)} APC</Text>
               </View>
             </Pressable>
 

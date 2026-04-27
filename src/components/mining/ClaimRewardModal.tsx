@@ -5,6 +5,9 @@ import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
 import { COLORS } from '../../constants/COLORS';
 import API from '../../services/api';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+// import { useInterstitialAd } from 'react-native-google-mobile-ads';
+// import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
@@ -13,15 +16,17 @@ const ClaimRewardModal = () => {
   const {
     isMining,
     earned,
+    claimRewardAmount,
     secondsLeft,
     hours,
     multiplier,
     stopMining,
     miningData,
     showClaimPopup,
+    hasUnclaimedReward,
     dismissClaimPopup,
   } = useMining();
-  const { setBalanceFromServer } = useWallet();
+  const { refreshBalance, setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
   const [isPendingReward, setIsPendingReward] = useState(false);
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
@@ -38,8 +43,9 @@ const ClaimRewardModal = () => {
 
   const isClaimAvailable =
     showClaimPopup &&
-    (miningData?.canClaim ?? false) &&
-    (miningData?.status === 'idle' || miningData?.status === 'mining');
+    hasUnclaimedReward &&
+    miningData?.status !== 'claimed' &&
+    Boolean(miningData?.miningStartTime);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -67,8 +73,13 @@ const ClaimRewardModal = () => {
   const executeClaim = useCallback(async () => {
     try {
       const response = await API.post('/mining/claim');
-      setBalanceFromServer(response.data?.balance ?? 0);
-      setVisible(false);
+      const nextWalletBalance = response.data?.walletBalance ?? response.data?.balance;
+
+      if (Number.isFinite(nextWalletBalance)) {
+        setBalanceFromServer(nextWalletBalance);
+      } else {
+        await refreshBalance();
+      }
 
       setTimeout(() => {
         stopMining().catch(error => {
@@ -79,7 +90,7 @@ const ClaimRewardModal = () => {
     } catch (err) {
       console.error('[mining] claim failed:', err);
     }
-  }, [dismissClaimPopup, setBalanceFromServer, stopMining]);
+  }, [dismissClaimPopup, refreshBalance, setBalanceFromServer, stopMining]);
 
   useEffect(() => {
     if (isClosed && isPendingReward) {
@@ -150,56 +161,69 @@ const ClaimRewardModal = () => {
               padding: 20,
             }}
           >
-            <Text
-            style={{
-              color: COLORS.textPrimary,
-              fontSize: 18,
-              textAlign: 'center',
-              marginBottom: 12,
-            }}
-          >
-            Mining Complete
-          </Text>
-
-          <Text
-            style={{
-              color: COLORS.primary,
-              fontSize: 22,
-              textAlign: 'center',
-              marginBottom: 10,
-            }}
-          >
-            {earned.toFixed(6)} APC
-          </Text>
-
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ color: COLORS.textSecondary }}>Duration: {hours}h</Text>
-            <Text style={{ color: COLORS.textSecondary }}>Multiplier: {multiplier}x</Text>
-            <Text style={{ color: COLORS.textSecondary }}>
-              Remaining: {formatTime(secondsLeft)}
-            </Text>
-          </View>
-
-          <Pressable
-            onPress={handleClaim}
-            style={{
-              marginTop: 20,
-              backgroundColor: COLORS.primary,
-              paddingVertical: 12,
-              borderRadius: 16,
-              alignItems: 'center',
-            }}
-          >
-            <Text
+            <Pressable
+              onPress={dismissClaimPopup}
+              hitSlop={10}
               style={{
-                color: COLORS.textDark,
-                fontWeight: 'bold',
+                position: 'absolute',
+                top: 14,
+                right: 14,
+                zIndex: 1,
               }}
             >
-              CLAIM REWARD
+              <Ionicons name="close" size={22} color={COLORS.textSecondary} />
+            </Pressable>
+
+            <Text
+              style={{
+                color: COLORS.textPrimary,
+                fontSize: 18,
+                textAlign: 'center',
+                marginBottom: 12,
+              }}
+            >
+              Mining Complete
             </Text>
-          </Pressable>
-        </View>
+
+            <Text
+              style={{
+                color: COLORS.primary,
+                fontSize: 22,
+                textAlign: 'center',
+                marginBottom: 10,
+              }}
+            >
+              {(claimRewardAmount || earned).toFixed(6)} APC
+            </Text>
+
+            <View style={{ marginTop: 10 }}>
+              <Text style={{ color: COLORS.textSecondary }}>Duration: {hours}h</Text>
+              <Text style={{ color: COLORS.textSecondary }}>Multiplier: {multiplier}x</Text>
+              <Text style={{ color: COLORS.textSecondary }}>
+                Remaining: {formatTime(secondsLeft)}
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={handleClaim}
+              style={{
+                marginTop: 20,
+                backgroundColor: COLORS.primary,
+                paddingVertical: 12,
+                borderRadius: 16,
+                alignItems: 'center',
+              }}
+            >
+              <Text
+                style={{
+                  color: COLORS.textDark,
+                  fontWeight: 'bold',
+                }}
+              >
+                CLAIM REWARD
+              </Text>
+            </Pressable>
+          </View>
         </View>
         </View>
       </Modal>

@@ -26,7 +26,7 @@ type MiningButtonProps = {
 export default function MiningButton({ onPress }: MiningButtonProps) {
   const navigation = useNavigation<any>();
   const { setShowModal } = useTimeModal();
-  const { isMining, hours } = useMining();
+  const { isMining, hours, hasUnclaimedReward, openClaimPopup } = useMining();
 
   const rotation = useSharedValue(0);
   const borderRotation = useSharedValue(0);
@@ -134,6 +134,11 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 
     if (isMining) {
       navigation.navigate('Mining', { time: hours || 1 });
+      return;
+    }
+
+    if (hasUnclaimedReward) {
+      openClaimPopup();
       return;
     }
 

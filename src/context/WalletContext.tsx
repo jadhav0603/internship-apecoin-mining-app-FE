@@ -16,15 +16,18 @@ export const WalletProvider = ({ children }: any) => {
   const refreshBalance = async () => {
     try {
       const response = await API.get('/user/me');
-      setBalance(response.data?.usdBalance ?? 0);
+      setBalance(
+        Number.isFinite(response.data?.walletBalance)
+          ? response.data.walletBalance
+          : response.data?.usdBalance ?? 0,
+      );
     } catch (error) {
       console.error('[wallet] failed to load balance:', error);
-      setBalance(0);
     }
   };
 
   const setBalanceFromServer = (amount: number) => {
-    setBalance(amount ?? 0);
+    setBalance(Number.isFinite(amount) ? amount : 0);
   };
 
   useEffect(() => {
