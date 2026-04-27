@@ -40,12 +40,7 @@ const HomeScreen = () => {
       style={styles.background}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <View style={styles.adContainer}>
-          <BannerAd
-            unitId={AD_UNITS.BANNER_HOME}
-            size={BannerAdSize.BANNER}
-          />
-        </View>
+        
 
         <View style={styles.primaryGlow} />
         <View style={styles.secondaryGlow} />
@@ -61,6 +56,12 @@ const HomeScreen = () => {
           ]}
         >
           <View>
+            <View style={styles.adContainer}>
+          <BannerAd
+            unitId={AD_UNITS.BANNER_HOME}
+            size={BannerAdSize.BANNER}
+          />
+        </View>
             <Text style={styles.title}>Launch the mining Dashboard</Text>
             {/* <Text style={styles.subtitle}>
                 The main CTA stays centered in the content area, with breathing
