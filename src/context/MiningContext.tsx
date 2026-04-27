@@ -50,8 +50,24 @@ type MiningContextType = {
   dismissClaimPopup: () => void;
 };
 
-const MINING_STORAGE_KEY = 'MINING_DATA';
+type LocalMiningCache = {
+  email: string;
+  startTime: number;
+  duration: number;
+  multiplier: number;
+  earned: number;
+};
+
+const MINING_STORAGE_KEY_PREFIX = 'MINING_DATA';
 const getSocketUrl = () => API_CONFIG.BASE_URL.replace(/\/api$/, '');
+const normalizeEmail = (email?: string | null) =>
+  email?.trim().toLowerCase() || null;
+const getScopedMiningStorageKey = (email?: string | null) => {
+  const normalizedEmail = normalizeEmail(email);
+  return normalizedEmail
+    ? `${MINING_STORAGE_KEY_PREFIX}:${normalizedEmail}`
+    : null;
+};
 
 const deriveStateFromDB = (data: MiningData) => {
   if (typeof data.remainingSeconds === 'number') {
@@ -103,6 +119,9 @@ export const MiningProvider = ({ children }: any) => {
   const socketRef = useRef<Socket | null>(null);
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
+  const currentUserEmailRef = useRef<string | null>(
+    normalizeEmail(auth().currentUser?.email),
+  );
   const { refreshBalance } = useWallet();
 
   useEffect(() => {
@@ -113,12 +132,88 @@ export const MiningProvider = ({ children }: any) => {
     miningDataRef.current = miningData;
   }, [miningData]);
 
+  const resetMiningState = () => {
+    setIsMining(false);
+    setSecondsLeft(0);
+    setHours(1);
+    setMultiplierState(1);
+    setEarned(0);
+    setMiningData(null);
+    setShowClaimPopup(false);
+  };
+
+  const clearStoredMiningSession = async (email?: string | null) => {
+    const storageKey = getScopedMiningStorageKey(email);
+    if (!storageKey) {
+      return;
+    }
+
+    await AsyncStorage.removeItem(storageKey);
+  };
+
+  const persistStoredMiningSession = async (
+    email: string,
+    cache: LocalMiningCache,
+  ) => {
+    const storageKey = getScopedMiningStorageKey(email);
+    if (!storageKey) {
+      return;
+    }
+
+    await AsyncStorage.setItem(storageKey, JSON.stringify(cache));
+  };
+
+  const loadStoredMiningSession = async (email: string) => {
+    const storageKey = getScopedMiningStorageKey(email);
+    if (!storageKey) {
+      return null;
+    }
+
+    const saved = await AsyncStorage.getItem(storageKey);
+    if (!saved) {
+      return null;
+    }
+
+    const parsed = JSON.parse(saved) as Partial<LocalMiningCache>;
+    if (normalizeEmail(parsed.email) !== normalizeEmail(email)) {
+      await AsyncStorage.removeItem(storageKey);
+      return null;
+    }
+
+    return parsed;
+  };
+
+  const cacheMiningSession = async (
+    email: string,
+    data: MiningData,
+    earnedCoins: number,
+  ) => {
+    if (!data.miningStartTime) {
+      await clearStoredMiningSession(email);
+      return;
+    }
+
+    await persistStoredMiningSession(email, {
+      email,
+      startTime: new Date(data.miningStartTime).getTime(),
+      duration: (data.selectedHour ?? 1) * 3600,
+      multiplier: data.multiplier ?? 1,
+      earned: earnedCoins,
+    });
+  };
+
   const applyMiningData = (data: MiningData, stats?: any) => {
     const updatedData = {
       ...data,
       ...(stats || {}),
       apeDollarValue: stats?.apeDollarValue ?? data.apeDollarValue ?? 0.1,
     };
+
+    const currentUserEmail = currentUserEmailRef.current;
+    const miningEmail = normalizeEmail(updatedData.email);
+    if (currentUserEmail && miningEmail && miningEmail !== currentUserEmail) {
+      return;
+    }
 
     if (stats?.miningMultipliers) {
       setMultipliers(stats.miningMultipliers);
@@ -136,11 +231,19 @@ export const MiningProvider = ({ children }: any) => {
       setSecondsLeft(remaining);
       setEarned(earnedCoins);
       setShowClaimPopup(false);
+
+      if (currentUserEmail) {
+        void cacheMiningSession(currentUserEmail, updatedData, earnedCoins);
+      }
     } else {
       setIsMining(false);
       setSecondsLeft(0);
       setEarned(earnedCoins);
       setShowClaimPopup(Boolean(updatedData.shouldShowClaimPopup));
+
+      if (currentUserEmail) {
+        void clearStoredMiningSession(currentUserEmail);
+      }
     }
   };
 
@@ -154,10 +257,15 @@ export const MiningProvider = ({ children }: any) => {
       }
 
       if (!firebaseUser?.email) {
+        socketRef.current = null;
         return;
       }
 
-      const email = firebaseUser.email;
+      const email = normalizeEmail(firebaseUser.email);
+      if (!email) {
+        socketRef.current = null;
+        return;
+      }
 
       socket = socketIO(getSocketUrl(), {
         transports: ['websocket'],
@@ -172,6 +280,13 @@ export const MiningProvider = ({ children }: any) => {
       });
 
       socket.on('mining_update', (data: MiningData) => {
+        if (
+          currentUserEmailRef.current &&
+          normalizeEmail(data.email) !== currentUserEmailRef.current
+        ) {
+          return;
+        }
+
         console.log(
           '[socket.io] mining_update received, miningStartTime:',
           data.miningStartTime,
@@ -185,63 +300,104 @@ export const MiningProvider = ({ children }: any) => {
     return () => {
       unsubscribeAuth();
       socket?.disconnect();
+      socketRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const fetchStatus = async () => {
+    let isMounted = true;
+
+    const hydrateMiningState = async (email: string) => {
       try {
         const response = await API.get('/mining/status');
-        if (response.data?.mining) {
-          const restoredMining = {
-            ...response.data.mining,
-            ...(response.data.stats ?? {}),
-          };
-          console.log(
-            '[mining] restored from backend:',
-            restoredMining.miningStartTime,
-          );
-          applyMiningData(restoredMining, response.data.stats);
-
-          const { isComplete } = deriveStateFromDB(restoredMining);
-          if (isComplete) {
-            await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-          } else {
-            await AsyncStorage.setItem(
-              MINING_STORAGE_KEY,
-              JSON.stringify({
-                startTime: new Date(restoredMining.miningStartTime).getTime(),
-                duration: (restoredMining.selectedHour ?? 1) * 3600,
-                multiplier: restoredMining.multiplier ?? 1,
-                earned: 0,
-              }),
-            );
-          }
-        }
-      } catch {
-        const saved = await AsyncStorage.getItem(MINING_STORAGE_KEY);
-        if (!saved) {
+        if (!isMounted || currentUserEmailRef.current !== email) {
           return;
         }
 
-        const data = JSON.parse(saved);
-        const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
-        const remaining = data.duration - elapsed;
+        if (!response.data?.mining) {
+          resetMiningState();
+          await clearStoredMiningSession(email);
+          return;
+        }
+
+        const restoredMining = {
+          ...response.data.mining,
+          ...(response.data.stats ?? {}),
+        };
+
+        if (
+          normalizeEmail(restoredMining.email) &&
+          normalizeEmail(restoredMining.email) !== email
+        ) {
+          resetMiningState();
+          await clearStoredMiningSession(email);
+          return;
+        }
+
+        console.log(
+          '[mining] restored from backend:',
+          restoredMining.miningStartTime,
+        );
+        applyMiningData(restoredMining, response.data.stats);
+      } catch {
+        const saved = await loadStoredMiningSession(email);
+        if (!isMounted || currentUserEmailRef.current !== email) {
+          return;
+        }
+
+        if (!saved?.startTime || !saved?.duration) {
+          resetMiningState();
+          return;
+        }
+
+        const elapsed = Math.floor((Date.now() - saved.startTime) / 1000);
+        const remaining = saved.duration - elapsed;
 
         if (remaining > 0) {
           setIsMining(true);
           setSecondsLeft(remaining);
-          setMultiplierState(data.multiplier ?? 1);
+          setHours(Math.max(1, Math.round(saved.duration / 3600)));
+          setMultiplierState(saved.multiplier ?? 1);
+          setEarned(saved.earned ?? 0);
+          setShowClaimPopup(false);
         } else {
-          await AsyncStorage.removeItem(MINING_STORAGE_KEY);
+          resetMiningState();
+          await clearStoredMiningSession(email);
         }
       }
     };
 
-    fetchStatus();
+    const unsubscribeAuth = auth().onAuthStateChanged(firebaseUser => {
+      const nextEmail = normalizeEmail(firebaseUser?.email);
+      const previousEmail = currentUserEmailRef.current;
+
+      currentUserEmailRef.current = nextEmail;
+      resetMiningState();
+
+      if (previousEmail && previousEmail !== nextEmail) {
+        void clearStoredMiningSession(previousEmail);
+      }
+
+      if (!nextEmail) {
+        return;
+      }
+
+      void hydrateMiningState(nextEmail);
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribeAuth();
+    };
   }, []);
 
   const startMining = async (h: number) => {
+    const currentUserEmail = currentUserEmailRef.current;
+    if (!currentUserEmail) {
+      resetMiningState();
+      return;
+    }
+
     const totalSeconds = h * 3600;
     setIsMining(true);
     setHours(h);
@@ -249,15 +405,13 @@ export const MiningProvider = ({ children }: any) => {
     setEarned(0);
     setShowClaimPopup(false);
 
-    await AsyncStorage.setItem(
-      MINING_STORAGE_KEY,
-      JSON.stringify({
-        startTime: Date.now(),
-        duration: totalSeconds,
-        multiplier: 1,
-        earned: 0,
-      }),
-    );
+    await persistStoredMiningSession(currentUserEmail, {
+      email: currentUserEmail,
+      startTime: Date.now(),
+      duration: totalSeconds,
+      multiplier: 1,
+      earned: 0,
+    });
 
     try {
       const response = await API.post('/mining/start', {
@@ -277,12 +431,15 @@ export const MiningProvider = ({ children }: any) => {
       }
     } catch (err) {
       console.error('[mining] failed to save to backend:', err);
+      resetMiningState();
+      await clearStoredMiningSession(currentUserEmail);
     }
   };
 
-  // ✅ 2-SECOND POLLING
   useEffect(() => {
-    if (!isMining) return;
+    if (!isMining) {
+      return;
+    }
 
     const poll = setInterval(async () => {
       try {
@@ -298,7 +455,7 @@ export const MiningProvider = ({ children }: any) => {
         }
       } catch (e: any) {
         if (e?.response?.status === 401) {
-          setIsMining(false); // Stop polling if unauthorized (logged out)
+          resetMiningState();
         } else if (__DEV__) {
           console.warn('[mining] poll failed', e.message);
         }
@@ -309,6 +466,8 @@ export const MiningProvider = ({ children }: any) => {
   }, [isMining]);
 
   const stopMining = async () => {
+    const currentUserEmail = currentUserEmailRef.current;
+
     setIsMining(false);
     setSecondsLeft(0);
     setEarned(0);
@@ -325,8 +484,7 @@ export const MiningProvider = ({ children }: any) => {
         : prev,
     );
     setShowClaimPopup(false);
-    await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-    // ✅ Immediately refresh wallet balance so it doesn't reset to 0 on page load
+    await clearStoredMiningSession(currentUserEmail);
     void refreshBalance();
   };
 
@@ -345,7 +503,7 @@ export const MiningProvider = ({ children }: any) => {
             ...response.data.mining,
             ...(response.data.stats ?? {}),
           },
-          response.data.apeDollarValue,
+          response.data.stats,
         );
       }
       console.log('[mining] multiplier updated to', m);
@@ -356,7 +514,7 @@ export const MiningProvider = ({ children }: any) => {
             ...err.response.data.mining,
             ...(err.response.data.stats ?? {}),
           },
-          err.response.data.apeDollarValue,
+          err.response.data.stats,
         );
       }
       console.error('[mining] failed to update multiplier:', err);

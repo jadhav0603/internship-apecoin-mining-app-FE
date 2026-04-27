@@ -22,8 +22,8 @@ function App(): React.JSX.Element {
     <GestureHandlerRootView style={styles.root}>
       <UserProvider>
         <TimeModalProvider>
-          <MiningProvider>
-            <WalletProvider>
+          <WalletProvider>
+            <MiningProvider>
               <AlertProvider>
                 <SafeAreaProvider>
                   <StatusBar
@@ -33,8 +33,8 @@ function App(): React.JSX.Element {
                   <AppNavigator />
                 </SafeAreaProvider>
               </AlertProvider>
-            </WalletProvider>
-          </MiningProvider>
+            </MiningProvider>
+          </WalletProvider>
         </TimeModalProvider>
       </UserProvider>
     </GestureHandlerRootView>

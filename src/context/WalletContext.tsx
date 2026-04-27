@@ -30,6 +30,7 @@ export const WalletProvider = ({ children }: any) => {
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(user => {
       if (user) {
+        setBalance(0);
         void refreshBalance();
       } else {
         setBalance(0);
