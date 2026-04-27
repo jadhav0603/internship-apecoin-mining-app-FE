@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   StatusBar,
   TextInput,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -94,6 +96,16 @@ const SignIn: React.FC<Props> = ({navigation}) => {
   return (
     <SafeAreaView style={[styles.container, {paddingBottom: Math.max(insets.bottom, 20)}]}>
       <StatusBar barStyle="light-content" backgroundColor="#1A2B1A" />
+
+      {/* ✅ Full-screen blocking overlay during Google/Auth loading */}
+      <Modal transparent visible={loading} animationType="fade">
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color="#A6FF00" />
+            <Text style={styles.loadingText}>Signing you in…</Text>
+          </View>
+        </View>
+      </Modal>
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -472,6 +484,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+  },
+  // ── Loading Overlay ──
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingBox: {
+    backgroundColor: '#1A1A1A',
+    padding: 30,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(166, 255, 0, 0.2)',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    marginTop: 15,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -178,7 +178,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 
         <View style={styles.ringWrapper}>
           <SegmentedRing
-            size={182}
+            size={192}
             segmentCount={56}
             activeSegments={18}
             segmentWidth={5}

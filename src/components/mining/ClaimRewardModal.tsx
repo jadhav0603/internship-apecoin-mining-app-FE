@@ -8,6 +8,8 @@ import API from '../../services/api';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 // import { useInterstitialAd } from 'react-native-google-mobile-ads';
 // import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useRewardedAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 const ClaimRewardModal = () => {
   const {
@@ -24,20 +26,24 @@ const ClaimRewardModal = () => {
     dismissClaimPopup,
   } = useMining();
   const { setBalanceFromServer } = useWallet();
-  // const { isLoaded, isClosed, load, show } = useInterstitialAd(
-  //   AD_UNITS.INTERSTITIAL_CLAIM,
-  //   { requestNonPersonalizedAdsOnly: true }
-  // );
+  const [visible, setVisible] = useState(true);
+  const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
+    AD_UNITS.REWARDED_CLAIM,
+    { requestNonPersonalizedAdsOnly: true }
+  );
 
-  // useEffect(() => {
-  //   load();
-  // }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  // useEffect(() => {
-  //   if (isClosed) {
-  //     load();
-  //   }
-  // }, [isClosed, load]);
+  useEffect(() => {
+    if (isClosed) {
+      load();
+      if (isEarnedReward) {
+        executeClaim();
+      }
+    }
+  }, [isClosed, load, isEarnedReward]);
 
   const isClaimAvailable =
     showClaimPopup &&
@@ -67,10 +73,17 @@ const ClaimRewardModal = () => {
   }
 
   const handleClaim = async () => {
+    if (isLoaded) {
+      show();
+      return;
+    }
+    
+    // If ad not loaded, allow direct claim as fallback
+    await executeClaim();
+  };
+
+  const executeClaim = async () => {
     try {
-      // if (isLoaded) {
-      //   show();
-      // }
       const response = await API.post('/mining/claim');
       setBalanceFromServer(response.data?.balance ?? 0);
 

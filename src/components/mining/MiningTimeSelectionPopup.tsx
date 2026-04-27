@@ -9,6 +9,8 @@ import styles from './miningTimeSelectionPopup.styles';
 import { useTimeModal } from '../../context/TimeModal';
 import { useMining } from '../../context/MiningContext';
 import { RootStackParamList } from '../../navigation/types';
+import { useInterstitialAd } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../../constants/AD_UNITS';
 
 type MiningPopupNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -27,6 +29,7 @@ const DURATION_OPTIONS: DurationOption[] = [
   { hours: 4, label: '4 hr', unlocked: false },
   { hours: 8, label: '8 hr', unlocked: false },
   { hours: 12, label: '12 hr', unlocked: false },
+
 ];
 
 const MiningTimeSelectionPopup = () => {
@@ -39,6 +42,21 @@ const MiningTimeSelectionPopup = () => {
     () => DURATION_OPTIONS.findIndex(option => option.hours === selectedHours),
     [selectedHours],
   );
+
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_MINING,
+    { requestNonPersonalizedAdsOnly: true }
+  );
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  React.useEffect(() => {
+    if (isClosed) {
+      load();
+    }
+  }, [isClosed, load]);
 
   const handleClose = () => {
     setShowModal(false);
