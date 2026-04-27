@@ -26,7 +26,7 @@ const ClaimRewardModal = () => {
     hasUnclaimedReward,
     dismissClaimPopup,
   } = useMining();
-  const { setBalanceFromServer } = useWallet();
+  const { refreshBalance, setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
   const [isPendingReward, setIsPendingReward] = useState(false);
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
@@ -73,7 +73,13 @@ const ClaimRewardModal = () => {
   const executeClaim = useCallback(async () => {
     try {
       const response = await API.post('/mining/claim');
-      setBalanceFromServer(response.data?.balance ?? 0);
+      const nextWalletBalance = response.data?.walletBalance ?? response.data?.balance;
+
+      if (Number.isFinite(nextWalletBalance)) {
+        setBalanceFromServer(nextWalletBalance);
+      } else {
+        await refreshBalance();
+      }
 
       setTimeout(() => {
         stopMining().catch(error => {
@@ -84,7 +90,7 @@ const ClaimRewardModal = () => {
     } catch (err) {
       console.error('[mining] claim failed:', err);
     }
-  }, [dismissClaimPopup, setBalanceFromServer, stopMining]);
+  }, [dismissClaimPopup, refreshBalance, setBalanceFromServer, stopMining]);
 
   useEffect(() => {
     if (isClosed && isPendingReward) {

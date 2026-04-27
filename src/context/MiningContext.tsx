@@ -10,7 +10,6 @@ import { io as socketIO, Socket } from 'socket.io-client';
 import auth from '@react-native-firebase/auth';
 import API from '../services/api';
 import { API_CONFIG } from '../api/config';
-import { useWallet } from './WalletContext';
 
 export interface MiningData {
   email: string;
@@ -152,8 +151,6 @@ export const MiningProvider = ({ children }: any) => {
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
   const lastAutoShownClaimKeyRef = useRef<string | null>(null);
-  const { refreshBalance } = useWallet();
-
   useEffect(() => {
     multiplierRef.current = multiplier;
   }, [multiplier]);
@@ -442,7 +439,6 @@ export const MiningProvider = ({ children }: any) => {
     lastAutoShownClaimKeyRef.current = null;
     await AsyncStorage.removeItem(MINING_STORAGE_KEY);
     // ✅ Immediately refresh wallet balance so it doesn't reset to 0 on page load
-    void refreshBalance();
   };
 
   const setMultiplier = async (m: number) => {

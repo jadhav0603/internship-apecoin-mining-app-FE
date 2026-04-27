@@ -28,6 +28,7 @@ import { AD_UNITS } from '../../constants/AD_UNITS';
 import type { RootStackParamList } from '../../navigation/types';
 import { useUser } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
+import { useWallet } from '../../context/WalletContext';
 import { useLiquidBalance } from '../../hooks/useLiquidBalance';
 import {
   withdrawService,
@@ -42,6 +43,7 @@ const WalletScreen = () => {
     useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
   const { user } = useUser();
   const { showError } = useAlert();
+  const { refreshBalance } = useWallet();
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
@@ -172,6 +174,7 @@ const WalletScreen = () => {
         amount: rawBalance,
       });
 
+      await refreshBalance();
       await refreshWithdrawRecords();
       setShowWithdrawSuccessModal(true);
     } catch (error: any) {

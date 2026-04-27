@@ -55,12 +55,11 @@ import { COLORS } from '../../constants/COLORS';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
 import { useLiquidBalance } from '../../hooks/useLiquidBalance';
-import { formatAmount } from '../wallet/theme';
 
 const BalanceCard = () => {
   const { earned, claimRewardAmount, hours, hasUnclaimedReward, openClaimPopup } = useMining();
-  const navigation = useNavigation<any>();
   const { liquidBalance } = useLiquidBalance();
+  const navigation = useNavigation<any>();
   const displayEarned = hasUnclaimedReward ? claimRewardAmount || earned : earned;
 
   const spinAnim = useRef(new Animated.Value(0)).current;

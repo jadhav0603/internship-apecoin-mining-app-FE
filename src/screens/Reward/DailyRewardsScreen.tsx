@@ -18,6 +18,7 @@ import ClaimPopupModal from '../../components/ClaimPopupModal';
 import SuccessOverlay from '../../components/SuccessOverlay';
 import RewardsGridSection from '../../components/RewardsGridSection';
 import { useAlert } from '../../context/AlertContext';
+import { useWallet } from '../../context/WalletContext';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 import { BannerAd, BannerAdSize, useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
@@ -77,6 +78,7 @@ const formatTime = (seconds: number) => {
 
 const DailyRewardsScreen = () => {
   const { showError } = useAlert();
+  const { refreshBalance } = useWallet();
   const insets = useSafeAreaInsets();
   const bottomContentPadding = useBottomOverlayPadding(24);
   const [loading, setLoading] = useState(true);
@@ -191,6 +193,7 @@ const DailyRewardsScreen = () => {
       setIsAvailable(false);
       setClaimComplete(true);
       setTimeLeft(0);
+      await refreshBalance();
     } catch (error: any) {
       // If claim fails, close modal to show error
       setModalVisible(false);
@@ -208,7 +211,7 @@ const DailyRewardsScreen = () => {
     } finally {
       setClaiming(false);
     }
-  }, [currentDay, showError]);
+  }, [currentDay, refreshBalance, showError]);
 
   // Effect to handle reward after ad completion
   useEffect(() => {
