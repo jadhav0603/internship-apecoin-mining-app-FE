@@ -93,12 +93,14 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
     if (isClosed && isPendingUpgrade) {
       setIsPendingUpgrade(false);
       if (isEarnedReward) {
-        performUpgrade();
+        performUpgrade().finally(() => {
+          onClose();
+        });
       }
     }
-  }, [isClosed, isEarnedReward, isPendingUpgrade, performUpgrade]);
+  }, [isClosed, isEarnedReward, isPendingUpgrade, onClose, performUpgrade]);
 
-  const handleBoost = () => {
+  const handleActivateMultiplier = () => {
     const nextIndex = currentIndex + 1;
     if (nextIndex < multipliers.length) {
       // Animation
@@ -171,31 +173,41 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
             {multipliers.map((m, i) => renderMultiplierItem(m, i))}
 
             {/* Center Core */}
-            <Pressable 
-              onPress={handleBoost}
-              disabled={currentIndex >= multipliers.length - 1}
-              style={({ pressed }) => [
-                { transform: [{ scale: pressed ? 0.95 : 1 }] }
-              ]}
-            >
-              <Animated.View style={[
+            <Animated.View
+              style={[
                 styles.centerCore,
                 useAnimatedStyle(() => ({
-                  transform: [{ scale: boostScale.value }]
-                }))
-              ]}>
-                <View style={styles.centerInner}>
-                  <FontAwesome5 name="rocket" size={24} color={COLORS.primary} />
-                  <Text style={styles.centerLabel}>BOOST</Text>
-                </View>
-              </Animated.View>
-            </Pressable>
+                  transform: [{ scale: boostScale.value }],
+                })),
+              ]}
+            >
+              <View style={styles.centerInner}>
+                <FontAwesome5 name="rocket" size={24} color={COLORS.primary} />
+                <Text style={styles.centerLabel}>BOOST</Text>
+              </View>
+            </Animated.View>
           </View>
 
           <View style={styles.infoContainer}>
             <Text style={styles.title}>Multiplier Wheel</Text>
             <Text style={styles.subtitle}>Select a multiplier to boost your mining earnings instantly.</Text>
           </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.activateButton,
+              pressed && styles.activateButtonPressed,
+              currentIndex >= multipliers.length - 1 && styles.activateButtonDisabled,
+            ]}
+            disabled={currentIndex >= multipliers.length - 1}
+            onPress={handleActivateMultiplier}
+          >
+            <Text style={styles.activateButtonText}>
+              {currentIndex >= multipliers.length - 1
+                ? 'Multiplier Maxed'
+                : 'Activate Multiplier'}
+            </Text>
+          </Pressable>
 
           <Pressable style={styles.closeButton} onPress={handleClose}>
             <Ionicons name="close" size={28} color="#fff" />
@@ -312,6 +324,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
+  },
+  activateButton: {
+    marginTop: 28,
+    minWidth: 220,
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    borderRadius: 999,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  activateButtonPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
+  },
+  activateButtonDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  activateButtonText: {
+    color: '#081004',
+    fontSize: 15,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   closeButton: {
     marginTop: 40,

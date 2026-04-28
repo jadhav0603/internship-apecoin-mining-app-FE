@@ -234,6 +234,19 @@ export const authService = {
    * Log out the current user
    */
   async signOut() {
+    try {
+      await apiClient.post('/mining/stop', undefined, {
+        skipAutoSignOut: true,
+      } as any);
+    } catch (error) {
+      if (__DEV__) {
+        console.log(
+          'Failed to stop mining session before sign-out:',
+          error
+        );
+      }
+    }
+
     return signOutFromProviders();
   },
 

@@ -14,7 +14,10 @@ import {
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
 import AppBackButton from '../../components/navigation/AppBackButton';
@@ -48,6 +51,20 @@ const buildReferralCode = (email?: string, username?: string) => {
   return `${normalizedName}@apecoin.app`;
 };
 
+const ALERT_PRESENTATION = {
+  blurBackground: true,
+  blurAmount: 18,
+  theme: 'dark' as const,
+};
+
+const isCircularReferralMessage = (message?: string) =>
+  typeof message === 'string' &&
+  message.toLowerCase().includes('circular referrals are not allowed');
+
+const isSelfReferralMessage = (message?: string) =>
+  typeof message === 'string' &&
+  message.toLowerCase().includes('own email as a referral');
+
 const ReferAndEarnScreen = () => {
   const navigation = useNavigation<ReferAndEarnNavigationProp>();
   const route = useRoute<ReferAndEarnRouteProp>();
@@ -74,7 +91,7 @@ const ReferAndEarnScreen = () => {
 
   const referralCode = useMemo(
     () => buildReferralCode(resolvedEmail, resolvedUsername),
-    [resolvedEmail, resolvedUsername]
+    [resolvedEmail, resolvedUsername],
   );
 
   const totalReferralEarnings = useMemo(() => {
@@ -86,13 +103,17 @@ const ReferAndEarnScreen = () => {
     return historyTotal > 0 ? historyTotal : referralEarnings;
   }, [referralEarnings, referralHistory]);
 
-  const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
+  // const handleBack = () => {
+  //   if (navigation.canGoBack()) {
+  //     navigation.goBack();
+  //     return;
+  //   }
 
-    navigation.navigate('MainTabs', {screen: 'Profile'});
+  //   navigation.navigate('MainTabs', {screen: 'Profile'});
+  // };
+
+  const handleBack = () => {
+    navigation.goBack();
   };
 
   const handleCopy = () => {
@@ -110,16 +131,35 @@ const ReferAndEarnScreen = () => {
     }
   };
 
+  const showReferralRuleError = (message: string, title: string) => {
+    showError(message, title, {
+      ...ALERT_PRESENTATION,
+      dedupeKey: 'referral-rule-error',
+    });
+  };
+
   const handleClaim = async () => {
     const referralEmail = redeemCode.trim().toLowerCase();
+    const currentUserEmail = resolvedEmail?.trim().toLowerCase();
 
     if (!referralEmail) {
       showError('Please enter a referral email first.', 'Redeem Code');
       return;
     }
 
-    if (!resolvedEmail) {
-      showError('Unable to resolve your account email right now.', 'Redeem Code');
+    if (!currentUserEmail) {
+      showError(
+        'Unable to resolve your account email right now.',
+        'Redeem Code',
+      );
+      return;
+    }
+
+    if (referralEmail === currentUserEmail) {
+      showReferralRuleError(
+        'You cannot use your own email as a referral code. Please enter the email of the person who invited you.',
+        'Invalid Referral',
+      );
       return;
     }
 
@@ -127,7 +167,7 @@ const ReferAndEarnScreen = () => {
 
     try {
       const response = await referralService.applyReferral({
-        email: resolvedEmail,
+        email: currentUserEmail,
         referralEmail,
         source: 'profile',
       });
@@ -140,13 +180,35 @@ const ReferAndEarnScreen = () => {
 
       showSuccess(
         response.referralRewardApplied
-          ? `Referral linked successfully. ${response.reward.toFixed(2)} APE was credited from current earnings.`
+          ? `Referral linked successfully. ${response.reward.toFixed(
+              2,
+            )} APE was credited from current earnings.`
           : 'Referral linked successfully. Future mining and reward activity will credit the referrer automatically.',
         'Referral Applied',
       );
     } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        'Unable to apply the referral right now.';
+
+      if (isCircularReferralMessage(errorMessage)) {
+        showReferralRuleError(
+          'Circular referrals are not allowed between two accounts. This user is already connected to your account as your invitee.',
+          'Circular Referral Blocked',
+        );
+        return;
+      }
+
+      if (isSelfReferralMessage(errorMessage)) {
+        showReferralRuleError(
+          'You cannot use your own email as a referral code. Please enter the email of the person who invited you.',
+          'Invalid Referral',
+        );
+        return;
+      }
+
       showError(
-        error?.response?.data?.message || 'Unable to apply the referral right now.',
+        errorMessage,
         'Redeem Code',
       );
     } finally {
@@ -174,11 +236,15 @@ const ReferAndEarnScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.headerRow}>
-            <AppBackButton
-              onPress={handleBack}
-              iconSize={22}
-              style={styles.iconButton}
-            />
+            <View style={{ width: 54, alignItems: 'flex-start' }}>
+              <AppBackButton
+                onPress={handleBack}
+                iconSize={22}
+                style={styles.iconButton}
+              />
+            </View>
+
+            {/* <AppBackButton onPress={onBack} /> */}
 
             <Text style={styles.headerTitle}>Refer &amp; Earn</Text>
 
@@ -186,7 +252,7 @@ const ReferAndEarnScreen = () => {
           </View>
 
           <View style={styles.heroSection}>
-            <View style={styles.giftHalo}>
+            <View style={styles.giftHalo} pointerEvents="none">
               <LottieView
                 source={require('../../assets/animations/reward_first_page_animation.json')}
                 autoPlay
@@ -198,8 +264,10 @@ const ReferAndEarnScreen = () => {
             <Text style={styles.heroTitle}>Invite &amp; Earn Rewards!</Text>
             <Text style={styles.heroSubtitle}>
               Share your code with friends and earn{'\n'}
-              <Text style={styles.highlightText}>{referralPercentage}% rewards</Text> for every
-              successful invite
+              <Text style={styles.highlightText}>
+                {referralPercentage}% rewards
+              </Text>{' '}
+              for every successful invite
             </Text>
           </View>
 
@@ -261,7 +329,11 @@ const ReferAndEarnScreen = () => {
                     pressed && styles.actionButtonPressed,
                   ]}
                 >
-                  <Ionicons name="share-social-outline" size={21} color="#FFFFFF" />
+                  <Ionicons
+                    name="share-social-outline"
+                    size={21}
+                    color="#FFFFFF"
+                  />
                 </Pressable>
               </View>
             </View>
@@ -279,7 +351,9 @@ const ReferAndEarnScreen = () => {
                   hasAppliedReferral && styles.inputDisabled,
                 ]}
                 placeholder={
-                  hasAppliedReferral ? 'Referral already applied' : 'Enter referral email'
+                  hasAppliedReferral
+                    ? 'Referral already applied'
+                    : 'Enter referral email'
                 }
                 placeholderTextColor="rgba(255,255,255,0.32)"
                 value={hasAppliedReferral ? referredBy ?? '' : redeemCode}
@@ -296,8 +370,10 @@ const ReferAndEarnScreen = () => {
                 disabled={hasAppliedReferral || submitting}
                 style={({ pressed }) => [
                   styles.claimButton,
-                  (pressed || hasAppliedReferral || submitting) && styles.claimButtonPressed,
-                  (hasAppliedReferral || submitting) && styles.claimButtonDisabled,
+                  (pressed || hasAppliedReferral || submitting) &&
+                    styles.claimButtonPressed,
+                  (hasAppliedReferral || submitting) &&
+                    styles.claimButtonDisabled,
                 ]}
               >
                 {submitting ? (
@@ -357,6 +433,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    zIndex: 10,
+  elevation: 10,
   },
   iconButton: {
     width: 46,
@@ -387,7 +465,7 @@ const styles = StyleSheet.create({
   lottieIcon: {
     width: 320,
     height: 320,
-    marginTop:-240
+    marginTop: -240,
   },
   heroTitle: {
     color: '#FFFFFF',

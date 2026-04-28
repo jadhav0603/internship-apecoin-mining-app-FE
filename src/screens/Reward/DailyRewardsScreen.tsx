@@ -280,18 +280,20 @@ const DailyRewardsScreen = () => {
           />
         </View> */}
 
-        <View style={styles.adContainer}>
-          <BannerAd
-            unitId={AD_UNITS.BANNER_HOME}
-            size={BannerAdSize.BANNER}
-          />
-        </View>
+       
 
         <Image
           source={require('../../assets/images/daily_rewards.webp')}
           style={styles.headerImage}
           resizeMode="contain"
         />
+
+         <View style={styles.adContainer}>
+          <BannerAd
+            unitId={AD_UNITS.BANNER_HOME}
+            size={BannerAdSize.BANNER}
+          />
+        </View>
 
         {!isAvailable && timeLeft > 0 && (
           <Text style={styles.timerText}>
@@ -350,8 +352,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 0,
-    marginTop: -60,
-    marginBottom: 0,
+    marginTop: 10,
+    marginBottom: 10,
     backgroundColor: 'transparent',
   },
   scrollContent: {

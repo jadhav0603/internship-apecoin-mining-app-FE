@@ -48,6 +48,9 @@ const WalletScreen = () => {
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
     useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState<number | undefined>(
+    undefined,
+  );
   const [selectedWithdrawRecord, setSelectedWithdrawRecord] =
     useState<WalletTransaction | null>(null);
   const {
@@ -176,6 +179,7 @@ const WalletScreen = () => {
 
       await refreshBalance();
       await refreshWithdrawRecords();
+      setHistoryRefreshKey(Date.now());
       setShowWithdrawSuccessModal(true);
     } catch (error: any) {
       const message =
@@ -216,7 +220,11 @@ const WalletScreen = () => {
 
             <Pressable
               style={styles.receiptButton}
-              onPress={() => navigation.navigate('TransactionHistory')}
+              onPress={() =>
+                navigation.navigate('TransactionHistory', {
+                  refreshKey: historyRefreshKey ?? Date.now(),
+                })
+              }
             >
               <Ionicons name="receipt-outline" size={22} color={THEME.white} />
             </Pressable>

@@ -283,12 +283,13 @@ const getAccentColor = (type: AlertType) => {
     case 'success':
       return COLORS.primary;
     case 'error':
-      return COLORS.primary;
+      return '#FF6B6B';
     case 'warning':
-      return COLORS.primary;
+      return '#FFC857';
     case 'confirm':
       return COLORS.primary;
     case 'info':
+      return '#63B3FF';
     default:
       return COLORS.primary;
   }
