@@ -52,7 +52,8 @@ type MiningContextType = {
   openClaimPopup: () => void;
 };
 
-const MINING_STORAGE_KEY = 'MINING_DATA';
+const LEGACY_MINING_STORAGE_KEY = 'MINING_DATA';
+const getMiningStorageKey = (userId: string) => `MINING_DATA:${userId}`;
 const getSocketUrl = () => API_CONFIG.BASE_URL.replace(/\/api$/, '');
 
 const getElapsedSeconds = (data: MiningData, now = Date.now()) => {
@@ -78,7 +79,8 @@ const getLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
   }
 
   const base = data.baseDollarValue ?? 0.002;
-  const apeValue = data.apeDollarValue && data.apeDollarValue > 0 ? data.apeDollarValue : 0.1;
+  const apeValue =
+    data.apeDollarValue && data.apeDollarValue > 0 ? data.apeDollarValue : 0.1;
   const activeMultiplier = data.multiplier ?? 1;
   const apePerHour = (base / apeValue) * activeMultiplier;
   const apePerSecond = apePerHour / 3600;
@@ -86,15 +88,22 @@ const getLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
   return getElapsedSeconds(data, now) * apePerSecond;
 };
 
+const isClaimableMiningSession = (data: MiningData) =>
+  Boolean(data.miningStartTime) &&
+  Boolean(data.canClaim) &&
+  data.status !== 'claimed';
+
+const isActiveMiningSession = (data: MiningData) =>
+  data.status === 'mining' &&
+  Boolean(data.miningStartTime) &&
+  Boolean(data.isActive);
+
 const getDisplayEarnedCoins = (data: MiningData) => {
-  const canClaimReward = Boolean(data.canClaim) && data.status !== 'claimed';
+  const canClaimReward = isClaimableMiningSession(data);
+  const isActiveSession = isActiveMiningSession(data);
 
-  if (data.miningStartTime && (data.status === 'mining' || canClaimReward)) {
+  if (isActiveSession || canClaimReward) {
     return getLiveEarnedCoins(data);
-  }
-
-  if (canClaimReward) {
-    return data.currentMiningPoints ?? 0;
   }
 
   return 0;
@@ -145,12 +154,16 @@ export const MiningProvider = ({ children }: any) => {
   ]);
   const [showClaimPopup, setShowClaimPopup] = useState(false);
   const [hasUnclaimedReward, setHasUnclaimedReward] = useState(false);
-  const [pendingClaimCoins, setPendingClaimCoins] = useState<number | null>(null);
+  const [pendingClaimCoins, setPendingClaimCoins] = useState<number | null>(
+    null,
+  );
 
   const socketRef = useRef<Socket | null>(null);
   const multiplierRef = useRef(multiplier);
   const miningDataRef = useRef(miningData);
   const lastAutoShownClaimKeyRef = useRef<string | null>(null);
+  const miningStorageKeyRef = useRef<string | null>(null);
+  const authRequestIdRef = useRef(0);
   useEffect(() => {
     multiplierRef.current = multiplier;
   }, [multiplier]);
@@ -173,6 +186,33 @@ export const MiningProvider = ({ children }: any) => {
     lastAutoShownClaimKeyRef.current = null;
   };
 
+  const syncMiningStorage = async (
+    storageKey: string,
+    data: Pick<MiningData, 'miningStartTime' | 'selectedHour' | 'multiplier'>,
+  ) => {
+    if (!data.miningStartTime) {
+      await AsyncStorage.removeItem(storageKey);
+      return;
+    }
+
+    const startTime = new Date(data.miningStartTime).getTime();
+
+    if (Number.isNaN(startTime)) {
+      await AsyncStorage.removeItem(storageKey);
+      return;
+    }
+
+    await AsyncStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        startTime,
+        duration: (data.selectedHour ?? 1) * 3600,
+        multiplier: data.multiplier ?? 1,
+        earned: 0,
+      }),
+    );
+  };
+
   const applyMiningData = (data: MiningData, stats?: any) => {
     const updatedData = {
       ...data,
@@ -188,15 +228,15 @@ export const MiningProvider = ({ children }: any) => {
     setMultiplierState(updatedData.multiplier ?? 1);
     setHours(updatedData.selectedHour ?? 1);
 
-    const { remaining, earnedCoins, isComplete } = deriveStateFromDB(updatedData);
+    const { remaining, earnedCoins, isComplete } =
+      deriveStateFromDB(updatedData);
     const claimKey =
       updatedData.sessionEndTime ??
       updatedData.miningStartTime ??
       `${updatedData.email}-${updatedData.selectedHour}`;
     const canClaimReward =
       isComplete &&
-      Boolean(updatedData.miningStartTime) &&
-      updatedData.status !== 'claimed';
+      isClaimableMiningSession(updatedData);
 
     if (!isComplete) {
       setIsMining(true);
@@ -250,6 +290,7 @@ export const MiningProvider = ({ children }: any) => {
       if (socket) {
         socket.disconnect();
         socket = null;
+        socketRef.current = null;
       }
 
       if (!firebaseUser?.email) {
@@ -275,7 +316,6 @@ export const MiningProvider = ({ children }: any) => {
           '[socket.io] mining_update received, miningStartTime:',
           data.miningStartTime,
         );
-        applyMiningData(data);
       });
 
       socket.on('disconnect', () => console.log('[socket.io] disconnected'));
@@ -284,64 +324,86 @@ export const MiningProvider = ({ children }: any) => {
     return () => {
       unsubscribeAuth();
       socket?.disconnect();
+      socketRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const response = await API.get('/mining/status');
-        if (response.data?.mining) {
-          const restoredMining = {
-            ...response.data.mining,
-            ...(response.data.stats ?? {}),
-          };
-          console.log(
-            '[mining] restored from backend:',
-            restoredMining.miningStartTime,
-          );
-          applyMiningData(restoredMining, response.data.stats);
+    const unsubscribeAuth = auth().onAuthStateChanged(firebaseUser => {
+      const requestId = ++authRequestIdRef.current;
+      const storageKey = firebaseUser?.uid
+        ? getMiningStorageKey(firebaseUser.uid)
+        : null;
 
-          const { isComplete } = deriveStateFromDB(restoredMining);
-          if (isComplete) {
-            await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-          } else {
-            await AsyncStorage.setItem(
-              MINING_STORAGE_KEY,
-              JSON.stringify({
-                startTime: new Date(restoredMining.miningStartTime).getTime(),
-                duration: (restoredMining.selectedHour ?? 1) * 3600,
-                multiplier: restoredMining.multiplier ?? 1,
-                earned: 0,
-              }),
-            );
-          }
-        } else {
-          resetMiningState();
-          await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-        }
-      } catch {
-        const saved = await AsyncStorage.getItem(MINING_STORAGE_KEY);
-        if (!saved) {
-          resetMiningState();
-          return;
-        }
+      miningStorageKeyRef.current = storageKey;
+      resetMiningState();
+      void AsyncStorage.removeItem(LEGACY_MINING_STORAGE_KEY);
 
-        const data = JSON.parse(saved);
-        const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
-        const remaining = data.duration - elapsed;
-
-        if (remaining > 0) {
-          setIsMining(true);
-          setSecondsLeft(remaining);
-          setMultiplierState(data.multiplier ?? 1);
-        } else {
-          await AsyncStorage.removeItem(MINING_STORAGE_KEY);
-        }
+      if (!firebaseUser || !storageKey) {
+        return;
       }
-    };
 
-    fetchStatus();
+      const fetchStatus = async () => {
+        try {
+          const response = await API.get('/mining/status');
+
+          if (authRequestIdRef.current !== requestId) {
+            return;
+          }
+
+          if (response.data?.mining) {
+            const restoredMining = {
+              ...response.data.mining,
+              ...(response.data.stats ?? {}),
+            };
+            console.log(
+              '[mining] restored from backend:',
+              restoredMining.miningStartTime,
+            );
+            applyMiningData(restoredMining, response.data.stats);
+
+            const { isComplete } = deriveStateFromDB(restoredMining);
+            if (isComplete) {
+              await AsyncStorage.removeItem(storageKey);
+            } else {
+              await syncMiningStorage(storageKey, restoredMining);
+            }
+            return;
+          }
+
+          resetMiningState();
+          await AsyncStorage.removeItem(storageKey);
+        } catch {
+          const saved = await AsyncStorage.getItem(storageKey);
+
+          if (authRequestIdRef.current !== requestId) {
+            return;
+          }
+
+          if (!saved) {
+            resetMiningState();
+            return;
+          }
+
+          const data = JSON.parse(saved);
+          const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
+          const remaining = data.duration - elapsed;
+
+          if (remaining > 0) {
+            setIsMining(true);
+            setSecondsLeft(remaining);
+            setHours(Math.max(1, Math.ceil(data.duration / 3600)));
+            setMultiplierState(data.multiplier ?? 1);
+          } else {
+            await AsyncStorage.removeItem(storageKey);
+          }
+        }
+      };
+
+      void fetchStatus();
+    });
+
+    return unsubscribeAuth;
   }, []);
 
   const startMining = async (h: number) => {
@@ -357,15 +419,17 @@ export const MiningProvider = ({ children }: any) => {
     setEarned(0);
     setShowClaimPopup(false);
 
-    await AsyncStorage.setItem(
-      MINING_STORAGE_KEY,
-      JSON.stringify({
-        startTime: Date.now(),
-        duration: totalSeconds,
-        multiplier: 1,
-        earned: 0,
-      }),
-    );
+    if (miningStorageKeyRef.current) {
+      await AsyncStorage.setItem(
+        miningStorageKeyRef.current,
+        JSON.stringify({
+          startTime: Date.now(),
+          duration: totalSeconds,
+          multiplier: 1,
+          earned: 0,
+        }),
+      );
+    }
 
     try {
       const response = await API.post('/mining/start', {
@@ -375,13 +439,14 @@ export const MiningProvider = ({ children }: any) => {
       });
       console.log('[mining] saved to backend:', response.data?.mining?._id);
       if (response.data?.mining) {
-        applyMiningData(
-          {
-            ...response.data.mining,
-            ...(response.data.stats ?? {}),
-          },
-          response.data.stats,
-        );
+        const restoredMining = {
+          ...response.data.mining,
+          ...(response.data.stats ?? {}),
+        };
+        applyMiningData(restoredMining, response.data.stats);
+        if (miningStorageKeyRef.current) {
+          await syncMiningStorage(miningStorageKeyRef.current, restoredMining);
+        }
       }
     } catch (err) {
       console.error('[mining] failed to save to backend:', err);
@@ -396,17 +461,18 @@ export const MiningProvider = ({ children }: any) => {
       try {
         const response = await API.get('/mining/status');
         if (response.data?.mining) {
-          applyMiningData(
-            {
-              ...response.data.mining,
-              ...(response.data.stats ?? {}),
-            },
-            response.data.stats,
-          );
+          const restoredMining = {
+            ...response.data.mining,
+            ...(response.data.stats ?? {}),
+          };
+          applyMiningData(restoredMining, response.data.stats);
+          if (miningStorageKeyRef.current) {
+            await syncMiningStorage(miningStorageKeyRef.current, restoredMining);
+          }
         }
       } catch (e: any) {
         if (e?.response?.status === 401) {
-          setIsMining(false); // Stop polling if unauthorized (logged out)
+          resetMiningState();
         } else if (__DEV__) {
           console.warn('[mining] poll failed', e.message);
         }
@@ -437,7 +503,10 @@ export const MiningProvider = ({ children }: any) => {
     setShowClaimPopup(false);
     setPendingClaimCoins(null);
     lastAutoShownClaimKeyRef.current = null;
-    await AsyncStorage.removeItem(MINING_STORAGE_KEY);
+    if (miningStorageKeyRef.current) {
+      await AsyncStorage.removeItem(miningStorageKeyRef.current);
+    }
+    await AsyncStorage.removeItem(LEGACY_MINING_STORAGE_KEY);
     // ✅ Immediately refresh wallet balance so it doesn't reset to 0 on page load
   };
 
@@ -474,34 +543,34 @@ export const MiningProvider = ({ children }: any) => {
     }
   };
 
-  useEffect(() => {
-    if (!isMining) {
-      return;
+useEffect(() => {
+  if (!isMining) return;
+
+  const interval = setInterval(() => {
+    const d = miningDataRef.current;
+
+    setSecondsLeft(prev => {
+      if (prev <= 1) return 0;
+      return prev - 1;
+    });
+
+    if (d) {
+      setEarned(prev => {
+        const ratePerSec =
+          ((d.baseDollarValue ?? 0.002) /
+            (d.apeDollarValue && d.apeDollarValue > 0
+              ? d.apeDollarValue
+              : 0.1)) *
+          (multiplierRef.current ?? 1) /
+          3600;
+
+        return prev + ratePerSec;
+      });
     }
+  }, 1000);
 
-    const interval = setInterval(() => {
-      const d = miningDataRef.current;
-
-      if (!d) {
-        setSecondsLeft(prev => {
-          if (prev <= 1) {
-            return 0;
-          }
-          return prev - 1;
-        });
-        return;
-      }
-
-      const totalSeconds = (d.selectedHour ?? 1) * 3600;
-      const elapsedSeconds = getElapsedSeconds(d);
-      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
-
-      setSecondsLeft(remaining);
-      setEarned(getLiveEarnedCoins({ ...d, multiplier: multiplierRef.current }));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isMining]);
+  return () => clearInterval(interval);
+}, [isMining]);
 
   return (
     <MiningContext.Provider

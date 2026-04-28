@@ -39,7 +39,9 @@ const MiningScreen = () => {
   const { setShowModal } = useTimeModal();
   const [multiplierModalVisible, setMultiplierModalVisible] =
     React.useState(false);
-  const displayEarned = hasUnclaimedReward ? claimRewardAmount || earned : earned;
+  const displayEarned = hasUnclaimedReward
+    ? claimRewardAmount || earned
+    : earned;
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)

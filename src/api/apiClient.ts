@@ -97,8 +97,9 @@ apiClient.interceptors.response.use(
     }
     const isNetworkError = !error?.response;
     const isUnauthorized = error?.response?.status === 401;
+    const skipAutoSignOut = Boolean((error?.config as any)?.skipAutoSignOut);
 
-    if (isUnauthorized) {
+    if (isUnauthorized && !skipAutoSignOut) {
       // ✅ Handle critical connectivity/auth failures
       const { authService } = require('../services/authService');
 
