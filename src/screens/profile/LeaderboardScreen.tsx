@@ -422,7 +422,7 @@ const LeaderboardScreen = () => {
               />
             }
           >
-            <View style={styles.heroCard}>
+            {/* <View style={styles.heroCard}>
               <Text style={styles.heroEyebrow}>WEEKLY MINING POWER</Text>
               <Text style={styles.heroTitle}>
                 Top miners leading the ApeCoin grid
@@ -431,7 +431,7 @@ const LeaderboardScreen = () => {
                 Rankings combine mining output and referral performance in real
                 time.
               </Text>
-            </View>
+            </View> */}
 
             <View style={styles.podiumSection}>
               <PodiumItem entry={podiumSecond} rank={2} />
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     marginBottom: 24,
-    marginTop: -25,
+    marginTop: -80,
   },
   podiumItem: {
     alignItems: 'center',

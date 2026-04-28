@@ -59,7 +59,7 @@ const InfoSlider = () => {
     },
     {
       id: 'apecoin',
-      title: 'ApeCoin ($APE)',
+      title: 'ApeCoin (APE)',
       description: 'The native governance and utility token empowering the decentralized APE ecosystem and future of Web3.',
       icon: (color: string) => <Ionicons name="information-circle-outline" size={24} color={color} />,
       route: 'Wallet',
