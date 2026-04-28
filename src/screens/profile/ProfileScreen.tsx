@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from 'react';
 import {
   View,
   Text,
@@ -10,7 +16,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -33,7 +39,11 @@ import {
 } from '../../components/profile/profileTheme';
 import AppBackButton from '../../components/navigation/AppBackButton';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
-import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
+import {
+  BannerAd,
+  BannerAdSize,
+  useInterstitialAd,
+} from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 
@@ -52,21 +62,38 @@ const ProfileScreen = () => {
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const profileAura = useRef(new Animated.Value(0)).current;
-  const hasRequestedProfileAd = useRef(false);
+  const skipNextFocusAdRef = useRef(false);
 
-  const { isLoaded, load, show } = useInterstitialAd(AD_UNITS.INTERSTITIAL_PROFILE, {
-    requestNonPersonalizedAdsOnly: true,
+  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+    AD_UNITS.INTERSTITIAL_PROFILE,
+    {
+      requestNonPersonalizedAdsOnly: true,
+    },
+  );
+  const { startAd, adLoadingModal } = useAdLoadingGate({
+    isLoaded,
+    load,
+    show,
   });
-  const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
 
   useEffect(() => {
-    if (hasRequestedProfileAd.current) {
+    if (!isClosed) {
       return;
     }
 
-    hasRequestedProfileAd.current = true;
-    startAd();
-  }, [startAd]);
+    skipNextFocusAdRef.current = true;
+  }, [isClosed]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (skipNextFocusAdRef.current) {
+        skipNextFocusAdRef.current = false;
+        return;
+      }
+
+      startAd();
+    }, [startAd]),
+  );
 
   const handleLogout = async () => {
     setLogoutVisible(false);
