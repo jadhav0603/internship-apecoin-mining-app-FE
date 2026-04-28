@@ -34,9 +34,23 @@ const getReadableErrorMessage = (error: any, fallback: string) => {
   return error?.response?.data?.message || error?.message || fallback;
 };
 
+const REFERRAL_ALERT_PRESENTATION = {
+  blurBackground: true,
+  blurAmount: 18,
+  theme: 'dark' as const,
+};
+
+const isCircularReferralMessage = (message?: string) =>
+  typeof message === 'string' &&
+  message.toLowerCase().includes('circular referrals are not allowed');
+
+const isSelfReferralMessage = (message?: string) =>
+  typeof message === 'string' &&
+  message.toLowerCase().includes('own email as a referral');
+
 const SignUp: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { showWarning } = useAlert();
+  const { showError, showWarning } = useAlert();
 
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
@@ -92,9 +106,30 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
             source: 'signup',
           });
         } catch (referralError: any) {
-          showWarning(
+          const referralMessage =
             referralError?.response?.data?.message ||
-              'Account created, but the referral email could not be applied.',
+            'Account created, but the referral email could not be applied.';
+
+          if (isCircularReferralMessage(referralMessage)) {
+            showError(
+              'Circular referrals are not allowed between two accounts. This user is already connected to your account as your invitee.',
+              'Circular Referral Blocked',
+              REFERRAL_ALERT_PRESENTATION,
+            );
+            return;
+          }
+
+          if (isSelfReferralMessage(referralMessage)) {
+            showError(
+              'You cannot use your own email as a referral code. Please enter the email of the person who invited you.',
+              'Invalid Referral',
+              REFERRAL_ALERT_PRESENTATION,
+            );
+            return;
+          }
+
+          showWarning(
+            referralMessage,
             'Referral',
           );
         }
