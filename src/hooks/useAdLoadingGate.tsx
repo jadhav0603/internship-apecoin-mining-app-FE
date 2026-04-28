@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import { COLORS } from '../constants/COLORS';
 
 type StartAdOptions = {
@@ -21,21 +21,17 @@ type UseAdLoadingGateParams = {
 
 type GateStatus = 'idle' | 'loading' | 'failed';
 
-const COUNTDOWN_SECONDS = 10;
-
 export const useAdLoadingGate = ({
   isLoaded,
   load,
   show,
 }: UseAdLoadingGateParams) => {
   const [status, setStatus] = useState<GateStatus>('idle');
-  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const callbacksRef = useRef<StartAdOptions>({});
   const hasShownRef = useRef(false);
 
   const resetGate = useCallback(() => {
     setStatus('idle');
-    setCountdown(COUNTDOWN_SECONDS);
     hasShownRef.current = false;
   }, []);
 
@@ -46,7 +42,6 @@ export const useAdLoadingGate = ({
 
     hasShownRef.current = true;
     setStatus('idle');
-    setCountdown(COUNTDOWN_SECONDS);
 
     try {
       show();
@@ -61,7 +56,6 @@ export const useAdLoadingGate = ({
     (options: StartAdOptions = {}) => {
       callbacksRef.current = options;
       hasShownRef.current = false;
-      setCountdown(COUNTDOWN_SECONDS);
       setStatus('loading');
 
       if (isLoaded) {
@@ -85,20 +79,6 @@ export const useAdLoadingGate = ({
     }
   }, [isLoaded, showLoadedAd, status]);
 
-  useEffect(() => {
-    if (status !== 'loading') {
-      return undefined;
-    }
-
-    const interval = setInterval(() => {
-      setCountdown(prev => (prev > 0 ? prev - 1 : COUNTDOWN_SECONDS));
-    }, 1000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [status]);
-
   const retry = useCallback(() => {
     startAd(callbacksRef.current);
   }, [startAd]);
@@ -112,14 +92,16 @@ export const useAdLoadingGate = ({
       onRequestClose={status === 'failed' ? resetGate : undefined}
     >
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          {status === 'loading' ? (
-            <>
-              <ActivityIndicator size="large" color={COLORS.primary} />
-              <Text style={styles.title}>Loading Ad...</Text>
-              <Text style={styles.countdown}>{countdown}</Text>
-            </>
-          ) : (
+        {status === 'loading' ? (
+          <LottieView
+            source={require('../assets/animations/loader.json')}
+            autoPlay
+            loop
+            style={styles.loader}
+            resizeMode="contain"
+          />
+        ) : (
+          <View style={styles.card}>
             <>
               <Text style={styles.title}>Failed to load ad. Please try again.</Text>
               <View style={styles.actions}>
@@ -131,8 +113,8 @@ export const useAdLoadingGate = ({
                 </Pressable>
               </View>
             </>
-          )}
-        </View>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -148,7 +130,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.78)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
     paddingHorizontal: 24,
   },
   card: {
@@ -166,14 +148,12 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontSize: 17,
     fontWeight: '700',
-    marginTop: 16,
+    marginTop: 12,
     textAlign: 'center',
   },
-  countdown: {
-    color: COLORS.primary,
-    fontSize: 42,
-    fontWeight: '900',
-    marginTop: 10,
+  loader: {
+    width: 160,
+    height: 160,
   },
   actions: {
     flexDirection: 'row',
