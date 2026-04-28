@@ -1,17 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import Animated, {
-  Easing,
-  cancelAnimation,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -46,14 +36,63 @@ const MiningScreen = () => {
   const { setShowModal } = useTimeModal();
   const [multiplierModalVisible, setMultiplierModalVisible] =
     React.useState(false);
-  const coinFlip = useSharedValue(0);
-  const orbitRotation = useSharedValue(0);
-  const coinAuraPulse = useSharedValue(0);
+  const [displayedEarned, setDisplayedEarned] = useState(earned);
+  const previousSecondsLeftRef = useRef(secondsLeft);
+  const totalDurationSeconds = Math.max(hours * 3600, 1);
+  const ratePerSecond = useMemo(() => {
+    if (!miningData) {
+      return 0;
+    }
+
+    const baseDollarValue = miningData.baseDollarValue ?? 0.002;
+    const apeDollarValue =
+      miningData.apeDollarValue && miningData.apeDollarValue > 0
+        ? miningData.apeDollarValue
+        : 0.1;
+
+    return ((baseDollarValue / apeDollarValue) * multiplier) / 3600;
+  }, [miningData, multiplier]);
+
+  useEffect(() => {
+    if (hasUnclaimedReward) {
+      setDisplayedEarned(claimRewardAmount || earned);
+      previousSecondsLeftRef.current = secondsLeft;
+      return;
+    }
+
+    if (!isMining) {
+      setDisplayedEarned(earned);
+      previousSecondsLeftRef.current = secondsLeft;
+      return;
+    }
+
+    const previousSecondsLeft = previousSecondsLeftRef.current;
+    const elapsedTickSeconds = Math.max(previousSecondsLeft - secondsLeft, 0);
+
+    setDisplayedEarned(currentValue => {
+      const syncedValue = earned > currentValue ? earned : currentValue;
+
+      if (elapsedTickSeconds <= 0 || ratePerSecond <= 0) {
+        return syncedValue;
+      }
+
+      return syncedValue + elapsedTickSeconds * ratePerSecond;
+    });
+
+    previousSecondsLeftRef.current = secondsLeft;
+  }, [
+    claimRewardAmount,
+    earned,
+    hasUnclaimedReward,
+    isMining,
+    ratePerSecond,
+    secondsLeft,
+  ]);
+
   const displayEarned = hasUnclaimedReward
     ? claimRewardAmount || earned
-    : earned;
+    : displayedEarned;
   const minedBalance = (miningData?.totalEarned ?? 0) + displayEarned;
-  const totalDurationSeconds = Math.max(hours * 3600, 1);
   const ringProgress = useMemo(() => {
     if (hasUnclaimedReward) {
       return 1;
@@ -75,67 +114,6 @@ const MiningScreen = () => {
     const progressSegments = Math.round(ringProgress * TIMER_SEGMENT_COUNT);
     return Math.max(1, Math.min(TIMER_SEGMENT_COUNT, progressSegments));
   }, [hasUnclaimedReward, isMining, ringProgress]);
-
-  useEffect(() => {
-    if (isMining) {
-      coinFlip.value = withRepeat(
-        withTiming(360, {
-          duration: 3400,
-          easing: Easing.inOut(Easing.cubic),
-        }),
-        -1,
-        false,
-      );
-
-      orbitRotation.value = withRepeat(
-        withTiming(360, {
-          duration: 5200,
-          easing: Easing.linear,
-        }),
-        -1,
-        false,
-      );
-
-      coinAuraPulse.value = withRepeat(
-        withSequence(
-          withTiming(1, {
-            duration: 1500,
-            easing: Easing.out(Easing.quad),
-          }),
-          withTiming(0, {
-            duration: 1900,
-            easing: Easing.inOut(Easing.quad),
-          }),
-        ),
-        -1,
-        false,
-      );
-    } else {
-      cancelAnimation(coinFlip);
-      cancelAnimation(orbitRotation);
-      cancelAnimation(coinAuraPulse);
-      coinFlip.value = 0;
-      orbitRotation.value = 0;
-      coinAuraPulse.value = 0;
-    }
-  }, [coinAuraPulse, coinFlip, orbitRotation, isMining]);
-
-  const circleFlipAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 900 },
-      { rotateY: `${coinFlip.value}deg` },
-      { scale: interpolate(coinAuraPulse.value, [0, 1], [1, 1.03]) },
-    ],
-  }));
-
-  const ellipseRotateAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${orbitRotation.value}deg` }],
-  }));
-
-  const coinAuraAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(coinAuraPulse.value, [0, 1], [0.74, 0.98]),
-    transform: [{ scale: interpolate(coinAuraPulse.value, [0, 1], [1, 1.12]) }],
-  }));
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -181,8 +159,8 @@ const MiningScreen = () => {
 
         <View style={styles.content}>
           <View style={styles.coinCluster}>
-            <Animated.View style={[styles.coinAura, coinAuraAnimatedStyle]} />
-            <Animated.View style={[styles.orbitLayer, circleFlipAnimatedStyle]}>
+            <View style={styles.coinAura} />
+            <View style={styles.orbitLayer}>
               <Svg width={240} height={170} style={styles.orbitSvg}>
                 <Defs>
                   <RadialGradient id="coinGlow" cx="50%" cy="50%" r="55%">
@@ -193,9 +171,9 @@ const MiningScreen = () => {
                 </Defs>
                 <Circle cx="120" cy="78" r="52" fill="url(#coinGlow)" />
               </Svg>
-            </Animated.View>
+            </View>
 
-            <Animated.View style={[styles.orbitLayer, ellipseRotateAnimatedStyle]}>
+            <View style={styles.orbitLayer}>
               <Svg width={240} height={170} style={styles.orbitSvg}>
                 <Ellipse
                   cx="120"
@@ -216,7 +194,7 @@ const MiningScreen = () => {
                   fill="transparent"
                 />
               </Svg>
-            </Animated.View>
+            </View>
 
             <LinearGradient
               colors={['rgba(229, 255, 141, 0.42)', 'rgba(76, 105, 19, 0.94)']}
