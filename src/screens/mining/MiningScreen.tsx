@@ -42,6 +42,7 @@ const MiningScreen = () => {
   const displayEarned = hasUnclaimedReward
     ? claimRewardAmount || earned
     : earned;
+  const minedBalance = (miningData?.totalEarned ?? 0) + displayEarned;
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -217,7 +218,7 @@ const MiningScreen = () => {
                 </View>
                 <View style={styles.metricBlock}>
                   <Text style={styles.metricValue}>
-                    {(miningData?.totalEarned || 0).toFixed(6)}
+                    {minedBalance.toFixed(6)}
                   </Text>
                   <Text style={styles.metricCaption}>Mined Balance</Text>
                 </View>

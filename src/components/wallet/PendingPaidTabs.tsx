@@ -23,6 +23,8 @@ type PendingPaidTabsProps = {
   onRecordPress?: (item: WalletTransaction) => void;
 };
 
+const TOGGLE_SHELL_PADDING = 6;
+
 const PendingPaidTabs = ({
   pendingItems,
   paidItems,
@@ -54,7 +56,11 @@ const PendingPaidTabs = ({
   }, [activeTab, indicatorX, tabWidth]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
-    setTabWidth(event.nativeEvent.layout.width / 2);
+    const innerWidth = Math.max(
+      0,
+      event.nativeEvent.layout.width - TOGGLE_SHELL_PADDING * 2,
+    );
+    setTabWidth(innerWidth / 2);
   };
 
   const renderLoadingState = () => (
@@ -199,7 +205,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     flexDirection: 'row',
     borderRadius: 22,
-    padding: 6,
+    padding: TOGGLE_SHELL_PADDING,
     backgroundColor: 'rgba(7, 12, 8, 0.84)',
     borderWidth: 1,
     borderColor: 'rgba(157, 231, 95, 0.16)',
@@ -207,9 +213,9 @@ const styles = StyleSheet.create({
   },
   toggleIndicator: {
     position: 'absolute',
-    top: 6,
-    bottom: 6,
-    left: 6,
+    top: TOGGLE_SHELL_PADDING,
+    bottom: TOGGLE_SHELL_PADDING,
+    left: TOGGLE_SHELL_PADDING,
     borderRadius: 16,
     backgroundColor: '#6E9918',
     borderWidth: 1,

@@ -11,7 +11,12 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
   SafeAreaView,
@@ -34,6 +39,10 @@ import {
 import { formatTransactionDateTime } from '../../utils/dateFormatters';
 
 type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'TransactionHistory'
+>;
+type TransactionHistoryRouteProp = RouteProp<
   RootStackParamList,
   'TransactionHistory'
 >;
@@ -63,6 +72,9 @@ const formatTransactionAmount = (amount: number) =>
     maximumFractionDigits: 6,
   });
 
+const getSignedAmount = (item: TransactionItem) =>
+  item.isCredit ? item.amount : -item.amount;
+
 const getTypeBadgeStyle = (type: TransactionType) => {
   switch (type) {
     case 'reward':
@@ -83,8 +95,35 @@ const getTypeBadgeStyle = (type: TransactionType) => {
   }
 };
 
+const getStatusBadgeStyle = (status: TransactionItem['status']) => {
+  switch (status) {
+    case 'withdrawn':
+      return {
+        backgroundColor: 'rgba(255, 92, 92, 0.14)',
+        borderColor: 'rgba(255, 92, 92, 0.28)',
+        textColor: '#FF8585',
+        label: 'Withdrawn',
+      };
+    case 'pending':
+      return {
+        backgroundColor: 'rgba(255, 199, 0, 0.14)',
+        borderColor: 'rgba(255, 199, 0, 0.28)',
+        textColor: '#F5C542',
+        label: 'Pending',
+      };
+    default:
+      return {
+        backgroundColor: 'rgba(72, 205, 120, 0.14)',
+        borderColor: 'rgba(72, 205, 120, 0.28)',
+        textColor: '#6FE39A',
+        label: 'Claimed',
+      };
+  }
+};
+
 const TransactionRow = ({ item }: { item: TransactionItem }) => {
   const badge = getTypeBadgeStyle(item.type);
+  const statusBadge = getStatusBadgeStyle(item.status);
   const scale = useState(new Animated.Value(1))[0];
 
   const animateTo = (toValue: number) => {
@@ -121,13 +160,39 @@ const TransactionRow = ({ item }: { item: TransactionItem }) => {
           <Text style={styles.transactionTitle} numberOfLines={1}>
             {item.title}
           </Text>
-          <Text style={styles.transactionMetaText}>
-            {formatTransactionDateTime(item.date)}
-          </Text>
+          <View style={styles.transactionMetaRow}>
+            <Text style={styles.transactionMetaText}>
+              {formatTransactionDateTime(item.date)}
+            </Text>
+            <View
+              style={[
+                styles.statusBadge,
+                {
+                  backgroundColor: statusBadge.backgroundColor,
+                  borderColor: statusBadge.borderColor,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  { color: statusBadge.textColor },
+                ]}
+              >
+                {statusBadge.label}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <Text style={styles.amountText}>
-          +{formatTransactionAmount(item.amount)}
+        <Text
+          style={[
+            styles.amountText,
+            item.isCredit ? styles.amountCredit : styles.amountDebit,
+          ]}
+        >
+          {item.isCredit ? '+' : '-'}
+          {formatTransactionAmount(item.amount)}
         </Text>
       </Animated.View>
     </Pressable>
@@ -172,8 +237,10 @@ const buildMultiLineChartData = (
 
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<TransactionHistoryRouteProp>();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const refreshKey = route.params?.refreshKey;
 
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
@@ -209,24 +276,26 @@ const TransactionHistoryScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadTransactions(true).catch(() => undefined);
-    }, [loadTransactions]),
+    }, [loadTransactions, refreshKey]),
   );
 
   const filteredTransactions = useMemo(() => {
-    if (activeFilter === 'all') {
-      return transactions;
-    }
-
-    return transactions.filter(item => item.type === activeFilter);
+    return activeFilter === 'all'
+      ? transactions
+      : transactions.filter(item => item.type === activeFilter);
   }, [activeFilter, transactions]);
 
   const chartData = useMemo(
-    () => buildMultiLineChartData(transactions),
-    [transactions],
+    () => buildMultiLineChartData(filteredTransactions),
+    [filteredTransactions],
   );
 
   const totalForFilter = useMemo(
-    () => filteredTransactions.reduce((sum, item) => sum + item.amount, 0),
+    () =>
+      filteredTransactions.reduce(
+        (sum, item) => sum + getSignedAmount(item),
+        0,
+      ),
     [filteredTransactions],
   );
 
@@ -235,20 +304,8 @@ const TransactionHistoryScreen = () => {
     const miningValue = chartData.miningEarning[ACTIVE_MONTH_INDEX] ?? 0;
     const referralValue = chartData.referralEarning[ACTIVE_MONTH_INDEX] ?? 0;
 
-    if (activeFilter === 'reward') {
-      return rewardValue;
-    }
-
-    if (activeFilter === 'mining') {
-      return miningValue;
-    }
-
-    if (activeFilter === 'referral') {
-      return referralValue;
-    }
-
     return rewardValue + miningValue + referralValue;
-  }, [activeFilter, chartData]);
+  }, [chartData]);
 
   const renderTransaction = useCallback(
     ({ item }: { item: TransactionItem }) => <TransactionRow item={item} />,
@@ -306,8 +363,14 @@ const TransactionHistoryScreen = () => {
 
       <View style={styles.totalStrip}>
         <Text style={styles.totalStripLabel}>Filtered Total</Text>
-        <Text style={styles.totalStripValue}>
-          + {formatAmount(totalForFilter)} APE
+        <Text
+          style={[
+            styles.totalStripValue,
+            totalForFilter >= 0 ? styles.amountCredit : styles.amountDebit,
+          ]}
+        >
+          {totalForFilter >= 0 ? '+' : '-'}{' '}
+          {formatAmount(Math.abs(totalForFilter))} APE
         </Text>
       </View>
 
@@ -502,7 +565,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 22,
+    marginBottom: 12,
   },
   filterChip: {
     borderRadius: 18,
@@ -575,16 +638,40 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   transactionMetaText: {
-    marginTop: 6,
     color: COLORS.textMuted,
     fontSize: 12,
     fontFamily: FONTS.medium,
+  },
+  transactionMetaRow: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statusBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   amountText: {
     fontSize: 15,
     fontFamily: FONTS.bold,
     fontWeight: '700',
+  },
+  amountCredit: {
     color: COLORS.success,
+  },
+  amountDebit: {
+    color: '#FF8585',
   },
   separator: {
     height: 12,

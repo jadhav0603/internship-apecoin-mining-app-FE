@@ -74,6 +74,17 @@ const getElapsedSeconds = (data: MiningData, now = Date.now()) => {
 };
 
 const getLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
+  const currentCoins =
+    typeof data.currentMiningPoints === 'number' && Number.isFinite(data.currentMiningPoints)
+      ? data.currentMiningPoints
+      : typeof data.currentApeCoins === 'number' && Number.isFinite(data.currentApeCoins)
+        ? data.currentApeCoins
+        : null;
+
+  if (currentCoins !== null) {
+    return currentCoins;
+  }
+
   if (data.status !== 'mining' || !data.miningStartTime || !data.isActive) {
     return data.currentMiningPoints ?? 0;
   }
