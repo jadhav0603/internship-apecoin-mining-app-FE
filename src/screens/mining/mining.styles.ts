@@ -106,6 +106,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
+  orbitLayer: {
+    position: 'absolute',
+    width: 240,
+    height: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   orbitSvg: {
     position: 'absolute',
   },

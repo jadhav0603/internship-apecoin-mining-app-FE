@@ -1,7 +1,17 @@
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -16,11 +26,9 @@ import styles from './mining.styles';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
 import AppBackButton from '../../components/navigation/AppBackButton';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import MiningActionButton from '../../components/mining/MiningActionButton';
 import MultiplierUpgradeModal from '../../components/mining/MultiplierUpgradeModal';
 import { useTimeModal } from '../../context/TimeModal';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MiningScreen = () => {
   const {
@@ -28,21 +36,83 @@ const MiningScreen = () => {
     claimRewardAmount,
     hasUnclaimedReward,
     secondsLeft,
+    isMining,
     hours,
     miningData,
     multiplier,
-    multipliers,
-    setMultiplier,
   } = useMining();
   const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
   const { setShowModal } = useTimeModal();
   const [multiplierModalVisible, setMultiplierModalVisible] =
     React.useState(false);
+  const coinFlip = useSharedValue(0);
+  const orbitRotation = useSharedValue(0);
+  const coinAuraPulse = useSharedValue(0);
   const displayEarned = hasUnclaimedReward
     ? claimRewardAmount || earned
     : earned;
   const minedBalance = (miningData?.totalEarned ?? 0) + displayEarned;
+
+  useEffect(() => {
+    if (isMining) {
+      coinFlip.value = withRepeat(
+        withTiming(360, {
+          duration: 3400,
+          easing: Easing.inOut(Easing.cubic),
+        }),
+        -1,
+        false,
+      );
+
+      orbitRotation.value = withRepeat(
+        withTiming(360, {
+          duration: 5200,
+          easing: Easing.linear,
+        }),
+        -1,
+        false,
+      );
+
+      coinAuraPulse.value = withRepeat(
+        withSequence(
+          withTiming(1, {
+            duration: 1500,
+            easing: Easing.out(Easing.quad),
+          }),
+          withTiming(0, {
+            duration: 1900,
+            easing: Easing.inOut(Easing.quad),
+          }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      cancelAnimation(coinFlip);
+      cancelAnimation(orbitRotation);
+      cancelAnimation(coinAuraPulse);
+      coinFlip.value = 0;
+      orbitRotation.value = 0;
+      coinAuraPulse.value = 0;
+    }
+  }, [coinAuraPulse, coinFlip, orbitRotation, isMining]);
+
+  const circleFlipAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 900 },
+      { rotateY: `${coinFlip.value}deg` },
+      { scale: interpolate(coinAuraPulse.value, [0, 1], [1, 1.03]) },
+    ],
+  }));
+
+  const ellipseRotateAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${orbitRotation.value}deg` }],
+  }));
+
+  const coinAuraAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(coinAuraPulse.value, [0, 1], [0.74, 0.98]),
+    transform: [{ scale: interpolate(coinAuraPulse.value, [0, 1], [1, 1.12]) }],
+  }));
 
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
@@ -88,35 +158,42 @@ const MiningScreen = () => {
 
         <View style={styles.content}>
           <View style={styles.coinCluster}>
-            <View style={styles.coinAura} />
-            <Svg width={240} height={170} style={styles.orbitSvg}>
-              <Defs>
-                <RadialGradient id="coinGlow" cx="50%" cy="50%" r="55%">
-                  <Stop offset="0%" stopColor="rgba(221, 255, 120, 0.42)" />
-                  <Stop offset="70%" stopColor="rgba(160, 214, 60, 0.12)" />
-                  <Stop offset="100%" stopColor="rgba(160, 214, 60, 0)" />
-                </RadialGradient>
-              </Defs>
-              <Circle cx="120" cy="78" r="52" fill="url(#coinGlow)" />
-              <Ellipse
-                cx="120"
-                cy="92"
-                rx="76"
-                ry="16"
-                stroke="rgba(255,255,255,0.62)"
-                strokeWidth="2"
-                fill="transparent"
-              />
-              <Ellipse
-                cx="120"
-                cy="88"
-                rx="88"
-                ry="22"
-                stroke="rgba(255,255,255,0.34)"
-                strokeWidth="2"
-                fill="transparent"
-              />
-            </Svg>
+            <Animated.View style={[styles.coinAura, coinAuraAnimatedStyle]} />
+            <Animated.View style={[styles.orbitLayer, circleFlipAnimatedStyle]}>
+              <Svg width={240} height={170} style={styles.orbitSvg}>
+                <Defs>
+                  <RadialGradient id="coinGlow" cx="50%" cy="50%" r="55%">
+                    <Stop offset="0%" stopColor="rgba(221, 255, 120, 0.42)" />
+                    <Stop offset="70%" stopColor="rgba(160, 214, 60, 0.12)" />
+                    <Stop offset="100%" stopColor="rgba(160, 214, 60, 0)" />
+                  </RadialGradient>
+                </Defs>
+                <Circle cx="120" cy="78" r="52" fill="url(#coinGlow)" />
+              </Svg>
+            </Animated.View>
+
+            <Animated.View style={[styles.orbitLayer, ellipseRotateAnimatedStyle]}>
+              <Svg width={240} height={170} style={styles.orbitSvg}>
+                <Ellipse
+                  cx="120"
+                  cy="92"
+                  rx="76"
+                  ry="16"
+                  stroke="rgba(255,255,255,0.62)"
+                  strokeWidth="2"
+                  fill="transparent"
+                />
+                <Ellipse
+                  cx="120"
+                  cy="88"
+                  rx="88"
+                  ry="22"
+                  stroke="rgba(255,255,255,0.34)"
+                  strokeWidth="2"
+                  fill="transparent"
+                />
+              </Svg>
+            </Animated.View>
 
             <LinearGradient
               colors={['rgba(229, 255, 141, 0.42)', 'rgba(76, 105, 19, 0.94)']}
@@ -128,10 +205,10 @@ const MiningScreen = () => {
                 <FontAwesome5 name="dollar-sign" size={32} color="#F4FFC4" />
               </View>
             </LinearGradient>
-            <View style={styles.coinBaseGlow} />
           </View>
 
           {/* <Text style={styles.rateText}>0.02083 Kryptons/hour</Text> */}
+          
           <Text style={styles.amountText}>{displayEarned.toFixed(6)} APE</Text>
 
           <View style={styles.ringSection}>
