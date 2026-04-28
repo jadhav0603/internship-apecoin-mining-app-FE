@@ -6,12 +6,12 @@ import {
   Theme,
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 
 import SignIn from '../screens/Auth/SignIn';
 import SignUp from '../screens/Auth/SignUp';
 import SplashScreen from '../screens/splash/SplashScreen';
+import SplashIntroAnimation from '../screens/splash/SplashIntroAnimation';
 import MiningScreen from '../screens/mining/MiningScreen';
 import LeaderboardScreen from '../screens/profile/LeaderboardScreen';
 import ReferAndEarnScreen from '../screens/profile/ReferAndEarnScreen';
@@ -62,6 +62,7 @@ const mapFirebaseUserToAppUser = (firebaseUser: NonNullable<ReturnType<typeof ge
 
 const AppNavigator = () => {
   const { setUser } = useUser();
+  const [showIntroAnimation, setShowIntroAnimation] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
 
@@ -80,6 +81,7 @@ const AppNavigator = () => {
           }
 
           setUser(null);
+          setShowSplash(true);
           setAuthStatus('unauthenticated');
           return;
         }
@@ -123,19 +125,16 @@ const AppNavigator = () => {
     };
   }, [setUser]);
 
+  if (showIntroAnimation) {
+    return (
+      <SplashIntroAnimation onFinish={() => setShowIntroAnimation(false)} />
+    );
+  }
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
-        {showSplash ? (
-          <Stack.Screen name="Splash">
-            {props => (
-              <SplashScreen
-                {...props}
-                onFinish={() => setShowSplash(false)}
-              />
-            )}
-          </Stack.Screen>
-        ) : authStatus === 'loading' ? (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {authStatus === 'loading' ? (
           <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
         ) : authStatus === 'authenticated' ? (
           <>
@@ -151,6 +150,15 @@ const AppNavigator = () => {
             <Stack.Screen name="ProfileDetails" component={ProfileDetailsScreen} />
             <Stack.Screen name="AboutUs" component={AboutUsScreen} />
           </>
+        ) : showSplash ? (
+          <Stack.Screen name="Splash">
+            {props => (
+              <SplashScreen
+                {...props}
+                onFinish={() => setShowSplash(false)}
+              />
+            )}
+          </Stack.Screen>
         ) : (
           <>
             <Stack.Screen name="SignIn" component={SignIn} />
