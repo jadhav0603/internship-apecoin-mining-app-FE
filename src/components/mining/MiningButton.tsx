@@ -32,6 +32,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
   const borderRotation = useSharedValue(0);
   const iconSwitch = useSharedValue(0); // 0 = start icon, 1 = end icon
   const glow = useSharedValue(1);
+  const idleAccent = useSharedValue(0);
 
   useEffect(() => {
     // Border rotation animation
@@ -72,6 +73,8 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
     };
 
     if (isMining) {
+      cancelAnimation(idleAccent);
+      idleAccent.value = 0;
       startAnimation();
       glow.value = withRepeat(
         withSequence(
@@ -89,12 +92,26 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
       rotation.value = 0;
       iconSwitch.value = 0;
       glow.value = 1;
+      idleAccent.value = withRepeat(
+        withSequence(
+          withTiming(1, {
+            duration: 1150,
+            easing: Easing.out(Easing.cubic),
+          }),
+          withTiming(0, {
+            duration: 950,
+            easing: Easing.inOut(Easing.quad),
+          })
+        ),
+        -1,
+        false
+      );
     }
 
     return () => {
       isActive = false;
     };
-  }, [isMining, rotation, iconSwitch, glow]);
+  }, [isMining, rotation, iconSwitch, glow, idleAccent]);
 
   const animatedIconStyle = useAnimatedStyle(() => {
     return {
@@ -124,6 +141,35 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${borderRotation.value}deg` }],
+  }));
+
+  const idleHaloStyle = useAnimatedStyle(() => ({
+    opacity: 0.16 + idleAccent.value * 0.18,
+    transform: [{ scale: 1 + idleAccent.value * 0.5 }],
+  }));
+
+  const idleRingStyle = useAnimatedStyle(() => ({
+    opacity: 0.24 + idleAccent.value * 0.26,
+    transform: [{ scale: 1 + idleAccent.value * 0.22 }],
+  }));
+
+  const idlePlayStyle = useAnimatedStyle(() => ({
+    opacity: 0.88 + idleAccent.value * 0.12,
+    transform: [
+      { translateY: idleAccent.value * 2.4 },
+      { rotate: `${-12 + idleAccent.value * 8}deg` },
+      { scale: 1 + idleAccent.value * 0.08 },
+    ],
+  }));
+
+  const idleHintStyle = useAnimatedStyle(() => ({
+    opacity: 0.52 + idleAccent.value * 0.42,
+    transform: [{ translateY: idleAccent.value * -1.5 }],
+  }));
+
+  const idleTapRippleStyle = useAnimatedStyle(() => ({
+    opacity: 0.26 + idleAccent.value * 0.2,
+    transform: [{ scale: 0.78 + idleAccent.value * 0.34 }],
   }));
 
   const handleOpen = () => {
@@ -192,32 +238,61 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
               style={styles.innerCore}
             >
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                {isMining && <Animated.View style={[styles.cardGlow, glowStyle, { backgroundColor: COLORS.primary, width: 40, height: 40, borderRadius: 20 }]} />}
-                
-                <Animated.View style={animatedIconStyle}>
-                  <FontAwesome5
-                    name="hourglass-start"
-                    size={18}
-                    color={COLORS.textPrimary}
-                  />
-                </Animated.View>
+                {isMining ? (
+                  <>
+                    <Animated.View
+                      style={[
+                        styles.cardGlow,
+                        glowStyle,
+                        {
+                          backgroundColor: COLORS.primary,
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                        },
+                      ]}
+                    />
 
-                <Animated.View style={animatedEndIconStyle}>
-                  <FontAwesome5
-                    name="hourglass-end"
-                    size={18}
-                    color={COLORS.primary}
-                  />
-                </Animated.View>
+                    <Animated.View style={animatedIconStyle}>
+                      <FontAwesome5
+                        name="hourglass-start"
+                        size={18}
+                        color={COLORS.textPrimary}
+                      />
+                    </Animated.View>
 
-                {/* {!isMining && (
-                   <FontAwesome5
-                    name="play"
-                    size={18}
-                    color={COLORS.textPrimary}
-                    style={styles.playIcon}
-                  />
-                )} */}
+                    <Animated.View style={animatedEndIconStyle}>
+                      <FontAwesome5
+                        name="hourglass-end"
+                        size={18}
+                        color={COLORS.primary}
+                      />
+                    </Animated.View>
+                  </>
+                ) : (
+                  <View style={styles.idleCueWrap}>
+                    <Animated.View
+                      style={[styles.idleHalo, idleHaloStyle]}
+                    />
+                    <Animated.View
+                      style={[styles.idlePulseRing, idleRingStyle]}
+                    />
+                    <Animated.View
+                      style={[styles.idleTapRipple, idleTapRippleStyle]}
+                    />
+                    <Animated.View style={idlePlayStyle}>
+                      <FontAwesome5
+                        name="hand-pointer"
+                        size={22}
+                        color={COLORS.textPrimary}
+                        style={styles.tapIcon}
+                      />
+                    </Animated.View>
+                    <Animated.Text style={[styles.idleTapHint, idleHintStyle]}>
+                      TAP
+                    </Animated.Text>
+                  </View>
+                )}
               </View>
             </LinearGradient>
           </SegmentedRing>
