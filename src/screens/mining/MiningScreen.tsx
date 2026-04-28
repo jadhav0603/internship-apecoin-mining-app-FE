@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -31,6 +31,7 @@ import MultiplierUpgradeModal from '../../components/mining/MultiplierUpgradeMod
 import { useTimeModal } from '../../context/TimeModal';
 
 const MiningScreen = () => {
+  const TIMER_SEGMENT_COUNT = 72;
   const {
     earned,
     claimRewardAmount,
@@ -52,6 +53,28 @@ const MiningScreen = () => {
     ? claimRewardAmount || earned
     : earned;
   const minedBalance = (miningData?.totalEarned ?? 0) + displayEarned;
+  const totalDurationSeconds = Math.max(hours * 3600, 1);
+  const ringProgress = useMemo(() => {
+    if (hasUnclaimedReward) {
+      return 1;
+    }
+
+    if (!isMining) {
+      return 0;
+    }
+
+    const elapsedSeconds = Math.max(totalDurationSeconds - secondsLeft, 0);
+    return Math.min(elapsedSeconds / totalDurationSeconds, 1);
+  }, [hasUnclaimedReward, isMining, secondsLeft, totalDurationSeconds]);
+
+  const activeTimerSegments = useMemo(() => {
+    if (!isMining && !hasUnclaimedReward) {
+      return 0;
+    }
+
+    const progressSegments = Math.round(ringProgress * TIMER_SEGMENT_COUNT);
+    return Math.max(1, Math.min(TIMER_SEGMENT_COUNT, progressSegments));
+  }, [hasUnclaimedReward, isMining, ringProgress]);
 
   useEffect(() => {
     if (isMining) {
@@ -214,8 +237,8 @@ const MiningScreen = () => {
           <View style={styles.ringSection}>
             <SegmentedRing
               size={320}
-              segmentCount={72}
-              activeSegments={24}
+              segmentCount={TIMER_SEGMENT_COUNT}
+              activeSegments={activeTimerSegments}
               segmentWidth={7}
               segmentHeight={24}
               rotationDuration={18000}
