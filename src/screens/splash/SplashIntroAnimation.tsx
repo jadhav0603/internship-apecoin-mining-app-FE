@@ -7,7 +7,7 @@ type SplashIntroAnimationProps = {
   onFinish: () => void;
 };
 
-const INTRO_FALLBACK_MS = 2300;
+const INTRO_FALLBACK_MS = 4500;
 
 const SplashIntroAnimation = ({ onFinish }: SplashIntroAnimationProps) => {
   const hasFinishedRef = useRef(false);
