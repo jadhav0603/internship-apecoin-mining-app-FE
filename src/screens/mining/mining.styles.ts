@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontSize: 16,
     letterSpacing: FONTS.letterSpacing.ultraWide,
-    marginBottom: 0-10,
+    marginBottom: -10,
     marginTop: 8,
   },
   statsTitle: {

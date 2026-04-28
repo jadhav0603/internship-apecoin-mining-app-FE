@@ -2,6 +2,16 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -22,6 +32,8 @@ import { useTimeModal } from '../../context/TimeModal';
 
 const MiningScreen = () => {
   const TIMER_SEGMENT_COUNT = 72;
+
+  // ============ CONTEXT & HOOKS ============
   const {
     earned,
     claimRewardAmount,
@@ -32,17 +44,20 @@ const MiningScreen = () => {
     miningData,
     multiplier,
   } = useMining();
+
   const navigation = useNavigation();
   const { setShowModal } = useTimeModal();
-  const [multiplierModalVisible, setMultiplierModalVisible] =
-    React.useState(false);
+  const [multiplierModalVisible, setMultiplierModalVisible] = useState(false);
+
+  // ============ COIN CALCULATION STATE ============
   const [displayedEarned, setDisplayedEarned] = useState(earned);
   const previousSecondsLeftRef = useRef(secondsLeft);
+
   const totalDurationSeconds = Math.max(hours * 3600, 1);
+
+  // Calculate rate per second
   const ratePerSecond = useMemo(() => {
-    if (!miningData) {
-      return 0;
-    }
+    if (!miningData) return 0;
 
     const baseDollarValue = miningData.baseDollarValue ?? 0.002;
     const apeDollarValue =
@@ -53,6 +68,14 @@ const MiningScreen = () => {
     return ((baseDollarValue / apeDollarValue) * multiplier) / 3600;
   }, [miningData, multiplier]);
 
+  // Live earned calculation
+  const liveEarned = useMemo(() => {
+    if (!isMining) return earned;
+    const syncedValue = earned > displayedEarned ? earned : displayedEarned;
+    return syncedValue;
+  }, [secondsLeft, isMining, earned, displayedEarned]);
+
+  // Update displayed earned on every tick
   useEffect(() => {
     if (hasUnclaimedReward) {
       setDisplayedEarned(claimRewardAmount || earned);
@@ -91,8 +114,11 @@ const MiningScreen = () => {
 
   const displayEarned = hasUnclaimedReward
     ? claimRewardAmount || earned
-    : displayedEarned;
+    : liveEarned;
+
   const minedBalance = (miningData?.totalEarned ?? 0) + displayEarned;
+
+  // ============ RING PROGRESS CALCULATION ============
   const ringProgress = useMemo(() => {
     if (hasUnclaimedReward) {
       return 1;
@@ -115,6 +141,63 @@ const MiningScreen = () => {
     return Math.max(1, Math.min(TIMER_SEGMENT_COUNT, progressSegments));
   }, [hasUnclaimedReward, isMining, ringProgress]);
 
+  // ============ ANIMATION STATE ============
+  const coinFlip = useSharedValue(0);
+  const orbitRotation = useSharedValue(0);
+  const coinAuraPulse = useSharedValue(0);
+
+  // Animation control
+  useEffect(() => {
+    if (isMining) {
+      coinFlip.value = withRepeat(
+        withTiming(360, { duration: 3400, easing: Easing.inOut(Easing.cubic) }),
+        -1,
+        false,
+      );
+
+      orbitRotation.value = withRepeat(
+        withTiming(360, { duration: 5200, easing: Easing.linear }),
+        -1,
+        false,
+      );
+
+      coinAuraPulse.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1500 }),
+          withTiming(0, { duration: 1900 }),
+        ),
+        -1,
+        false,
+      );
+    } else {
+      cancelAnimation(coinFlip);
+      cancelAnimation(orbitRotation);
+      cancelAnimation(coinAuraPulse);
+      coinFlip.value = 0;
+      orbitRotation.value = 0;
+      coinAuraPulse.value = 0;
+    }
+  }, [isMining]);
+
+  // ============ ANIMATED STYLES ============
+  const circleFlipAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 900 },
+      { rotateY: `${coinFlip.value}deg` },
+      { scale: interpolate(coinAuraPulse.value, [0, 1], [1, 1.03]) },
+    ],
+  }));
+
+  const ellipseRotateAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${orbitRotation.value}deg` }],
+  }));
+
+  const coinAuraAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(coinAuraPulse.value, [0, 1], [0.7, 1]),
+    transform: [{ scale: interpolate(coinAuraPulse.value, [0, 1], [1, 1.1]) }],
+  }));
+
+  // ============ TIME FORMATTER ============
   const formatTime = (sec: number) => {
     const h = Math.floor(sec / 3600)
       .toString()
@@ -127,6 +210,7 @@ const MiningScreen = () => {
     return `${h}:${m}:${s}`;
   };
 
+  // ============ RENDER ============
   return (
     <LinearGradient
       colors={[
@@ -146,21 +230,15 @@ const MiningScreen = () => {
           <View style={styles.profileChip}>
             <AppBackButton onPress={() => navigation.goBack()} />
           </View>
-
-          {/* <View style={styles.topActions}>
-            <View style={styles.topActionButton}>
-              <FontAwesome5 name="plus" size={14} color={COLORS.textPrimary} />
-            </View>
-            <View style={styles.topActionButton}>
-              <FontAwesome5 name="bell" size={14} color={COLORS.textPrimary} />
-            </View>
-          </View> */}
         </View>
 
         <View style={styles.content}>
           <View style={styles.coinCluster}>
-            <View style={styles.coinAura} />
-            <View style={styles.orbitLayer}>
+            {/* Aura pulse animation */}
+            <Animated.View style={[styles.coinAura, coinAuraAnimatedStyle]} />
+
+            {/* Circle flip animation */}
+            <Animated.View style={[styles.orbitLayer, circleFlipAnimatedStyle]}>
               <Svg width={240} height={170} style={styles.orbitSvg}>
                 <Defs>
                   <RadialGradient id="coinGlow" cx="50%" cy="50%" r="55%">
@@ -171,9 +249,10 @@ const MiningScreen = () => {
                 </Defs>
                 <Circle cx="120" cy="78" r="52" fill="url(#coinGlow)" />
               </Svg>
-            </View>
+            </Animated.View>
 
-            <View style={styles.orbitLayer}>
+            {/* Ellipse rotation animation */}
+            <Animated.View style={[styles.orbitLayer, ellipseRotateAnimatedStyle]}>
               <Svg width={240} height={170} style={styles.orbitSvg}>
                 <Ellipse
                   cx="120"
@@ -194,8 +273,9 @@ const MiningScreen = () => {
                   fill="transparent"
                 />
               </Svg>
-            </View>
+            </Animated.View>
 
+            {/* Dollar badge */}
             <LinearGradient
               colors={['rgba(229, 255, 141, 0.42)', 'rgba(76, 105, 19, 0.94)']}
               start={{ x: 0.15, y: 0 }}
@@ -208,10 +288,10 @@ const MiningScreen = () => {
             </LinearGradient>
           </View>
 
-          {/* <Text style={styles.rateText}>0.02083 Kryptons/hour</Text> */}
-          
+          {/* Live earned amount */}
           <Text style={styles.amountText}>{displayEarned.toFixed(6)} APE</Text>
 
+          {/* Timer ring */}
           <View style={styles.ringSection}>
             <SegmentedRing
               size={320}
@@ -228,9 +308,6 @@ const MiningScreen = () => {
                 style={styles.timerCore}
               >
                 <View style={styles.timerCoreGlow} />
-                {/* <View style={styles.playButton}>
-                  <FontAwesome5 name="play" size={25} color={COLORS.textPrimary} style={styles.playIcon} />
-                </View> */}
                 <Text style={styles.storageLabel}>Time Storage</Text>
                 <Text style={styles.timerText}>{formatTime(secondsLeft)}</Text>
               </LinearGradient>
@@ -238,6 +315,7 @@ const MiningScreen = () => {
           </View>
         </View>
 
+        {/* Action buttons and stats */}
         <View
           style={{
             flexDirection: 'row',
@@ -248,7 +326,6 @@ const MiningScreen = () => {
           }}
         >
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-            {/* ACTION BUTTONS */}
             <View
               style={{
                 flexDirection: 'row',
@@ -270,7 +347,6 @@ const MiningScreen = () => {
               />
             </View>
 
-            {/* STATS CARD */}
             <LinearGradient
               colors={['rgba(39, 57, 15, 0.9)', 'rgba(10, 15, 8, 0.96)']}
               start={{ x: 0.1, y: 0 }}
@@ -311,6 +387,7 @@ const MiningScreen = () => {
           </View>
         </View>
       </SafeAreaView>
+
       <MultiplierUpgradeModal
         visible={multiplierModalVisible}
         onClose={() => setMultiplierModalVisible(false)}
