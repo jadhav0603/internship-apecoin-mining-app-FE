@@ -99,7 +99,7 @@ apiClient.interceptors.response.use(
 
     const isNetworkError = !error?.response;
     const isUnauthorized = error?.response?.status === 401;
-    const blockedAccount = getBlockedAccountFromError(error);
+    const blockedAccount = getBlockedAccountFromError(error, 'login');
     const skipSessionHandling = Boolean(
       (error?.config as any)?.skipAutoSignOut ||
         (error?.config as any)?.skipAccountBlockedHandling,

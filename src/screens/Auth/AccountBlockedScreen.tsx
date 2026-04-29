@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Linking,
   Pressable,
@@ -8,12 +8,18 @@ import {
   Text,
   View,
 } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/COLORS';
 import { useAlert } from '../../context/AlertContext';
-import { useBlockedAccount } from '../../session/blockedAccountState';
+import { RootStackParamList } from '../../navigation/types';
+import {
+  clearBlockedAccount,
+  useBlockedAccount,
+} from '../../session/blockedAccountState';
+import { authService } from '../../services/authService';
 
 const ALERT_PRESENTATION = {
   blurBackground: true,
@@ -21,24 +27,61 @@ const ALERT_PRESENTATION = {
   theme: 'dark' as const,
 };
 
-const AccountBlockedScreen = () => {
+type Props = NativeStackScreenProps<RootStackParamList, 'AccountBlocked'>;
+
+const AccountBlockedScreen = ({ route }: Props) => {
   const { showError, showInfo } = useAlert();
   const blockedAccount = useBlockedAccount();
+  const [isClosing, setIsClosing] = useState(false);
 
   const content = useMemo(() => {
-    const isDeleted = blockedAccount?.status === 'DELETED';
+    const type = blockedAccount?.type ?? route.params?.type ?? 'banned';
+    const source = blockedAccount?.source ?? route.params?.source ?? 'login';
+    const reason = blockedAccount?.reason ?? route.params?.reason ?? null;
+    const isDeleted = type === 'deleted';
+    const isDeleteSource = source === 'delete';
 
     return {
+      type,
+      source,
+      reason,
       isDeleted,
+      isDeleteSource,
       title: isDeleted ? 'Account Deleted' : 'Account Banned',
-      subtitle: isDeleted
-        ? 'Your ApeCoin account is unavailable right now. If this happened by mistake, our team can review recovery options with you.'
-        : 'This ApeCoin account has been restricted. Contact support if you believe the restriction was applied in error.',
+      subtitle: isDeleteSource
+        ? 'Your account has been deleted.'
+        : isDeleted
+          ? 'Your account has been deleted.'
+          : blockedAccount?.message ?? 'Your account has been banned.',
       accent: isDeleted ? '#6EF3C4' : '#FF6B6B',
       glow: isDeleted ? 'rgba(110, 243, 196, 0.18)' : 'rgba(255, 107, 107, 0.16)',
-      iconName: isDeleted ? 'archive-outline' : 'ban-outline',
+      iconName: isDeleted ? 'close-circle-outline' : 'ban-outline',
+      showContact: source === 'login',
+      showReactivate: source === 'login' && isDeleted,
     };
-  }, [blockedAccount?.status]);
+  }, [
+    blockedAccount?.message,
+    blockedAccount?.reason,
+    blockedAccount?.source,
+    blockedAccount?.type,
+    route.params?.reason,
+    route.params?.source,
+    route.params?.type,
+  ]);
+
+  const handleClose = async () => {
+    if (isClosing) {
+      return;
+    }
+
+    try {
+      setIsClosing(true);
+      await authService.clearSession();
+    } finally {
+      clearBlockedAccount();
+      setIsClosing(false);
+    }
+  };
 
   const openMailClient = async (subject: string, emptyStateMessage: string) => {
     const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}`;
@@ -75,6 +118,20 @@ const AccountBlockedScreen = () => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
+          {content.isDeleteSource ? (
+            <Pressable
+              onPress={handleClose}
+              disabled={isClosing}
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && styles.closeButtonPressed,
+                isClosing && styles.closeButtonPressed,
+              ]}
+            >
+              <Ionicons name="close" size={20} color={COLORS.textPrimary} />
+            </Pressable>
+          ) : null}
+
           <View style={[styles.iconShell, { shadowColor: content.accent }]}>
             <LinearGradient
               colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']}
@@ -90,43 +147,46 @@ const AccountBlockedScreen = () => {
           <Text style={styles.title}>{content.title}</Text>
           <Text style={styles.subtitle}>{content.subtitle}</Text>
 
-          {blockedAccount?.reason ? (
+          {content.reason && !content.isDeleteSource ? (
             <View style={styles.reasonCard}>
               <Text style={styles.reasonLabel}>Reason</Text>
-              <Text style={styles.reasonText}>{blockedAccount.reason}</Text>
+              <Text style={styles.reasonText}>{content.reason}</Text>
             </View>
           ) : null}
 
-          <View style={styles.actionStack}>
-            <Pressable
-              onPress={() =>
-                openMailClient(
-                  content.isDeleted
-                    ? 'Recover my deleted ApeCoin account'
-                    : 'Review my banned ApeCoin account',
-                  'No mail app is available right now. Please contact support from your registered email account.',
-                )
-              }
-              style={styles.primaryAction}
-            >
-              {({ pressed }) => (
-                <LinearGradient
-                  colors={
-                    pressed
-                      ? ['#90D900', '#6FB300']
-                      : [COLORS.primary, COLORS.primaryDark]
+          {content.showContact || content.showReactivate ? (
+            <View style={styles.actionStack}>
+              {content.showContact ? (
+                <Pressable
+                  onPress={() =>
+                    openMailClient(
+                      content.isDeleted
+                        ? 'Recover my deleted ApeCoin account'
+                        : 'Review my banned ApeCoin account',
+                      'No mail app is available right now. Please contact support from your registered email account.',
+                    )
                   }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.primaryActionGradient}
+                  style={styles.primaryAction}
                 >
-                  <Ionicons name="mail-open-outline" size={18} color={COLORS.textDark} />
-                  <Text style={styles.primaryActionText}>Contact Support</Text>
-                </LinearGradient>
-              )}
-            </Pressable>
+                  {({ pressed }) => (
+                    <LinearGradient
+                      colors={
+                        pressed
+                          ? ['#90D900', '#6FB300']
+                          : [COLORS.primary, COLORS.primaryDark]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.primaryActionGradient}
+                    >
+                      <Ionicons name="mail-open-outline" size={18} color={COLORS.textDark} />
+                      <Text style={styles.primaryActionText}>Contact Support</Text>
+                    </LinearGradient>
+                  )}
+                </Pressable>
+              ) : null}
 
-            {content.isDeleted ? (
+              {content.showReactivate ? (
               <Pressable
                 onPress={() =>
                   openMailClient(
@@ -152,11 +212,14 @@ const AccountBlockedScreen = () => {
                   </View>
                 )}
               </Pressable>
-            ) : null}
-          </View>
+              ) : null}
+            </View>
+          ) : null}
 
           <Text style={styles.helperText}>
-            Login is disabled while this account remains restricted.
+            {content.isDeleteSource
+              ? 'Close this screen to finish signing out of this account.'
+              : 'Login is disabled while this account remains restricted.'}
           </Text>
         </View>
       </ScrollView>
@@ -201,6 +264,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 28,
     elevation: 16,
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 10,
+  },
+  closeButtonPressed: {
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   iconShell: {
     alignSelf: 'center',

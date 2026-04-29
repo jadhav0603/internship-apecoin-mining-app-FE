@@ -31,10 +31,13 @@ import { useUser } from '../context/UserContext';
 import { userService } from '../services/userService';
 import {
   clearBlockedAccount,
+  getBlockedAccountFromStatus,
   getBlockedAccount,
   isBlockedAccountError,
+  setBlockedAccount,
   subscribeBlockedAccount,
 } from '../session/blockedAccountState';
+import { authService } from '../services/authService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -71,9 +74,9 @@ const AppNavigator = () => {
   const [showIntroAnimation, setShowIntroAnimation] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
-  const [blockedAccount, setBlockedAccount] = useState(getBlockedAccount());
+  const [blockedAccount, setBlockedAccountState] = useState(getBlockedAccount());
 
-  useEffect(() => subscribeBlockedAccount(setBlockedAccount), []);
+  useEffect(() => subscribeBlockedAccount(setBlockedAccountState), []);
 
   useEffect(() => {
     const auth = getAuth();
@@ -90,7 +93,6 @@ const AppNavigator = () => {
           }
 
           setUser(null);
-          setShowSplash(true);
           setAuthStatus('unauthenticated');
           return;
         }
@@ -100,9 +102,40 @@ const AppNavigator = () => {
         }
 
         try {
+          const syncResponse = await authService.syncCurrentSession();
+
+          if (!isMounted || requestId !== authRequestId) {
+            return;
+          }
+
+          const blockedFromSync = getBlockedAccountFromStatus(syncResponse?.user?.status, {
+            source: 'login',
+            reason: syncResponse?.user?.bannedReason ?? null,
+          });
+
+          if (blockedFromSync) {
+            setBlockedAccount(blockedFromSync);
+            setUser(null);
+            setAuthStatus('unauthenticated');
+            void authService.clearSession().catch(() => undefined);
+            return;
+          }
+
           const userData = await userService.getMe();
 
           if (!isMounted || requestId !== authRequestId) {
+            return;
+          }
+
+          const blockedFromStatus = getBlockedAccountFromStatus(userData?.status, {
+            source: 'login',
+          });
+
+          if (blockedFromStatus) {
+            setBlockedAccount(blockedFromStatus);
+            setUser(null);
+            setAuthStatus('unauthenticated');
+            void authService.clearSession().catch(() => undefined);
             return;
           }
 
@@ -119,7 +152,7 @@ const AppNavigator = () => {
 
           if (__DEV__) {
             console.log(
-              '[auth] failed to hydrate backend user, using Firebase session fallback',
+              '[auth] failed to verify backend user status during bootstrap',
               error,
             );
           }
@@ -128,8 +161,9 @@ const AppNavigator = () => {
             return;
           }
 
-          setUser(mapFirebaseUserToAppUser(firebaseUser as any));
-          setAuthStatus('authenticated');
+          setUser(null);
+          setAuthStatus('unauthenticated');
+          void authService.clearSession().catch(() => undefined);
         }
       };
 
@@ -154,8 +188,14 @@ const AppNavigator = () => {
         {blockedAccount ? (
           <Stack.Screen
             name="AccountBlocked"
-            component={AccountBlockedScreen}
-          />
+          >
+            {props => (
+              <AccountBlockedScreen
+                {...props}
+                key={`${blockedAccount.type}:${blockedAccount.source}`}
+              />
+            )}
+          </Stack.Screen>
         ) : authStatus === 'loading' ? (
           <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
         ) : authStatus === 'authenticated' ? (

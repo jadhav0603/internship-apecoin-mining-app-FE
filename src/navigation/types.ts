@@ -10,7 +10,13 @@ export type BottomTabParamList = {
 export type RootStackParamList = {
   Splash: undefined;
   AuthLoading: undefined;
-  AccountBlocked: undefined;
+  AccountBlocked:
+    | {
+        type: 'deleted' | 'banned';
+        reason?: string;
+        source: 'delete' | 'login';
+      }
+    | undefined;
   SignIn: undefined;
   SignUp: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;

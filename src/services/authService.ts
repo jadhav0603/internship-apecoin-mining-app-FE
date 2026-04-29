@@ -16,7 +16,10 @@ import {
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import apiClient from '../api/apiClient';
 import { FIREBASE_CONFIG, API_CONFIG, getDevApiBaseUrls } from '../api/config';
-import { setBlockedAccount } from '../session/blockedAccountState';
+import {
+  getBlockedAccountFromStatus,
+  setBlockedAccount,
+} from '../session/blockedAccountState';
 
 const firebaseAuth = getAuth(getApp());
 let authRestorePromise: Promise<FirebaseAuthTypes.User | null> | null = null;
@@ -31,6 +34,8 @@ type SyncedUser = {
   email: string;
   displayName?: string;
   photoURL?: string;
+  status?: string;
+  bannedReason?: string | null;
   plan?: string;
   referredBy?: string | null;
   referralEarnings?: number;
@@ -41,6 +46,23 @@ type BackendSyncResponse = {
   message: string;
   user: SyncedUser;
 };
+
+const createBlockedAccountError = (
+  type: 'banned' | 'deleted',
+  reason?: string | null,
+) => ({
+  response: {
+    status: 403,
+    data: {
+      code: type === 'banned' ? 'ACCOUNT_BANNED' : 'ACCOUNT_DELETED',
+      message:
+        type === 'banned'
+          ? 'Your account has been banned.'
+          : 'Your account has been deleted.',
+      reason: reason ?? null,
+    },
+  },
+});
 
 const signOutFromProviders = async () => {
   try {
@@ -112,6 +134,29 @@ const syncFirebaseSession = async (
 
     throw error;
   }
+};
+
+const ensureActiveBackendAccount = async (
+  user: FirebaseAuthTypes.User,
+): Promise<BackendSyncResponse> => {
+  const syncResponse = await syncFirebaseSession(user, {
+    rollbackOnFailure: true,
+  });
+  const blockedAccount = getBlockedAccountFromStatus(syncResponse.user?.status, {
+    source: 'login',
+    reason: syncResponse.user?.bannedReason ?? null,
+  });
+
+  if (!blockedAccount) {
+    return syncResponse;
+  }
+
+  setBlockedAccount(blockedAccount);
+  await Promise.allSettled([
+    AsyncStorage.clear(),
+    signOutFromProviders(),
+  ]);
+  throw createBlockedAccountError(blockedAccount.type, blockedAccount.reason);
 };
 
 const postSync = async (baseURL: string, idToken: string) => {
@@ -255,6 +300,7 @@ export const authService = {
    */
   async signIn(email: string, password: string): Promise<FirebaseAuthTypes.User> {
     const userCredential = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+    await ensureActiveBackendAccount(userCredential.user);
     return userCredential.user;
   },
 
@@ -271,6 +317,7 @@ export const authService = {
     // 3. Sign-in the user with the credential
     const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
 
+    await ensureActiveBackendAccount(userCredential.user);
     return userCredential.user;
   },
 
@@ -297,7 +344,10 @@ export const authService = {
    * Log out the current user
    */
   async clearSession() {
-    return signOutFromProviders();
+    await Promise.allSettled([
+      AsyncStorage.clear(),
+      signOutFromProviders(),
+    ]);
   },
 
   async signOut() {
@@ -343,14 +393,10 @@ export const authService = {
 
     setBlockedAccount({
       code: 'ACCOUNT_DELETED',
-      status: 'DELETED',
+      type: 'deleted',
+      source: 'delete',
       message: 'Your account has been deleted.',
     });
-
-    await Promise.allSettled([
-      AsyncStorage.clear(),
-      signOutFromProviders(),
-    ]);
   },
 
   /**

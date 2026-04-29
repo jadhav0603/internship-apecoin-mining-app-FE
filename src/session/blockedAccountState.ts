@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 
 export type BlockedAccountCode = 'ACCOUNT_BANNED' | 'ACCOUNT_DELETED';
-export type BlockedAccountStatus = 'BANNED' | 'DELETED';
+export type BlockedAccountType = 'banned' | 'deleted';
+export type BlockedAccountSource = 'delete' | 'login';
 
 export type BlockedAccountState = {
   code: BlockedAccountCode;
-  status: BlockedAccountStatus;
+  type: BlockedAccountType;
+  source: BlockedAccountSource;
   reason?: string | null;
   message?: string;
 };
@@ -58,26 +60,55 @@ export const isBlockedAccountError = (error: any): boolean =>
   (error?.response?.data?.code === 'ACCOUNT_BANNED' ||
     error?.response?.data?.code === 'ACCOUNT_DELETED');
 
+export const getBlockedAccountFromStatus = (
+  status?: string | null,
+  options?: {
+    source?: BlockedAccountSource;
+    reason?: string | null;
+    message?: string;
+  },
+): BlockedAccountState | null => {
+  if (status !== 'banned' && status !== 'deleted') {
+    return null;
+  }
+
+  return {
+    code: status === 'banned' ? 'ACCOUNT_BANNED' : 'ACCOUNT_DELETED',
+    type: status,
+    source: options?.source ?? 'login',
+    reason: options?.reason ?? null,
+    message:
+      options?.message ??
+      (status === 'banned'
+        ? 'Your account has been banned.'
+        : 'Your account has been deleted.'),
+  };
+};
+
 export const getBlockedAccountFromError = (
   error: any,
+  source: BlockedAccountSource = 'login',
 ): BlockedAccountState | null => {
   if (!isBlockedAccountError(error)) {
     return null;
   }
 
   const code = error?.response?.data?.code as BlockedAccountCode;
+  const type = code === 'ACCOUNT_BANNED' ? 'banned' : 'deleted';
 
   return {
     code,
-    status: code === 'ACCOUNT_BANNED' ? 'BANNED' : 'DELETED',
+    type,
+    source,
     reason:
       error?.response?.data?.reason ??
       error?.response?.data?.banReason ??
-      error?.response?.data?.deleteReason ??
       null,
     message:
       typeof error?.response?.data?.message === 'string'
         ? error.response.data.message
-        : undefined,
+        : type === 'banned'
+          ? 'Your account has been banned.'
+          : 'Your account has been deleted.',
   };
 };
