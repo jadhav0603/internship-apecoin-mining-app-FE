@@ -69,7 +69,7 @@ const AboutUsScreen = () => {
             <Ionicons name="gift-outline" size={24} color={COLORS.primary} />
             <View style={styles.featureTextWrapper}>
               <Text style={styles.featureTitle}>Daily Rewards</Text>
-              <Text style={styles.featureSubtitle}>Claim bonus APC every 24 hours.</Text>
+              <Text style={styles.featureSubtitle}>Claim bonus APE every 24 hours.</Text>
             </View>
           </View>
 

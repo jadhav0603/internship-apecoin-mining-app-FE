@@ -21,6 +21,11 @@ import AboutUsScreen from '../screens/profile/AboutUsScreen';
 import TicketListScreen from '../screens/profile/TicketListScreen';
 import TicketDetailScreen from '../screens/profile/TicketDetailScreen';
 import TransactionHistoryScreen from '../screens/home/TransactionHistoryScreen';
+import OtherAppsScreen from '../screens/profile/OtherAppsScreen';
+import CheckUpdateScreen from '../screens/profile/CheckUpdateScreen';
+import FAQScreen from '../screens/profile/FAQScreen';
+import TermsAndConditionsScreen from '../screens/profile/TermsAndConditionsScreen';
+import ConnectUsScreen from '../screens/profile/ConnectUsScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
 import Loading from '../components/Loading';
@@ -157,6 +162,14 @@ const AppNavigator = () => {
               component={ProfileDetailsScreen}
             />
             <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+            <Stack.Screen name="OtherApps" component={OtherAppsScreen} />
+            <Stack.Screen name="CheckUpdate" component={CheckUpdateScreen} />
+            <Stack.Screen name="FAQ" component={FAQScreen} />
+            <Stack.Screen
+              name="TermsAndConditions"
+              component={TermsAndConditionsScreen}
+            />
+            <Stack.Screen name="ConnectUs" component={ConnectUsScreen} />
           </>
         ) : showSplash ? (
           <Stack.Screen name="Splash">

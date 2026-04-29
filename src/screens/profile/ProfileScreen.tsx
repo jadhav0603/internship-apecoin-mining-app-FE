@@ -15,6 +15,7 @@ import {
   Image,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -53,6 +54,7 @@ const ProfileScreen = () => {
   const { user } = useUser();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
   const [myProfileVisible, setMyProfileVisible] = useState(false);
   const [, setIsLoading] = useState(true);
   const [isLoggingOut] = useState(false);
@@ -131,6 +133,12 @@ const ProfileScreen = () => {
   const confirmLogout = () => {
     if (isLoggingOut) return;
     setLogoutVisible(true);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteAccountVisible(false);
+    // Placeholder for account deletion logic
+    Alert.alert('Success', 'Account deletion request submitted.');
   };
 
   const menuItems = useMemo(
@@ -495,12 +503,12 @@ const ProfileScreen = () => {
                       navigation.navigate('ReferAndEarn');
                       return;
                     }
-                    if (item.id === 'report_issue') {
-                      navigation.navigate('ReportIssue');
-                      return;
-                    }
                     if (item.id === 'leaderboard') {
                       navigation.navigate('Leaderboard');
+                      return;
+                    }
+                    if (item.id === 'report_issue') {
+                      navigation.navigate('ReportIssue');
                       return;
                     }
                     if (item.id === 'about') {
@@ -518,13 +526,37 @@ const ProfileScreen = () => {
         <ProfileSettingsModal
           visible={settingsVisible}
           onClose={() => setSettingsVisible(false)}
-          onAboutUs={() => {
+          onTransactionHistory={() => {
             setSettingsVisible(false);
-            navigation.navigate('AboutUs');
+            navigation.navigate('TransactionHistory');
           }}
-          onReportIssue={() => {
+          onLeaderboard={() => {
             setSettingsVisible(false);
-            navigation.navigate('ReportIssue');
+            navigation.navigate('Leaderboard');
+          }}
+          onOtherApps={() => {
+            setSettingsVisible(false);
+            navigation.navigate('OtherApps');
+          }}
+          onCheckUpdate={() => {
+            setSettingsVisible(false);
+            navigation.navigate('CheckUpdate');
+          }}
+          onFAQ={() => {
+            setSettingsVisible(false);
+            navigation.navigate('FAQ');
+          }}
+          onTermsAndConditions={() => {
+            setSettingsVisible(false);
+            navigation.navigate('TermsAndConditions');
+          }}
+          onConnectUs={() => {
+            setSettingsVisible(false);
+            navigation.navigate('ConnectUs');
+          }}
+          onDeleteAccount={() => {
+            setSettingsVisible(false);
+            setDeleteAccountVisible(true);
           }}
           onLogout={() => {
             setSettingsVisible(false);
@@ -546,6 +578,17 @@ const ProfileScreen = () => {
           tone="danger"
           onConfirm={handleLogout}
           onCancel={() => setLogoutVisible(false)}
+        />
+
+        <ConfirmModal
+          visible={deleteAccountVisible}
+          title="Delete Account"
+          message="Are you sure you want to delete your account? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          tone="danger"
+          onConfirm={handleDeleteAccount}
+          onCancel={() => setDeleteAccountVisible(false)}
         />
       </SafeAreaView>
     </LinearGradient>

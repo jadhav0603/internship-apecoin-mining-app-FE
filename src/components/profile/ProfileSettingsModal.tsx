@@ -13,18 +13,60 @@ import { COLORS } from '../../constants/COLORS';
 interface ProfileSettingsModalProps {
   visible: boolean;
   onClose: () => void;
-  onReportIssue: () => void;
-  onAboutUs: () => void;
+  onTransactionHistory: () => void;
+  onLeaderboard: () => void;
+  onOtherApps: () => void;
+  onCheckUpdate: () => void;
+  onFAQ: () => void;
+  onTermsAndConditions: () => void;
+  onConnectUs: () => void;
+  onDeleteAccount: () => void;
   onLogout: () => void;
 }
 
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   visible,
   onClose,
-  onReportIssue,
-  onAboutUs,
+  onTransactionHistory,
+  onLeaderboard,
+  onOtherApps,
+  onCheckUpdate,
+  onFAQ,
+  onTermsAndConditions,
+  onConnectUs,
+  onDeleteAccount,
   onLogout,
 }) => {
+  const menuItems = [
+    {
+      label: 'Transaction History',
+      icon: 'list-outline',
+      onPress: onTransactionHistory,
+    },
+    { label: 'Leaderboard', icon: 'trophy-outline', onPress: onLeaderboard },
+    { label: 'Other Apps', icon: 'apps-outline', onPress: onOtherApps },
+    { label: 'Check Update', icon: 'sync-outline', onPress: onCheckUpdate },
+    { label: 'FAQ', icon: 'help-circle-outline', onPress: onFAQ },
+    {
+      label: 'Terms & Conditions',
+      icon: 'document-text-outline',
+      onPress: onTermsAndConditions,
+    },
+    { label: 'Connect Us', icon: 'share-social-outline', onPress: onConnectUs },
+    {
+      label: 'Delete Account',
+      icon: 'trash-outline',
+      onPress: onDeleteAccount,
+      color: '#FF4B4B',
+    },
+    {
+      label: 'Logout',
+      icon: 'log-out-outline',
+      onPress: onLogout,
+      color: '#FF4B4B',
+    },
+  ];
+
   return (
     <Modal
       visible={visible}
@@ -36,24 +78,28 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         <View style={styles.overlay}>
           <View style={styles.modalContainer}>
             <View style={styles.content}>
-              <TouchableOpacity style={styles.menuItem} onPress={onReportIssue}>
-                <Ionicons name="bug-outline" size={22} color={COLORS.textPrimary} />
-                <Text style={styles.menuText}>Report Issue</Text>
-              </TouchableOpacity>
-
-              <View style={styles.divider} />
-
-              <TouchableOpacity style={styles.menuItem} onPress={onAboutUs}>
-                <Ionicons name="information-circle-outline" size={22} color={COLORS.textPrimary} />
-                <Text style={styles.menuText}>About Us</Text>
-              </TouchableOpacity>
-
-              <View style={styles.divider} />
-
-              <TouchableOpacity style={styles.menuItem} onPress={onLogout}>
-                <Ionicons name="log-out-outline" size={22} color="#FF4B4B" />
-                <Text style={[styles.menuText, { color: '#FF4B4B' }]}>Logout</Text>
-              </TouchableOpacity>
+              {menuItems.map((item, index) => (
+                <React.Fragment key={index}>
+                  <TouchableOpacity style={styles.menuItem} onPress={item.onPress}>
+                    <Ionicons
+                      name={item.icon}
+                      size={20}
+                      color={item.color || COLORS.textPrimary}
+                    />
+                    <Text
+                      style={[
+                        styles.menuText,
+                        item.color ? { color: item.color } : null,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                  {index < menuItems.length - 1 && (
+                    <View style={styles.divider} />
+                  )}
+                </React.Fragment>
+              ))}
             </View>
           </View>
         </View>
@@ -72,7 +118,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   modalContainer: {
-    width: 200,
+    width: 240,
     backgroundColor: COLORS.card,
     borderRadius: 20,
     borderWidth: 1,
