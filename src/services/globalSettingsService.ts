@@ -41,9 +41,20 @@ export type AboutUsContent = {
   };
 };
 
+export type FaqItem = {
+  question: string;
+  answer: string;
+  icon?: string;
+};
+
 type GlobalSettingsResponse = {
   success: boolean;
   aboutUs: AboutUsContent | null;
+};
+
+type FaqSettingsResponse = {
+  key: 'FAQ';
+  value: FaqItem[];
 };
 
 export const globalSettingsService = {
@@ -53,5 +64,13 @@ export const globalSettingsService = {
     } as any);
 
     return response.data.aboutUs ?? null;
+  },
+
+  async getFaq(): Promise<FaqItem[]> {
+    const response = await API.get<FaqSettingsResponse>('/global-settings/faq', {
+      skipAutoSignOut: true,
+    } as any);
+
+    return response.data.value ?? [];
   },
 };
