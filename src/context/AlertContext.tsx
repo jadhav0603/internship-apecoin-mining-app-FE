@@ -27,6 +27,7 @@ export type AlertPresentationOptions = CustomAlertPresentationOptions & {
 
 export type StandardAlertOptions = AlertPresentationOptions & {
   title?: string;
+  onConfirm?: () => void;
 };
 
 export type ConfirmAlertOptions = AlertPresentationOptions & {
@@ -182,7 +183,9 @@ const AlertProvider = ({ children }: { children: React.ReactNode }) => {
           type,
           message,
           title: title ?? options?.title ?? ALERT_TITLES[type],
-          callbacks: {},
+          callbacks: {
+            onConfirm: options?.onConfirm,
+          },
           confirmText: 'Confirm',
           cancelText: 'Cancel',
           dedupeKey: options?.dedupeKey,
@@ -276,6 +279,12 @@ const AlertProvider = ({ children }: { children: React.ReactNode }) => {
     onCancel?.();
   }, [alertState.callbacks.onCancel, hideAlert]);
 
+  const handlePrimaryAction = useCallback(() => {
+    const onConfirm = alertState.callbacks.onConfirm;
+    hideAlert();
+    onConfirm?.();
+  }, [alertState.callbacks.onConfirm, hideAlert]);
+
   const value = useMemo(
     () => ({
       ...alertState,
@@ -313,7 +322,7 @@ const AlertProvider = ({ children }: { children: React.ReactNode }) => {
     : [
         {
           label: 'OK',
-          onPress: hideAlert,
+          onPress: handlePrimaryAction,
         },
       ];
 
@@ -333,7 +342,7 @@ const AlertProvider = ({ children }: { children: React.ReactNode }) => {
             ? undefined
             : isConfirm
             ? handleCancel
-            : hideAlert
+            : handlePrimaryAction
         }
         onHidden={flushNextAlert}
       />

@@ -599,7 +599,6 @@ const ProfileScreen = () => {
             setSettingsVisible(false);
             setLogoutVisible(true);
           }}
-          onDeleteAccount={openDeleteAccountModal}
         />
 
         <MyProfileModal

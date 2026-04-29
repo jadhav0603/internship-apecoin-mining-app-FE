@@ -22,7 +22,6 @@ interface ProfileSettingsModalProps {
   onConnectUs: () => void;
   onDeleteAccount: () => void;
   onLogout: () => void;
-  onDeleteAccount: () => void;
 }
 
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
@@ -37,7 +36,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   onConnectUs,
   onDeleteAccount,
   onLogout,
-  onDeleteAccount,
 }) => {
   const menuItems = [
     {

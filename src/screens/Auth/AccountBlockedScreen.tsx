@@ -26,6 +26,7 @@ const ALERT_PRESENTATION = {
   blurBackground: true,
   blurAmount: 18,
   theme: 'dark' as const,
+  dismissOnBackdropPress: false,
 };
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AccountBlocked'>;
@@ -112,34 +113,84 @@ const AccountBlockedScreen = ({ route, navigation }: Props) => {
         ? await currentUser.getIdToken().catch(() => null)
         : null;
 
-      showInfo(
-        'Account reactivated. Now you can use your account.',
-        'Account Reactivated',
-        ALERT_PRESENTATION,
-      );
-
       if (!currentUser || !currentUserToken) {
-        setUser(null);
-        await authService.clearSession();
-        clearBlockedAccount();
+        showInfo(
+          'Account reactivated. Please login again.',
+          'Account Reactivated',
+          {
+            ...ALERT_PRESENTATION,
+            onConfirm: () => {
+              void (async () => {
+                setUser(null);
+                await authService.clearSession();
+                clearBlockedAccount();
+              })();
+            },
+          },
+        );
+        return;
+      }
+
+      const syncedSession = await authService.syncCurrentSession({
+        rollbackOnFailure: false,
+      });
+
+      if (!syncedSession?.user || syncedSession.user.status !== 'active') {
+        showInfo(
+          'Account reactivated. Please login again.',
+          'Account Reactivated',
+          {
+            ...ALERT_PRESENTATION,
+            onConfirm: () => {
+              void (async () => {
+                setUser(null);
+                await authService.clearSession();
+                clearBlockedAccount();
+              })();
+            },
+          },
+        );
         return;
       }
 
       setUser({
-        uid: response.user.uid ?? currentUser?.uid ?? '',
-        email: response.user.email ?? currentUser?.email ?? '',
+        uid: syncedSession.user.uid ?? response.user.uid ?? currentUser?.uid ?? '',
+        email: syncedSession.user.email ?? response.user.email ?? currentUser?.email ?? '',
         displayName:
+          syncedSession.user.displayName ??
           response.user.displayName ??
           currentUser?.displayName ??
           currentUser?.email?.split('@')[0] ??
           'User',
-        photoURL: response.user.photoURL ?? currentUser?.photoURL ?? '',
-        plan: response.user.plan,
-        referredBy: response.user.referredBy ?? null,
-        referralEarnings: response.user.referralEarnings ?? 0,
-        referralCount: response.user.referralCount ?? 0,
+        photoURL:
+          syncedSession.user.photoURL ??
+          response.user.photoURL ??
+          currentUser?.photoURL ??
+          '',
+        plan: syncedSession.user.plan ?? response.user.plan,
+        referredBy:
+          syncedSession.user.referredBy ??
+          response.user.referredBy ??
+          null,
+        referralEarnings:
+          syncedSession.user.referralEarnings ??
+          response.user.referralEarnings ??
+          0,
+        referralCount:
+          syncedSession.user.referralCount ??
+          response.user.referralCount ??
+          0,
       });
-      clearBlockedAccount();
+      showInfo(
+        'Account reactivated. Now you can use your account.',
+        'Account Reactivated',
+        {
+          ...ALERT_PRESENTATION,
+          onConfirm: () => {
+            clearBlockedAccount();
+          },
+        },
+      );
     } catch (error: any) {
       showError(
         error?.response?.data?.message ??
