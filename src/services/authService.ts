@@ -122,9 +122,31 @@ const postSync = async (baseURL: string, idToken: string) => {
   return response.data;
 };
 
+const unique = <T>(values: T[]) => [...new Set(values)];
+
+const getDeleteAccountBaseUrls = () => {
+  const currentApiBaseUrl = apiClient.defaults.baseURL;
+  return unique([currentApiBaseUrl, ...getDevApiBaseUrls()].filter(Boolean) as string[]);
+};
+
+const isMissingDeleteRouteError = (error: any) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+
+  if (status !== 404) {
+    return false;
+  }
+
+  if (typeof data === 'string') {
+    return data.includes('Cannot DELETE /api/user/account');
+  }
+
+  return typeof data?.message === 'string' && data.message.includes('Cannot DELETE /api/user/account');
+};
+
 const deleteAccountRequest = async (token: string) => {
   let lastError: any;
-  const baseUrls = getDevApiBaseUrls().filter(Boolean);
+  const baseUrls = getDeleteAccountBaseUrls();
 
   for (const baseURL of baseUrls) {
     try {
@@ -135,9 +157,21 @@ const deleteAccountRequest = async (token: string) => {
         timeout: API_CONFIG.TIMEOUT,
       });
 
+      apiClient.defaults.baseURL = baseURL;
       return response.data;
     } catch (error: any) {
       lastError = error;
+
+      if (__DEV__) {
+        console.log(
+          `[deleteAccount] request failed via baseURL ${baseURL}:`,
+          error?.response?.data ?? error?.message ?? error
+        );
+      }
+
+      if (isMissingDeleteRouteError(error)) {
+        continue;
+      }
 
       if (error?.response) {
         throw error;
