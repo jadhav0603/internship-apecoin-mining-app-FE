@@ -31,36 +31,38 @@ const DayCard: React.FC<DayCardProps> = ({ day, amount, state, onPress }) => {
       activeOpacity={0.85}
       style={[styles.container, isClaimable && styles.glowCard]}
     >
-      {/* Background */}
-      <Image source={bgImage} style={styles.bg} resizeMode="stretch" />
+      <View style={styles.inner}>
+        {/* Background */}
+        <Image source={bgImage} style={styles.bg} resizeMode="stretch" />
 
-      {/* DAY */}
-      <Text style={styles.dayText}>{`DAY ${day}`}</Text>
+        {/* DAY */}
+        <Text style={styles.dayText}>{`DAY ${day}`}</Text>
 
-      {/* COIN / LOCK */}
-      {isLocked ? (
-        <Image
-          source={require('../assets/images/lock_icon.webp')}
-          style={styles.lockCoin}
-          resizeMode="contain"
-        />
-      ) : (
-        <Image
-          source={require('../assets/images/coin_stack.webp')}
-          style={styles.coin}
-          resizeMode="contain"
-        />
-      )}
+        {/* COIN / LOCK */}
+        {isLocked ? (
+          <Image
+            source={require('../assets/images/lock_icon.webp')}
+            style={styles.lockCoin}
+            resizeMode="contain"
+          />
+        ) : (
+          <Image
+            source={require('../assets/images/coin_stack.webp')}
+            style={styles.coin}
+            resizeMode="contain"
+          />
+        )}
 
-      {/* AMOUNT */}
-      <Text style={styles.amount}>{amount}</Text>
+        {/* AMOUNT */}
+        <Text style={styles.amount}>{amount}</Text>
 
-      {/* CLAIMED OVERLAY */}
-      {isClaimed && (
-        <View style={styles.claimedOverlay}>
-          <Text style={styles.claimedText}>✓</Text>
-        </View>
-      )}
+        {/* CLAIMED OVERLAY */}
+        {isClaimed && (
+          <View style={styles.claimedOverlay}>
+            <Text style={styles.claimedText}>✓</Text>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -77,10 +79,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  inner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   bg: {
     position: 'absolute',
     width: '100%',
     height: '100%',
+    borderRadius: 12,
   },
 
   dayText: {
@@ -117,7 +129,7 @@ const styles = StyleSheet.create({
 
   amount: {
     position: 'absolute',
-    bottom: 25,
+    bottom: 26,
     fontSize: 12,
     fontWeight: '500',
     color: '#eaaf0f',
@@ -126,11 +138,7 @@ const styles = StyleSheet.create({
   },
 
   glowCard: {
-    shadowColor: '#b1ff14',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 12,
-    elevation: 14,
+    // Glow removed per user request
   },
 
   claimedOverlay: {
@@ -138,6 +146,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
   },
 
   claimedText: {
