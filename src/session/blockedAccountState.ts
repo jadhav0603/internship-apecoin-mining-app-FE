@@ -8,6 +8,7 @@ export type BlockedAccountState = {
   code: BlockedAccountCode;
   type: BlockedAccountType;
   source: BlockedAccountSource;
+  email?: string | null;
   reason?: string | null;
   message?: string;
   sessionToken?: string | null;
@@ -65,6 +66,7 @@ export const getBlockedAccountFromStatus = (
   status?: string | null,
   options?: {
     source?: BlockedAccountSource;
+    email?: string | null;
     reason?: string | null;
     message?: string;
   },
@@ -77,6 +79,7 @@ export const getBlockedAccountFromStatus = (
     code: status === 'banned' ? 'ACCOUNT_BANNED' : 'ACCOUNT_DELETED',
     type: status,
     source: options?.source ?? 'login',
+    email: options?.email ?? null,
     reason: options?.reason ?? null,
     sessionToken: null,
     message:
@@ -102,6 +105,7 @@ export const getBlockedAccountFromError = (
     code,
     type,
     source,
+    email: error?.response?.data?.email ?? null,
     sessionToken: null,
     reason:
       error?.response?.data?.reason ??

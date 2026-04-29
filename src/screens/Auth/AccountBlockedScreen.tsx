@@ -30,7 +30,7 @@ const ALERT_PRESENTATION = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AccountBlocked'>;
 
-const AccountBlockedScreen = ({ route }: Props) => {
+const AccountBlockedScreen = ({ route, navigation }: Props) => {
   const { showError, showInfo } = useAlert();
   const { setUser } = useUser();
   const blockedAccount = useBlockedAccount();
@@ -43,6 +43,7 @@ const AccountBlockedScreen = ({ route }: Props) => {
     const reason = blockedAccount?.reason ?? route.params?.reason ?? null;
     const isDeleted = type === 'deleted';
     const isDeleteSource = source === 'delete';
+    const showClose = isDeleted || type === 'banned';
 
     return {
       type,
@@ -50,14 +51,17 @@ const AccountBlockedScreen = ({ route }: Props) => {
       reason,
       isDeleted,
       isDeleteSource,
+      showClose,
       title: isDeleted ? 'Account Deleted' : 'Account Banned',
       subtitle: isDeleteSource
         ? 'Your account has been deleted.'
         : isDeleted
-          ? 'Your account has been deleted.'
-          : blockedAccount?.message ?? 'Your account has been banned.',
+        ? 'Your account has been deleted.'
+        : blockedAccount?.message ?? 'Your account has been banned.',
       accent: isDeleted ? '#6EF3C4' : '#FF6B6B',
-      glow: isDeleted ? 'rgba(110, 243, 196, 0.18)' : 'rgba(255, 107, 107, 0.16)',
+      glow: isDeleted
+        ? 'rgba(110, 243, 196, 0.18)'
+        : 'rgba(255, 107, 107, 0.16)',
       iconName: isDeleted ? 'close-circle-outline' : 'ban-outline',
       showContact: source === 'login',
       showReactivate: source === 'login' && isDeleted,
@@ -93,8 +97,33 @@ const AccountBlockedScreen = ({ route }: Props) => {
 
     try {
       setIsRecovering(true);
-      const response = await authService.recoverAccount();
+      const reactivationEmail =
+        blockedAccount?.email ??
+        authService.getCurrentUser()?.email ??
+        null;
+
+      if (!reactivationEmail) {
+        throw new Error('Unable to determine which account to reactivate.');
+      }
+
+      const response = await authService.reactivateAccount(reactivationEmail);
       const currentUser = authService.getCurrentUser();
+      const currentUserToken = currentUser
+        ? await currentUser.getIdToken().catch(() => null)
+        : null;
+
+      showInfo(
+        'Account reactivated. Now you can use your account.',
+        'Account Reactivated',
+        ALERT_PRESENTATION,
+      );
+
+      if (!currentUser || !currentUserToken) {
+        setUser(null);
+        await authService.clearSession();
+        clearBlockedAccount();
+        return;
+      }
 
       setUser({
         uid: response.user.uid ?? currentUser?.uid ?? '',
@@ -113,7 +142,9 @@ const AccountBlockedScreen = ({ route }: Props) => {
       clearBlockedAccount();
     } catch (error: any) {
       showError(
-        error?.response?.data?.message ?? error?.message ?? 'Unable to recover account right now.',
+        error?.response?.data?.message ??
+          error?.message ??
+          'Unable to recover account right now.',
         'Recover Account',
         ALERT_PRESENTATION,
       );
@@ -145,7 +176,10 @@ const AccountBlockedScreen = ({ route }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.backgroundDeep} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={COLORS.backgroundDeep}
+      />
       <LinearGradient
         colors={['#040704', '#0B1209', '#111B10']}
         start={{ x: 0.08, y: 0 }}
@@ -155,9 +189,12 @@ const AccountBlockedScreen = ({ route }: Props) => {
       <View style={[styles.topGlow, { backgroundColor: content.glow }]} />
       <View style={styles.gridAura} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.heroCard}>
-          {content.isDeleteSource ? (
+          {content.showClose ? (
             <Pressable
               onPress={handleClose}
               disabled={isClosing}
@@ -176,8 +213,14 @@ const AccountBlockedScreen = ({ route }: Props) => {
               colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']}
               style={styles.iconShellGradient}
             >
-              <View style={[styles.iconCore, { backgroundColor: content.glow }]}>
-                <Ionicons name={content.iconName} size={42} color={content.accent} />
+              <View
+                style={[styles.iconCore, { backgroundColor: content.glow }]}
+              >
+                <Ionicons
+                  name={content.iconName}
+                  size={42}
+                  color={content.accent}
+                />
               </View>
             </LinearGradient>
           </View>
@@ -198,12 +241,13 @@ const AccountBlockedScreen = ({ route }: Props) => {
               {content.showContact ? (
                 <Pressable
                   onPress={() =>
-                    openMailClient(
-                      content.isDeleted
-                        ? 'Recover my deleted ApeCoin account'
-                        : 'Review my banned ApeCoin account',
-                      'No mail app is available right now. Please contact support from your registered email account.',
-                    )
+                    // openMailClient(
+                    //   content.isDeleted
+                    //     ? 'Recover my deleted ApeCoin account'
+                    //     : 'Review my banned ApeCoin account',
+                    //   'No mail app is available right now. Please contact support from your registered email account.',
+                    // )
+                    navigation.navigate('ReportIssue')
                   }
                   style={styles.primaryAction}
                 >
@@ -218,8 +262,12 @@ const AccountBlockedScreen = ({ route }: Props) => {
                       end={{ x: 1, y: 1 }}
                       style={styles.primaryActionGradient}
                     >
-                      <Ionicons name="mail-open-outline" size={18} color={COLORS.textDark} />
-                      <Text style={styles.primaryActionText}>Contact Support</Text>
+                      <Ionicons
+                        name="mail-open-outline"
+                        size={18}
+                        color={COLORS.textDark}
+                      />
+                      <Text style={styles.primaryActionText}>Report Issue</Text>
                     </LinearGradient>
                   )}
                 </Pressable>
@@ -235,7 +283,8 @@ const AccountBlockedScreen = ({ route }: Props) => {
                     <View
                       style={[
                         styles.secondaryActionInner,
-                        (pressed || isRecovering) && styles.secondaryActionInnerPressed,
+                        (pressed || isRecovering) &&
+                          styles.secondaryActionInnerPressed,
                       ]}
                     >
                       <Ionicons

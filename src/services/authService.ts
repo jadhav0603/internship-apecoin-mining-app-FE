@@ -153,6 +153,7 @@ const ensureActiveBackendAccount = async (
   });
   const blockedAccount = getBlockedAccountFromStatus(syncResponse.user?.status, {
     source: 'login',
+    email: syncResponse.user?.email ?? user.email ?? null,
     reason: syncResponse.user?.bannedReason ?? null,
   });
 
@@ -197,7 +198,7 @@ const isMissingDeleteRouteError = (error: any) => {
   return typeof data?.message === 'string' && data.message.includes('Cannot DELETE /api/user/account');
 };
 
-const isMissingRecoverRouteError = (error: any) => {
+const isMissingReactivateRouteError = (error: any) => {
   const status = error?.response?.status;
   const data = error?.response?.data;
 
@@ -206,10 +207,10 @@ const isMissingRecoverRouteError = (error: any) => {
   }
 
   if (typeof data === 'string') {
-    return data.includes('Cannot POST /api/user/account/recover');
+    return data.includes('Cannot POST /api/user/account/reactivate');
   }
 
-  return typeof data?.message === 'string' && data.message.includes('Cannot POST /api/user/account/recover');
+  return typeof data?.message === 'string' && data.message.includes('Cannot POST /api/user/account/reactivate');
 };
 
 const deleteAccountRequest = async (token: string) => {
@@ -250,19 +251,21 @@ const deleteAccountRequest = async (token: string) => {
   throw lastError;
 };
 
-const recoverAccountRequest = async (token: string) => {
+const reactivateAccountRequest = async (email: string, sessionToken: string | null) => {
   let lastError: any;
   const baseUrls = getDeleteAccountBaseUrls();
 
   for (const baseURL of baseUrls) {
     try {
       const response = await axios.post(
-        `${baseURL}/user/account/recover`,
-        undefined,
+        `${baseURL}/user/account/reactivate`,
+        { email },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: sessionToken
+            ? {
+                Authorization: `Bearer ${sessionToken}`,
+              }
+            : undefined,
           timeout: API_CONFIG.TIMEOUT,
         }
       );
@@ -274,12 +277,12 @@ const recoverAccountRequest = async (token: string) => {
 
       if (__DEV__) {
         console.log(
-          `[recoverAccount] request failed via baseURL ${baseURL}:`,
+          `[reactivateAccount] request failed via baseURL ${baseURL}:`,
           error?.response?.data ?? error?.message ?? error
         );
       }
 
-      if (isMissingRecoverRouteError(error)) {
+      if (isMissingReactivateRouteError(error)) {
         continue;
       }
 
@@ -460,23 +463,21 @@ export const authService = {
       code: 'ACCOUNT_DELETED',
       type: 'deleted',
       source: 'delete',
+      email: firebaseAuth.currentUser?.email ?? null,
+      sessionToken: token,
       message: 'Your account has been deleted.',
     });
   },
 
-  async recoverAccount(): Promise<RecoverAccountResponse> {
-    const user = firebaseAuth.currentUser ?? (await this.waitForAuthRestore());
+  async reactivateAccount(email: string): Promise<RecoverAccountResponse> {
     const blockedAccount = getBlockedAccount();
-    const token =
-      (user ? await user.getIdToken() : null) ??
-      blockedAccount?.sessionToken ??
-      null;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!token) {
-      throw new Error('Unable to authenticate recover account request.');
+    if (!normalizedEmail) {
+      throw new Error('Unable to determine which account to reactivate.');
     }
 
-    return recoverAccountRequest(token);
+    return reactivateAccountRequest(normalizedEmail, blockedAccount?.sessionToken ?? null);
   },
 
   /**

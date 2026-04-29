@@ -106,10 +106,16 @@ apiClient.interceptors.response.use(
     );
 
     if (blockedAccount && !skipSessionHandling) {
-      setBlockedAccount(blockedAccount);
+      const currentUser = getFirebaseAuth().currentUser;
+      const sessionToken = currentUser
+        ? await currentUser.getIdToken().catch(() => null)
+        : null;
 
-      const { authService } = require('../services/authService');
-      await authService.clearSession().catch(() => undefined);
+      setBlockedAccount({
+        ...blockedAccount,
+        email: blockedAccount.email ?? currentUser?.email ?? null,
+        sessionToken: blockedAccount.sessionToken ?? sessionToken,
+      });
       return Promise.reject(error);
     }
 

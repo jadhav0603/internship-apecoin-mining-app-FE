@@ -110,6 +110,7 @@ const AppNavigator = () => {
 
           const blockedFromSync = getBlockedAccountFromStatus(syncResponse?.user?.status, {
             source: 'login',
+            email: syncResponse?.user?.email ?? firebaseUser.email ?? null,
             reason: syncResponse?.user?.bannedReason ?? null,
           });
 
@@ -136,6 +137,7 @@ const AppNavigator = () => {
 
           const blockedFromStatus = getBlockedAccountFromStatus(userData?.status, {
             source: 'login',
+            email: userData?.email ?? firebaseUser.email ?? null,
           });
 
           if (blockedFromStatus) {
@@ -200,16 +202,19 @@ const AppNavigator = () => {
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {blockedAccount ? (
-          <Stack.Screen
-            name="AccountBlocked"
-          >
-            {props => (
-              <AccountBlockedScreen
-                {...props}
-                key={`${blockedAccount.type}:${blockedAccount.source}`}
-              />
-            )}
-          </Stack.Screen>
+          <>
+            <Stack.Screen
+              name="AccountBlocked"
+            >
+              {props => (
+                <AccountBlockedScreen
+                  {...props}
+                  key={`${blockedAccount.type}:${blockedAccount.source}`}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+          </>
         ) : authStatus === 'loading' ? (
           <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
         ) : authStatus === 'authenticated' ? (
