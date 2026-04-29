@@ -47,6 +47,20 @@ export type FaqItem = {
   icon?: string;
 };
 
+export type OtherAppItem = {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  link: string;
+  icon: string;
+  gradient: [string, string];
+  accentColor: string;
+  badge?: string;
+  comingSoon: boolean;
+  isActive: boolean;
+};
+
 type GlobalSettingsResponse = {
   success: boolean;
   aboutUs: AboutUsContent | null;
@@ -55,6 +69,11 @@ type GlobalSettingsResponse = {
 type FaqSettingsResponse = {
   key: 'FAQ';
   value: FaqItem[];
+};
+
+type OtherAppsSettingsResponse = {
+  type: 'otherapps';
+  apps: OtherAppItem[];
 };
 
 export const globalSettingsService = {
@@ -72,5 +91,16 @@ export const globalSettingsService = {
     } as any);
 
     return response.data.value ?? [];
+  },
+
+  async getOtherApps(): Promise<OtherAppItem[]> {
+    const response = await API.get<OtherAppsSettingsResponse>(
+      '/global-settings/other-apps',
+      {
+        skipAutoSignOut: true,
+      } as any,
+    );
+
+    return response.data.apps ?? [];
   },
 };
