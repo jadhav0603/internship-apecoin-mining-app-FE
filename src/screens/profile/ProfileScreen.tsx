@@ -365,9 +365,9 @@ const ProfileScreen = () => {
                 </View>
 
                 <View style={styles.identityContent}>
-                  <View style={styles.identityPill}>
-                    {/* <Text style={styles.identityPillText}>Premium profile</Text> */}
-                  </View>
+                  {/* <View style={styles.identityPill}>
+                    <Text style={styles.identityPillText}>Premium profile</Text>
+                  </View> */}
 
                   <Text style={styles.userName}>{username}</Text>
                   <Text style={styles.userHandle}>{profileHandle}</Text>
