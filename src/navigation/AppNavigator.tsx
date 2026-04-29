@@ -9,6 +9,7 @@ import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 
 import SignIn from '../screens/Auth/SignIn';
 import SignUp from '../screens/Auth/SignUp';
+import AccountBlockedScreen from '../screens/Auth/AccountBlockedScreen';
 import SplashScreen from '../screens/splash/SplashScreen';
 import SplashIntroAnimation from '../screens/splash/SplashIntroAnimation';
 import MiningScreen from '../screens/mining/MiningScreen';
@@ -28,6 +29,12 @@ import Loading from '../components/Loading';
 import { RootStackParamList } from './types';
 import { useUser } from '../context/UserContext';
 import { userService } from '../services/userService';
+import {
+  clearBlockedAccount,
+  getBlockedAccount,
+  isBlockedAccountError,
+  subscribeBlockedAccount,
+} from '../session/blockedAccountState';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -64,6 +71,9 @@ const AppNavigator = () => {
   const [showIntroAnimation, setShowIntroAnimation] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
+  const [blockedAccount, setBlockedAccount] = useState(getBlockedAccount());
+
+  useEffect(() => subscribeBlockedAccount(setBlockedAccount), []);
 
   useEffect(() => {
     const auth = getAuth();
@@ -96,12 +106,17 @@ const AppNavigator = () => {
             return;
           }
 
+          clearBlockedAccount();
           setUser({
             ...mapFirebaseUserToAppUser(firebaseUser as any),
             ...userData,
           });
           setAuthStatus('authenticated');
         } catch (error) {
+          if (isBlockedAccountError(error)) {
+            return;
+          }
+
           if (__DEV__) {
             console.log(
               '[auth] failed to hydrate backend user, using Firebase session fallback',
@@ -136,7 +151,12 @@ const AppNavigator = () => {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {authStatus === 'loading' ? (
+        {blockedAccount ? (
+          <Stack.Screen
+            name="AccountBlocked"
+            component={AccountBlockedScreen}
+          />
+        ) : authStatus === 'loading' ? (
           <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
         ) : authStatus === 'authenticated' ? (
           <>

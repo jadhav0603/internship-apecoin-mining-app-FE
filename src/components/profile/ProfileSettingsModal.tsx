@@ -16,6 +16,7 @@ interface ProfileSettingsModalProps {
   onReportIssue: () => void;
   onAboutUs: () => void;
   onLogout: () => void;
+  onDeleteAccount: () => void;
 }
 
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
@@ -24,6 +25,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   onReportIssue,
   onAboutUs,
   onLogout,
+  onDeleteAccount,
 }) => {
   return (
     <Modal
@@ -53,6 +55,15 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               <TouchableOpacity style={styles.menuItem} onPress={onLogout}>
                 <Ionicons name="log-out-outline" size={22} color="#FF4B4B" />
                 <Text style={[styles.menuText, { color: '#FF4B4B' }]}>Logout</Text>
+              </TouchableOpacity>
+
+              <View style={styles.divider} />
+
+              <TouchableOpacity style={styles.menuItem} onPress={onDeleteAccount}>
+                <Ionicons name="trash-outline" size={22} color="#FF7B7B" />
+                <Text style={[styles.menuText, { color: '#FF7B7B' }]}>
+                  Delete Account
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

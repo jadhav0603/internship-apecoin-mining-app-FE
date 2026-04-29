@@ -1,4 +1,6 @@
+import axios from 'axios';
 import { getApp } from '@react-native-firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createUserWithEmailAndPassword,
   FirebaseAuthTypes,
@@ -14,6 +16,7 @@ import {
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import apiClient from '../api/apiClient';
 import { FIREBASE_CONFIG, API_CONFIG, getDevApiBaseUrls } from '../api/config';
+import { setBlockedAccount } from '../session/blockedAccountState';
 
 const firebaseAuth = getAuth(getApp());
 let authRestorePromise: Promise<FirebaseAuthTypes.User | null> | null = null;
@@ -117,6 +120,32 @@ const postSync = async (baseURL: string, idToken: string) => {
     { idToken }
   );
   return response.data;
+};
+
+const deleteAccountRequest = async (token: string) => {
+  let lastError: any;
+  const baseUrls = getDevApiBaseUrls().filter(Boolean);
+
+  for (const baseURL of baseUrls) {
+    try {
+      const response = await axios.delete(`${baseURL}/user/account`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: API_CONFIG.TIMEOUT,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      lastError = error;
+
+      if (error?.response) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
 };
 const resetGoogleSignInSession = async () => {
   // This package version does not expose `prompt: 'select_account'`,
@@ -233,6 +262,10 @@ export const authService = {
   /**
    * Log out the current user
    */
+  async clearSession() {
+    return signOutFromProviders();
+  },
+
   async signOut() {
     try {
       await apiClient.post('/mining/stop', undefined, {
@@ -251,8 +284,39 @@ export const authService = {
   },
 
   async deleteAccount() {
-    await apiClient.delete('/users/me');
-    await signOutFromProviders();
+    const token = await firebaseAuth.currentUser?.getIdToken();
+
+    if (!token) {
+      throw new Error('Unable to authenticate delete account request.');
+    }
+
+    try {
+      await deleteAccountRequest(token);
+    } catch (error: any) {
+      console.error('[deleteAccount] error.response?.data:', error?.response?.data);
+
+      const status = error?.response?.status;
+      const code = error?.response?.data?.code;
+
+      const isAlreadyDeletedState =
+        code === 'ACCOUNT_ALREADY_DELETED' ||
+        status === 409;
+
+      if (!isAlreadyDeletedState) {
+        throw error;
+      }
+    }
+
+    setBlockedAccount({
+      code: 'ACCOUNT_DELETED',
+      status: 'DELETED',
+      message: 'Your account has been deleted.',
+    });
+
+    await Promise.allSettled([
+      AsyncStorage.clear(),
+      signOutFromProviders(),
+    ]);
   },
 
   /**

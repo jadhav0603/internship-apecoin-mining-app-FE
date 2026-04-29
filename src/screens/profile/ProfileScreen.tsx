@@ -25,11 +25,14 @@ import { RootStackParamList } from '../../navigation/types';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
+import { useAlert } from '../../context/AlertContext';
 import { authService } from '../../services/authService';
 import { userService } from '../../services/userService';
+import { isBlockedAccountError } from '../../session/blockedAccountState';
 import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
 import MyProfileModal from '../../components/profile/MyProfileModal';
 import ConfirmModal from '../../components/ConfirmModal';
+import DeleteAccountConfirmModal from '../../components/profile/DeleteAccountConfirmModal';
 import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
 import {
   PROFILE_THEME,
@@ -51,11 +54,14 @@ const ProfileScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const bottomContentPadding = useBottomOverlayPadding(40);
   const { user } = useUser();
+  const { showError } = useAlert();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
   const [myProfileVisible, setMyProfileVisible] = useState(false);
   const [, setIsLoading] = useState(true);
   const [isLoggingOut] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const [username, setUsername] = useState(getUserDisplayName(user));
   const [email, setEmail] = useState(user?.email ?? '');
@@ -131,6 +137,44 @@ const ProfileScreen = () => {
   const confirmLogout = () => {
     if (isLoggingOut) return;
     setLogoutVisible(true);
+  };
+
+  const openDeleteAccountModal = () => {
+    setSettingsVisible(false);
+    setDeleteAccountVisible(true);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      await authService.deleteAccount();
+      setDeleteAccountVisible(false);
+    } catch (error: any) {
+      if (isBlockedAccountError(error)) {
+        setDeleteAccountVisible(false);
+        return;
+      }
+
+      console.error('[deleteAccount] profile error.response?.data:', error?.response?.data);
+
+      showError(
+        error?.response?.data?.message ??
+          error?.message ??
+          'Delete account request failed.',
+        'Delete Account',
+        {
+          blurBackground: true,
+          blurAmount: 18,
+          theme: 'dark',
+        },
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const menuItems = useMemo(
@@ -530,6 +574,7 @@ const ProfileScreen = () => {
             setSettingsVisible(false);
             setLogoutVisible(true);
           }}
+          onDeleteAccount={openDeleteAccountModal}
         />
 
         <MyProfileModal
@@ -546,6 +591,13 @@ const ProfileScreen = () => {
           tone="danger"
           onConfirm={handleLogout}
           onCancel={() => setLogoutVisible(false)}
+        />
+
+        <DeleteAccountConfirmModal
+          visible={deleteAccountVisible}
+          isSubmitting={isDeletingAccount}
+          onClose={() => setDeleteAccountVisible(false)}
+          onConfirm={handleDeleteAccount}
         />
       </SafeAreaView>
     </LinearGradient>

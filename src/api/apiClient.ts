@@ -2,11 +2,13 @@ import axios from 'axios';
 import { getApp } from '@react-native-firebase/app';
 import { getAuth } from '@react-native-firebase/auth';
 import { API_CONFIG, getDevApiBaseUrls } from './config';
+import {
+  getBlockedAccountFromError,
+  setBlockedAccount,
+} from '../session/blockedAccountState';
 
-// Lazy getter — avoids calling getApp()/getAuth() at module load time,
-// which would crash if Firebase hasn't initialized yet (causing the entire
-// module to be undefined and surfacing as "Cannot read property 'MiningProvider'
-// of undefined" in App.tsx).
+// Lazy getter avoids calling getApp()/getAuth() at module load time,
+// which would crash if Firebase hasn't initialized yet.
 let _firebaseAuth: ReturnType<typeof getAuth> | null = null;
 const getFirebaseAuth = () => {
   if (!_firebaseAuth) {
@@ -43,7 +45,7 @@ const getAuthorizationHeader = async () => {
   cachedTokenUserUid = user.uid;
   cachedTokenExpiry = Math.max(
     now,
-    new Date(tokenResult.expirationTime).getTime() - 60 * 1000
+    new Date(tokenResult.expirationTime).getTime() - 60 * 1000,
   );
 
   return `Bearer ${tokenResult.token}`;
@@ -57,13 +59,12 @@ const apiClient = axios.create({
   },
 });
 
-// Helpful debug: show which baseURL we're using in dev builds
 if (__DEV__) {
   console.debug('[apiClient] baseURL:', apiClient.defaults.baseURL);
 }
 
 apiClient.interceptors.request.use(
-  async (config) => {
+  async config => {
     if (!config.headers?.Authorization) {
       const authorizationHeader = await getAuthorizationHeader();
 
@@ -71,7 +72,6 @@ apiClient.interceptors.request.use(
         if (config.headers?.set) {
           config.headers.set('Authorization', authorizationHeader);
         } else {
-          // Fallback for older axios versions or custom headers object
           config.headers = axios.AxiosHeaders.from({
             ...(config.headers as any),
             Authorization: authorizationHeader,
@@ -79,9 +79,10 @@ apiClient.interceptors.request.use(
         }
       }
     }
+
     return config;
   },
-  error => Promise.reject(error)
+  error => Promise.reject(error),
 );
 
 apiClient.interceptors.response.use(
@@ -95,14 +96,25 @@ apiClient.interceptors.response.use(
         method: error?.config?.method,
       });
     }
+
     const isNetworkError = !error?.response;
     const isUnauthorized = error?.response?.status === 401;
-    const skipAutoSignOut = Boolean((error?.config as any)?.skipAutoSignOut);
+    const blockedAccount = getBlockedAccountFromError(error);
+    const skipSessionHandling = Boolean(
+      (error?.config as any)?.skipAutoSignOut ||
+        (error?.config as any)?.skipAccountBlockedHandling,
+    );
 
-    if (isUnauthorized && !skipAutoSignOut) {
-      // ✅ Handle critical connectivity/auth failures
+    if (blockedAccount && !skipSessionHandling) {
+      setBlockedAccount(blockedAccount);
+
       const { authService } = require('../services/authService');
+      await authService.clearSession().catch(() => undefined);
+      return Promise.reject(error);
+    }
 
+    if (isUnauthorized && !skipSessionHandling) {
+      const { authService } = require('../services/authService');
       await authService.signOut().catch(() => undefined);
       return Promise.reject(error);
     }
@@ -115,7 +127,9 @@ apiClient.interceptors.response.use(
 
     config.__devFallbackTried = true;
     const currentBaseUrl = config.baseURL || apiClient.defaults.baseURL;
-    const fallbackUrls = getDevApiBaseUrls().filter(url => url !== currentBaseUrl);
+    const fallbackUrls = getDevApiBaseUrls().filter(
+      url => url !== currentBaseUrl,
+    );
 
     for (const baseURL of fallbackUrls) {
       try {
@@ -134,7 +148,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

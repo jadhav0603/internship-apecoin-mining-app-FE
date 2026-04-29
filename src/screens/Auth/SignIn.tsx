@@ -19,6 +19,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {authService} from '../../services/authService';
 import {Colors} from '../../theme/colors';
 import {RootStackParamList} from '../../navigation/types';
+import {isBlockedAccountError} from '../../session/blockedAccountState';
 
 // Monkey avatar from assets
 const MONKEY_IMG = require('../../assets/images/auth_bg.webp');
@@ -70,6 +71,10 @@ const SignIn: React.FC<Props> = ({navigation}) => {
     try {
       await authService.signIn(email, password);
     } catch (error: any) {
+      if (isBlockedAccountError(error)) {
+        return;
+      }
+
       const message =
         typeof error?.code === 'string' && error.code.startsWith('auth/')
           ? 'Invalid email or password.'
@@ -85,6 +90,10 @@ const SignIn: React.FC<Props> = ({navigation}) => {
       setLoading(true);
       await authService.googleSignIn();
     } catch (error: any) {
+      if (isBlockedAccountError(error)) {
+        return;
+      }
+
       setErrors({
         email: getReadableErrorMessage(error, 'Google sign-in failed. Please try again.'),
       });
