@@ -15,6 +15,7 @@ import {
   Image,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -539,12 +540,12 @@ const ProfileScreen = () => {
                       navigation.navigate('ReferAndEarn');
                       return;
                     }
-                    if (item.id === 'report_issue') {
-                      navigation.navigate('ReportIssue');
-                      return;
-                    }
                     if (item.id === 'leaderboard') {
                       navigation.navigate('Leaderboard');
+                      return;
+                    }
+                    if (item.id === 'report_issue') {
+                      navigation.navigate('ReportIssue');
                       return;
                     }
                     if (item.id === 'about') {
@@ -562,13 +563,37 @@ const ProfileScreen = () => {
         <ProfileSettingsModal
           visible={settingsVisible}
           onClose={() => setSettingsVisible(false)}
-          onAboutUs={() => {
+          onTransactionHistory={() => {
             setSettingsVisible(false);
-            navigation.navigate('AboutUs');
+            navigation.navigate('TransactionHistory');
           }}
-          onReportIssue={() => {
+          onLeaderboard={() => {
             setSettingsVisible(false);
-            navigation.navigate('ReportIssue');
+            navigation.navigate('Leaderboard');
+          }}
+          onOtherApps={() => {
+            setSettingsVisible(false);
+            navigation.navigate('OtherApps');
+          }}
+          onCheckUpdate={() => {
+            setSettingsVisible(false);
+            navigation.navigate('CheckUpdate');
+          }}
+          onFAQ={() => {
+            setSettingsVisible(false);
+            navigation.navigate('FAQ');
+          }}
+          onTermsAndConditions={() => {
+            setSettingsVisible(false);
+            navigation.navigate('TermsAndConditions');
+          }}
+          onConnectUs={() => {
+            setSettingsVisible(false);
+            navigation.navigate('ConnectUs');
+          }}
+          onDeleteAccount={() => {
+            setSettingsVisible(false);
+            setDeleteAccountVisible(true);
           }}
           onLogout={() => {
             setSettingsVisible(false);

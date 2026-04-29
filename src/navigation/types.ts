@@ -43,4 +43,9 @@ export type RootStackParamList = {
   MyProgress: undefined;
   ProfileDetails: undefined;
   AboutUs: undefined;
+  OtherApps: undefined;
+  CheckUpdate: undefined;
+  FAQ: undefined;
+  TermsAndConditions: undefined;
+  ConnectUs: undefined;
 };
