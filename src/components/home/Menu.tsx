@@ -16,8 +16,11 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 
 import styles from './Menu.styles';
 import { COLORS } from '../../constants/COLORS';
+import { useAlert } from '../../context/AlertContext';
 import { authService } from '../../services/authService';
+import { isBlockedAccountError } from '../../session/blockedAccountState';
 import ConfirmModal from '../ConfirmModal';
+import DeleteAccountConfirmModal from '../profile/DeleteAccountConfirmModal';
 import UserHeader from './UserHeader';
 import type { RootStackParamList } from '../../navigation/types';
 
@@ -27,8 +30,11 @@ type MenuNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const Menu = () => {
   const navigation = useNavigation<MenuNavigationProp>();
+  const { showError } = useAlert();
   const [menuOpen, setMenuOpen] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   const toggleMenu = () => {
@@ -71,6 +77,47 @@ const Menu = () => {
     navigation.navigate('TransactionHistory');
   };
 
+  const handleDeleteAccountPress = () => {
+    if (menuOpen) {
+      toggleMenu();
+    }
+
+    setDeleteAccountVisible(true);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      await authService.deleteAccount();
+      setDeleteAccountVisible(false);
+    } catch (error: any) {
+      if (isBlockedAccountError(error)) {
+        setDeleteAccountVisible(false);
+        return;
+      }
+
+      console.error('[deleteAccount] menu error.response?.data:', error?.response?.data);
+
+      showError(
+        error?.response?.data?.message ??
+          error?.message ??
+          'Delete account request failed.',
+        'Delete Account',
+        {
+          blurBackground: true,
+          blurAmount: 18,
+          theme: 'dark',
+        },
+      );
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const menuItems: Array<{
     label: string;
     onPress?: () => void;
@@ -84,7 +131,7 @@ const Menu = () => {
     { label: 'FAQ' },
     { label: 'Terms & Conditions' },
     { label: 'Connect Us' },
-    { label: 'Delete Account' },
+    { label: 'Delete Account', onPress: handleDeleteAccountPress },
   ];
 
   return (
@@ -168,6 +215,13 @@ const Menu = () => {
         tone="danger"
         onConfirm={handleLogout}
         onCancel={() => setLogoutVisible(false)}
+      />
+
+      <DeleteAccountConfirmModal
+        visible={deleteAccountVisible}
+        isSubmitting={isDeletingAccount}
+        onClose={() => setDeleteAccountVisible(false)}
+        onConfirm={handleDeleteAccount}
       />
     </>
   );

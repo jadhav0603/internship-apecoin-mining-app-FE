@@ -1,4 +1,6 @@
+import axios from 'axios';
 import { getApp } from '@react-native-firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createUserWithEmailAndPassword,
   FirebaseAuthTypes,
@@ -14,6 +16,11 @@ import {
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import apiClient from '../api/apiClient';
 import { FIREBASE_CONFIG, API_CONFIG, getDevApiBaseUrls } from '../api/config';
+import {
+  getBlockedAccount,
+  getBlockedAccountFromStatus,
+  setBlockedAccount,
+} from '../session/blockedAccountState';
 
 const firebaseAuth = getAuth(getApp());
 let authRestorePromise: Promise<FirebaseAuthTypes.User | null> | null = null;
@@ -28,6 +35,8 @@ type SyncedUser = {
   email: string;
   displayName?: string;
   photoURL?: string;
+  status?: string;
+  bannedReason?: string | null;
   plan?: string;
   referredBy?: string | null;
   referralEarnings?: number;
@@ -38,6 +47,30 @@ type BackendSyncResponse = {
   message: string;
   user: SyncedUser;
 };
+
+type RecoverAccountResponse = {
+  success: boolean;
+  code: string;
+  message: string;
+  user: SyncedUser;
+};
+
+const createBlockedAccountError = (
+  type: 'banned' | 'deleted',
+  reason?: string | null,
+) => ({
+  response: {
+    status: 403,
+    data: {
+      code: type === 'banned' ? 'ACCOUNT_BANNED' : 'ACCOUNT_DELETED',
+      message:
+        type === 'banned'
+          ? 'Your account has been banned.'
+          : 'Your account has been deleted.',
+      reason: reason ?? null,
+    },
+  },
+});
 
 const signOutFromProviders = async () => {
   try {
@@ -111,12 +144,155 @@ const syncFirebaseSession = async (
   }
 };
 
+const ensureActiveBackendAccount = async (
+  user: FirebaseAuthTypes.User,
+): Promise<BackendSyncResponse> => {
+  const sessionToken = await getIdToken(user, true);
+  const syncResponse = await syncFirebaseSession(user, {
+    rollbackOnFailure: true,
+  });
+  const blockedAccount = getBlockedAccountFromStatus(syncResponse.user?.status, {
+    source: 'login',
+    email: syncResponse.user?.email ?? user.email ?? null,
+    reason: syncResponse.user?.bannedReason ?? null,
+  });
+
+  if (!blockedAccount) {
+    return syncResponse;
+  }
+
+  setBlockedAccount({
+    ...blockedAccount,
+    sessionToken,
+  });
+  throw createBlockedAccountError(blockedAccount.type, blockedAccount.reason);
+};
+
 const postSync = async (baseURL: string, idToken: string) => {
   const response = await apiClient.post<BackendSyncResponse>(
     `${baseURL}/auth/sync`,
     { idToken }
   );
   return response.data;
+};
+
+const unique = <T>(values: T[]) => [...new Set(values)];
+
+const getDeleteAccountBaseUrls = () => {
+  const currentApiBaseUrl = apiClient.defaults.baseURL;
+  return unique([currentApiBaseUrl, ...getDevApiBaseUrls()].filter(Boolean) as string[]);
+};
+
+const isMissingDeleteRouteError = (error: any) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+
+  if (status !== 404) {
+    return false;
+  }
+
+  if (typeof data === 'string') {
+    return data.includes('Cannot DELETE /api/user/account');
+  }
+
+  return typeof data?.message === 'string' && data.message.includes('Cannot DELETE /api/user/account');
+};
+
+const isMissingReactivateRouteError = (error: any) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+
+  if (status !== 404) {
+    return false;
+  }
+
+  if (typeof data === 'string') {
+    return data.includes('Cannot POST /api/user/account/reactivate');
+  }
+
+  return typeof data?.message === 'string' && data.message.includes('Cannot POST /api/user/account/reactivate');
+};
+
+const deleteAccountRequest = async (token: string) => {
+  let lastError: any;
+  const baseUrls = getDeleteAccountBaseUrls();
+
+  for (const baseURL of baseUrls) {
+    try {
+      const response = await axios.delete(`${baseURL}/user/account`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: API_CONFIG.TIMEOUT,
+      });
+
+      apiClient.defaults.baseURL = baseURL;
+      return response.data;
+    } catch (error: any) {
+      lastError = error;
+
+      if (__DEV__) {
+        console.log(
+          `[deleteAccount] request failed via baseURL ${baseURL}:`,
+          error?.response?.data ?? error?.message ?? error
+        );
+      }
+
+      if (isMissingDeleteRouteError(error)) {
+        continue;
+      }
+
+      if (error?.response) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+const reactivateAccountRequest = async (email: string, sessionToken: string | null) => {
+  let lastError: any;
+  const baseUrls = getDeleteAccountBaseUrls();
+
+  for (const baseURL of baseUrls) {
+    try {
+      const response = await axios.post(
+        `${baseURL}/user/account/reactivate`,
+        { email },
+        {
+          headers: sessionToken
+            ? {
+                Authorization: `Bearer ${sessionToken}`,
+              }
+            : undefined,
+          timeout: API_CONFIG.TIMEOUT,
+        }
+      );
+
+      apiClient.defaults.baseURL = baseURL;
+      return response.data;
+    } catch (error: any) {
+      lastError = error;
+
+      if (__DEV__) {
+        console.log(
+          `[reactivateAccount] request failed via baseURL ${baseURL}:`,
+          error?.response?.data ?? error?.message ?? error
+        );
+      }
+
+      if (isMissingReactivateRouteError(error)) {
+        continue;
+      }
+
+      if (error?.response) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
 };
 const resetGoogleSignInSession = async () => {
   // This package version does not expose `prompt: 'select_account'`,
@@ -192,6 +368,7 @@ export const authService = {
    */
   async signIn(email: string, password: string): Promise<FirebaseAuthTypes.User> {
     const userCredential = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+    await ensureActiveBackendAccount(userCredential.user);
     return userCredential.user;
   },
 
@@ -208,6 +385,7 @@ export const authService = {
     // 3. Sign-in the user with the credential
     const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
 
+    await ensureActiveBackendAccount(userCredential.user);
     return userCredential.user;
   },
 
@@ -233,6 +411,13 @@ export const authService = {
   /**
    * Log out the current user
    */
+  async clearSession() {
+    await Promise.allSettled([
+      AsyncStorage.clear(),
+      signOutFromProviders(),
+    ]);
+  },
+
   async signOut() {
     try {
       await apiClient.post('/mining/stop', undefined, {
@@ -251,8 +436,48 @@ export const authService = {
   },
 
   async deleteAccount() {
-    await apiClient.delete('/users/me');
-    await signOutFromProviders();
+    const token = await firebaseAuth.currentUser?.getIdToken();
+
+    if (!token) {
+      throw new Error('Unable to authenticate delete account request.');
+    }
+
+    try {
+      await deleteAccountRequest(token);
+    } catch (error: any) {
+      console.error('[deleteAccount] error.response?.data:', error?.response?.data);
+
+      const status = error?.response?.status;
+      const code = error?.response?.data?.code;
+
+      const isAlreadyDeletedState =
+        code === 'ACCOUNT_ALREADY_DELETED' ||
+        status === 409;
+
+      if (!isAlreadyDeletedState) {
+        throw error;
+      }
+    }
+
+    setBlockedAccount({
+      code: 'ACCOUNT_DELETED',
+      type: 'deleted',
+      source: 'delete',
+      email: firebaseAuth.currentUser?.email ?? null,
+      sessionToken: token,
+      message: 'Your account has been deleted.',
+    });
+  },
+
+  async reactivateAccount(email: string): Promise<RecoverAccountResponse> {
+    const blockedAccount = getBlockedAccount();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      throw new Error('Unable to determine which account to reactivate.');
+    }
+
+    return reactivateAccountRequest(normalizedEmail, blockedAccount?.sessionToken ?? null);
   },
 
   /**

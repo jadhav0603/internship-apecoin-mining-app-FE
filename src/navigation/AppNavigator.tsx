@@ -9,6 +9,7 @@ import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
 
 import SignIn from '../screens/Auth/SignIn';
 import SignUp from '../screens/Auth/SignUp';
+import AccountBlockedScreen from '../screens/Auth/AccountBlockedScreen';
 import SplashScreen from '../screens/splash/SplashScreen';
 import SplashIntroAnimation from '../screens/splash/SplashIntroAnimation';
 import MiningScreen from '../screens/mining/MiningScreen';
@@ -33,6 +34,15 @@ import Loading from '../components/Loading';
 import { RootStackParamList } from './types';
 import { useUser } from '../context/UserContext';
 import { userService } from '../services/userService';
+import {
+  clearBlockedAccount,
+  getBlockedAccountFromStatus,
+  getBlockedAccount,
+  isBlockedAccountError,
+  setBlockedAccount,
+  subscribeBlockedAccount,
+} from '../session/blockedAccountState';
+import { authService } from '../services/authService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -69,6 +79,9 @@ const AppNavigator = () => {
   const [showIntroAnimation, setShowIntroAnimation] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
+  const [blockedAccount, setBlockedAccountState] = useState(getBlockedAccount());
+
+  useEffect(() => subscribeBlockedAccount(setBlockedAccountState), []);
 
   useEffect(() => {
     const auth = getAuth();
@@ -85,7 +98,6 @@ const AppNavigator = () => {
           }
 
           setUser(null);
-          setShowSplash(true);
           setAuthStatus('unauthenticated');
           return;
         }
@@ -95,21 +107,73 @@ const AppNavigator = () => {
         }
 
         try {
+          const syncResponse = await authService.syncCurrentSession();
+
+          if (!isMounted || requestId !== authRequestId) {
+            return;
+          }
+
+          const blockedFromSync = getBlockedAccountFromStatus(syncResponse?.user?.status, {
+            source: 'login',
+            email: syncResponse?.user?.email ?? firebaseUser.email ?? null,
+            reason: syncResponse?.user?.bannedReason ?? null,
+          });
+
+          if (blockedFromSync) {
+            setBlockedAccount({
+              ...blockedFromSync,
+              sessionToken:
+                getBlockedAccount()?.sessionToken ??
+                (await firebaseUser.getIdToken().catch(() => null)),
+            });
+            setUser({
+              ...mapFirebaseUserToAppUser(firebaseUser as any),
+              ...syncResponse?.user,
+            });
+            setAuthStatus('authenticated');
+            return;
+          }
+
           const userData = await userService.getMe();
 
           if (!isMounted || requestId !== authRequestId) {
             return;
           }
 
+          const blockedFromStatus = getBlockedAccountFromStatus(userData?.status, {
+            source: 'login',
+            email: userData?.email ?? firebaseUser.email ?? null,
+          });
+
+          if (blockedFromStatus) {
+            setBlockedAccount({
+              ...blockedFromStatus,
+              sessionToken:
+                getBlockedAccount()?.sessionToken ??
+                (await firebaseUser.getIdToken().catch(() => null)),
+            });
+            setUser({
+              ...mapFirebaseUserToAppUser(firebaseUser as any),
+              ...userData,
+            });
+            setAuthStatus('authenticated');
+            return;
+          }
+
+          clearBlockedAccount();
           setUser({
             ...mapFirebaseUserToAppUser(firebaseUser as any),
             ...userData,
           });
           setAuthStatus('authenticated');
         } catch (error) {
+          if (isBlockedAccountError(error)) {
+            return;
+          }
+
           if (__DEV__) {
             console.log(
-              '[auth] failed to hydrate backend user, using Firebase session fallback',
+              '[auth] failed to verify backend user status during bootstrap',
               error,
             );
           }
@@ -118,8 +182,9 @@ const AppNavigator = () => {
             return;
           }
 
-          setUser(mapFirebaseUserToAppUser(firebaseUser as any));
-          setAuthStatus('authenticated');
+          setUser(null);
+          setAuthStatus('unauthenticated');
+          void authService.clearSession().catch(() => undefined);
         }
       };
 
@@ -141,7 +206,21 @@ const AppNavigator = () => {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {authStatus === 'loading' ? (
+        {blockedAccount ? (
+          <>
+            <Stack.Screen
+              name="AccountBlocked"
+            >
+              {props => (
+                <AccountBlockedScreen
+                  {...props}
+                  key={`${blockedAccount.type}:${blockedAccount.source}`}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+          </>
+        ) : authStatus === 'loading' ? (
           <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
         ) : authStatus === 'authenticated' ? (
           <>

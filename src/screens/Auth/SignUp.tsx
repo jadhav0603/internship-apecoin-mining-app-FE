@@ -22,6 +22,7 @@ import { referralService } from '../../services/referralService';
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 import { useAlert } from '../../context/AlertContext';
+import { isBlockedAccountError } from '../../session/blockedAccountState';
 
 const MONKEY_IMG = require('../../assets/images/auth_bg.webp');
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -135,6 +136,10 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         }
       }
     } catch (error: any) {
+      if (isBlockedAccountError(error)) {
+        return;
+      }
+
       if (error.code === 'auth/email-already-in-use') {
         setErrors({ email: 'That email address is already in use!' });
       } else {
@@ -155,6 +160,10 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       setLoading(true);
       await authService.googleSignIn();
     } catch (error: any) {
+      if (isBlockedAccountError(error)) {
+        return;
+      }
+
       setErrors({
         email: getReadableErrorMessage(
           error,
