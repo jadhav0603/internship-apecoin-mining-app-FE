@@ -207,10 +207,7 @@ const ReferAndEarnScreen = () => {
         return;
       }
 
-      showError(
-        errorMessage,
-        'Redeem Code',
-      );
+      showError(errorMessage, 'Redeem Code');
     } finally {
       setSubmitting(false);
     }
@@ -434,7 +431,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     zIndex: 10,
-  elevation: 10,
+    elevation: 10,
   },
   iconButton: {
     width: 46,

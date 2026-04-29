@@ -45,7 +45,6 @@ import {
   useInterstitialAd,
 } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
-import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 
 const ProfileScreen = () => {
   const navigation =
@@ -62,37 +61,62 @@ const ProfileScreen = () => {
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
   const profileAura = useRef(new Animated.Value(0)).current;
-  const skipNextFocusAdRef = useRef(false);
+  const hasShownInitialProfileAdRef = useRef(false);
+  const isProfileFocusedRef = useRef(false);
 
-  const { isLoaded, isClosed, load, show } = useInterstitialAd(
+  const { isLoaded, load, show } = useInterstitialAd(
     AD_UNITS.INTERSTITIAL_PROFILE,
     {
       requestNonPersonalizedAdsOnly: true,
     },
   );
-  const { startAd, adLoadingModal } = useAdLoadingGate({
-    isLoaded,
-    load,
-    show,
-  });
 
   useEffect(() => {
-    if (!isClosed) {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!isLoaded) {
       return;
     }
 
-    skipNextFocusAdRef.current = true;
-  }, [isClosed]);
+    if (!isProfileFocusedRef.current || hasShownInitialProfileAdRef.current) {
+      return;
+    }
+
+    hasShownInitialProfileAdRef.current = true;
+
+    try {
+      requestAnimationFrame(() => {
+        show();
+      });
+    } catch (error) {
+      hasShownInitialProfileAdRef.current = false;
+      console.warn('[profile] failed to show interstitial ad:', error);
+    }
+  }, [isLoaded, show]);
 
   useFocusEffect(
     useCallback(() => {
-      if (skipNextFocusAdRef.current) {
-        skipNextFocusAdRef.current = false;
-        return;
+      isProfileFocusedRef.current = true;
+
+      if (isLoaded && !hasShownInitialProfileAdRef.current) {
+        hasShownInitialProfileAdRef.current = true;
+
+        try {
+          requestAnimationFrame(() => {
+            show();
+          });
+        } catch (error) {
+          hasShownInitialProfileAdRef.current = false;
+          console.warn('[profile] failed to show interstitial ad:', error);
+        }
       }
 
-      startAd();
-    }, [startAd]),
+      return () => {
+        isProfileFocusedRef.current = false;
+      };
+    }, [isLoaded, show]),
   );
 
   const handleLogout = async () => {
@@ -341,9 +365,9 @@ const ProfileScreen = () => {
                 </View>
 
                 <View style={styles.identityContent}>
-                  <View style={styles.identityPill}>
-                    {/* <Text style={styles.identityPillText}>Premium profile</Text> */}
-                  </View>
+                  {/* <View style={styles.identityPill}>
+                    <Text style={styles.identityPillText}>Premium profile</Text>
+                  </View> */}
 
                   <Text style={styles.userName}>{username}</Text>
                   <Text style={styles.userHandle}>{profileHandle}</Text>
@@ -523,7 +547,6 @@ const ProfileScreen = () => {
           onConfirm={handleLogout}
           onCancel={() => setLogoutVisible(false)}
         />
-        {adLoadingModal}
       </SafeAreaView>
     </LinearGradient>
   );

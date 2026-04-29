@@ -106,6 +106,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
+  orbitLayer: {
+    position: 'absolute',
+    width: 240,
+    height: 170,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   orbitSvg: {
     position: 'absolute',
   },
@@ -220,7 +227,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontSize: 16,
     letterSpacing: FONTS.letterSpacing.ultraWide,
-    marginBottom: 0-10,
+    marginBottom: -10,
     marginTop: 8,
   },
   statsTitle: {

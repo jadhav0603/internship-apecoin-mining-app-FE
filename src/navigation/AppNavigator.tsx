@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import {
   DarkTheme,
   NavigationContainer,
@@ -24,6 +23,7 @@ import TicketDetailScreen from '../screens/profile/TicketDetailScreen';
 import TransactionHistoryScreen from '../screens/home/TransactionHistoryScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
+import Loading from '../components/Loading';
 
 import { RootStackParamList } from './types';
 import { useUser } from '../context/UserContext';
@@ -46,16 +46,15 @@ const navigationTheme: Theme = {
   },
 };
 
-const AuthLoadingScreen = () => (
-  <View style={styles.loadingScreen}>
-    <ActivityIndicator size="large" color={COLORS.primary} />
-  </View>
-);
+const AuthLoadingScreen = () => <Loading text="L O A D I N G . . . . ." />;
 
-const mapFirebaseUserToAppUser = (firebaseUser: NonNullable<ReturnType<typeof getAuth>['currentUser']>) => ({
+const mapFirebaseUserToAppUser = (
+  firebaseUser: NonNullable<ReturnType<typeof getAuth>['currentUser']>,
+) => ({
   uid: firebaseUser.uid,
   email: firebaseUser.email ?? '',
-  displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+  displayName:
+    firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
   photoURL: firebaseUser.photoURL ?? '',
   plan: 'Free',
 });
@@ -98,13 +97,16 @@ const AppNavigator = () => {
           }
 
           setUser({
-             ...mapFirebaseUserToAppUser(firebaseUser as any),
-             ...userData,
+            ...mapFirebaseUserToAppUser(firebaseUser as any),
+            ...userData,
           });
           setAuthStatus('authenticated');
         } catch (error) {
           if (__DEV__) {
-            console.log('[auth] failed to hydrate backend user, using Firebase session fallback', error);
+            console.log(
+              '[auth] failed to hydrate backend user, using Firebase session fallback',
+              error,
+            );
           }
 
           if (!isMounted || requestId !== authRequestId) {
@@ -140,23 +142,26 @@ const AppNavigator = () => {
           <>
             <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
             <Stack.Screen name="Mining" component={MiningScreen} />
-            <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
+            <Stack.Screen
+              name="TransactionHistory"
+              component={TransactionHistoryScreen}
+            />
             <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
             <Stack.Screen name="TicketList" component={TicketListScreen} />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
             <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Stack.Screen name="ReferAndEarn" component={ReferAndEarnScreen} />
             <Stack.Screen name="MyProgress" component={MyProgressScreen} />
-            <Stack.Screen name="ProfileDetails" component={ProfileDetailsScreen} />
+            <Stack.Screen
+              name="ProfileDetails"
+              component={ProfileDetailsScreen}
+            />
             <Stack.Screen name="AboutUs" component={AboutUsScreen} />
           </>
         ) : showSplash ? (
           <Stack.Screen name="Splash">
             {props => (
-              <SplashScreen
-                {...props}
-                onFinish={() => setShowSplash(false)}
-              />
+              <SplashScreen {...props} onFinish={() => setShowSplash(false)} />
             )}
           </Stack.Screen>
         ) : (
@@ -169,14 +174,5 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  loadingScreen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
 
 export default AppNavigator;
