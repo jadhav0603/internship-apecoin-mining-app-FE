@@ -17,6 +17,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import apiClient from '../api/apiClient';
 import { FIREBASE_CONFIG, API_CONFIG, getDevApiBaseUrls } from '../api/config';
 import {
+  getBlockedAccount,
   getBlockedAccountFromStatus,
   setBlockedAccount,
 } from '../session/blockedAccountState';
@@ -43,6 +44,13 @@ type SyncedUser = {
 };
 
 type BackendSyncResponse = {
+  message: string;
+  user: SyncedUser;
+};
+
+type RecoverAccountResponse = {
+  success: boolean;
+  code: string;
   message: string;
   user: SyncedUser;
 };
@@ -139,6 +147,7 @@ const syncFirebaseSession = async (
 const ensureActiveBackendAccount = async (
   user: FirebaseAuthTypes.User,
 ): Promise<BackendSyncResponse> => {
+  const sessionToken = await getIdToken(user, true);
   const syncResponse = await syncFirebaseSession(user, {
     rollbackOnFailure: true,
   });
@@ -151,11 +160,10 @@ const ensureActiveBackendAccount = async (
     return syncResponse;
   }
 
-  setBlockedAccount(blockedAccount);
-  await Promise.allSettled([
-    AsyncStorage.clear(),
-    signOutFromProviders(),
-  ]);
+  setBlockedAccount({
+    ...blockedAccount,
+    sessionToken,
+  });
   throw createBlockedAccountError(blockedAccount.type, blockedAccount.reason);
 };
 
@@ -189,6 +197,21 @@ const isMissingDeleteRouteError = (error: any) => {
   return typeof data?.message === 'string' && data.message.includes('Cannot DELETE /api/user/account');
 };
 
+const isMissingRecoverRouteError = (error: any) => {
+  const status = error?.response?.status;
+  const data = error?.response?.data;
+
+  if (status !== 404) {
+    return false;
+  }
+
+  if (typeof data === 'string') {
+    return data.includes('Cannot POST /api/user/account/recover');
+  }
+
+  return typeof data?.message === 'string' && data.message.includes('Cannot POST /api/user/account/recover');
+};
+
 const deleteAccountRequest = async (token: string) => {
   let lastError: any;
   const baseUrls = getDeleteAccountBaseUrls();
@@ -215,6 +238,48 @@ const deleteAccountRequest = async (token: string) => {
       }
 
       if (isMissingDeleteRouteError(error)) {
+        continue;
+      }
+
+      if (error?.response) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+const recoverAccountRequest = async (token: string) => {
+  let lastError: any;
+  const baseUrls = getDeleteAccountBaseUrls();
+
+  for (const baseURL of baseUrls) {
+    try {
+      const response = await axios.post(
+        `${baseURL}/user/account/recover`,
+        undefined,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: API_CONFIG.TIMEOUT,
+        }
+      );
+
+      apiClient.defaults.baseURL = baseURL;
+      return response.data;
+    } catch (error: any) {
+      lastError = error;
+
+      if (__DEV__) {
+        console.log(
+          `[recoverAccount] request failed via baseURL ${baseURL}:`,
+          error?.response?.data ?? error?.message ?? error
+        );
+      }
+
+      if (isMissingRecoverRouteError(error)) {
         continue;
       }
 
@@ -397,6 +462,21 @@ export const authService = {
       source: 'delete',
       message: 'Your account has been deleted.',
     });
+  },
+
+  async recoverAccount(): Promise<RecoverAccountResponse> {
+    const user = firebaseAuth.currentUser ?? (await this.waitForAuthRestore());
+    const blockedAccount = getBlockedAccount();
+    const token =
+      (user ? await user.getIdToken() : null) ??
+      blockedAccount?.sessionToken ??
+      null;
+
+    if (!token) {
+      throw new Error('Unable to authenticate recover account request.');
+    }
+
+    return recoverAccountRequest(token);
   },
 
   /**

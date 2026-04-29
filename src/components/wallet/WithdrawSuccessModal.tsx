@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   iconGlow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 38,
     backgroundColor: 'rgba(170, 255, 0, 0.12)',
     transform: [{ scale: 1.18 }],

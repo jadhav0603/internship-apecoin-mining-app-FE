@@ -14,6 +14,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/COLORS';
 import { useAlert } from '../../context/AlertContext';
+import { useUser } from '../../context/UserContext';
 import { RootStackParamList } from '../../navigation/types';
 import {
   clearBlockedAccount,
@@ -31,8 +32,10 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AccountBlocked'>;
 
 const AccountBlockedScreen = ({ route }: Props) => {
   const { showError, showInfo } = useAlert();
+  const { setUser } = useUser();
   const blockedAccount = useBlockedAccount();
   const [isClosing, setIsClosing] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const content = useMemo(() => {
     const type = blockedAccount?.type ?? route.params?.type ?? 'banned';
@@ -80,6 +83,42 @@ const AccountBlockedScreen = ({ route }: Props) => {
     } finally {
       clearBlockedAccount();
       setIsClosing(false);
+    }
+  };
+
+  const handleRecoverAccount = async () => {
+    if (isRecovering) {
+      return;
+    }
+
+    try {
+      setIsRecovering(true);
+      const response = await authService.recoverAccount();
+      const currentUser = authService.getCurrentUser();
+
+      setUser({
+        uid: response.user.uid ?? currentUser?.uid ?? '',
+        email: response.user.email ?? currentUser?.email ?? '',
+        displayName:
+          response.user.displayName ??
+          currentUser?.displayName ??
+          currentUser?.email?.split('@')[0] ??
+          'User',
+        photoURL: response.user.photoURL ?? currentUser?.photoURL ?? '',
+        plan: response.user.plan,
+        referredBy: response.user.referredBy ?? null,
+        referralEarnings: response.user.referralEarnings ?? 0,
+        referralCount: response.user.referralCount ?? 0,
+      });
+      clearBlockedAccount();
+    } catch (error: any) {
+      showError(
+        error?.response?.data?.message ?? error?.message ?? 'Unable to recover account right now.',
+        'Recover Account',
+        ALERT_PRESENTATION,
+      );
+    } finally {
+      setIsRecovering(false);
     }
   };
 
@@ -187,31 +226,29 @@ const AccountBlockedScreen = ({ route }: Props) => {
               ) : null}
 
               {content.showReactivate ? (
-              <Pressable
-                onPress={() =>
-                  openMailClient(
-                    'Recover my ApeCoin account',
-                    'Account recovery requests can be sent from your registered email account.',
-                  )
-                }
-                style={styles.secondaryAction}
-              >
-                {({ pressed }) => (
-                  <View
-                    style={[
-                      styles.secondaryActionInner,
-                      pressed && styles.secondaryActionInnerPressed,
-                    ]}
-                  >
-                    <Ionicons
-                      name="refresh-circle-outline"
-                      size={18}
-                      color={COLORS.textPrimary}
-                    />
-                    <Text style={styles.secondaryActionText}>Recover Account</Text>
-                  </View>
-                )}
-              </Pressable>
+                <Pressable
+                  onPress={handleRecoverAccount}
+                  disabled={isRecovering}
+                  style={styles.secondaryAction}
+                >
+                  {({ pressed }) => (
+                    <View
+                      style={[
+                        styles.secondaryActionInner,
+                        (pressed || isRecovering) && styles.secondaryActionInnerPressed,
+                      ]}
+                    >
+                      <Ionicons
+                        name="refresh-circle-outline"
+                        size={18}
+                        color={COLORS.textPrimary}
+                      />
+                      <Text style={styles.secondaryActionText}>
+                        {isRecovering ? 'Recovering...' : 'Recover Account'}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
               ) : null}
             </View>
           ) : null}

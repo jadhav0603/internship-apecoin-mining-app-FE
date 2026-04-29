@@ -10,6 +10,7 @@ export type BlockedAccountState = {
   source: BlockedAccountSource;
   reason?: string | null;
   message?: string;
+  sessionToken?: string | null;
 };
 
 type BlockedAccountListener = (state: BlockedAccountState | null) => void;
@@ -77,6 +78,7 @@ export const getBlockedAccountFromStatus = (
     type: status,
     source: options?.source ?? 'login',
     reason: options?.reason ?? null,
+    sessionToken: null,
     message:
       options?.message ??
       (status === 'banned'
@@ -100,6 +102,7 @@ export const getBlockedAccountFromError = (
     code,
     type,
     source,
+    sessionToken: null,
     reason:
       error?.response?.data?.reason ??
       error?.response?.data?.banReason ??

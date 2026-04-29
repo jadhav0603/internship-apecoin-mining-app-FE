@@ -114,10 +114,17 @@ const AppNavigator = () => {
           });
 
           if (blockedFromSync) {
-            setBlockedAccount(blockedFromSync);
-            setUser(null);
-            setAuthStatus('unauthenticated');
-            void authService.clearSession().catch(() => undefined);
+            setBlockedAccount({
+              ...blockedFromSync,
+              sessionToken:
+                getBlockedAccount()?.sessionToken ??
+                (await firebaseUser.getIdToken().catch(() => null)),
+            });
+            setUser({
+              ...mapFirebaseUserToAppUser(firebaseUser as any),
+              ...syncResponse?.user,
+            });
+            setAuthStatus('authenticated');
             return;
           }
 
@@ -132,10 +139,17 @@ const AppNavigator = () => {
           });
 
           if (blockedFromStatus) {
-            setBlockedAccount(blockedFromStatus);
-            setUser(null);
-            setAuthStatus('unauthenticated');
-            void authService.clearSession().catch(() => undefined);
+            setBlockedAccount({
+              ...blockedFromStatus,
+              sessionToken:
+                getBlockedAccount()?.sessionToken ??
+                (await firebaseUser.getIdToken().catch(() => null)),
+            });
+            setUser({
+              ...mapFirebaseUserToAppUser(firebaseUser as any),
+              ...userData,
+            });
+            setAuthStatus('authenticated');
             return;
           }
 
