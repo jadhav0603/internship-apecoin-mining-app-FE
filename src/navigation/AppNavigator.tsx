@@ -30,6 +30,7 @@ import ConnectUsScreen from '../screens/profile/ConnectUsScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
 import Loading from '../components/Loading';
+import TermsModal from '../components/terms/TermsModal';
 
 import { RootStackParamList } from './types';
 import { useUser } from '../context/UserContext';
@@ -75,11 +76,18 @@ const mapFirebaseUserToAppUser = (
 });
 
 const AppNavigator = () => {
-  const { setUser } = useUser();
+  const { user, setUser } = useUser();
   const [showIntroAnimation, setShowIntroAnimation] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
-  const [blockedAccount, setBlockedAccountState] = useState(getBlockedAccount());
+  const [blockedAccount, setBlockedAccountState] = useState(
+    getBlockedAccount(),
+  );
+  const [termsVisible, setTermsVisible] = useState(false);
+  const [acceptingTerms, setAcceptingTerms] = useState(false);
+  const [dismissedTermsForUid, setDismissedTermsForUid] = useState<
+    string | null
+  >(null);
 
   useEffect(() => subscribeBlockedAccount(setBlockedAccountState), []);
 
@@ -113,11 +121,14 @@ const AppNavigator = () => {
             return;
           }
 
-          const blockedFromSync = getBlockedAccountFromStatus(syncResponse?.user?.status, {
-            source: 'login',
-            email: syncResponse?.user?.email ?? firebaseUser.email ?? null,
-            reason: syncResponse?.user?.bannedReason ?? null,
-          });
+          const blockedFromSync = getBlockedAccountFromStatus(
+            syncResponse?.user?.status,
+            {
+              source: 'login',
+              email: syncResponse?.user?.email ?? firebaseUser.email ?? null,
+              reason: syncResponse?.user?.bannedReason ?? null,
+            },
+          );
 
           if (blockedFromSync) {
             setBlockedAccount({
@@ -140,10 +151,13 @@ const AppNavigator = () => {
             return;
           }
 
-          const blockedFromStatus = getBlockedAccountFromStatus(userData?.status, {
-            source: 'login',
-            email: userData?.email ?? firebaseUser.email ?? null,
-          });
+          const blockedFromStatus = getBlockedAccountFromStatus(
+            userData?.status,
+            {
+              source: 'login',
+              email: userData?.email ?? firebaseUser.email ?? null,
+            },
+          );
 
           if (blockedFromStatus) {
             setBlockedAccount({
@@ -197,6 +211,55 @@ const AppNavigator = () => {
     };
   }, [setUser]);
 
+  useEffect(() => {
+    if (
+      authStatus === 'authenticated' &&
+      user?.uid &&
+      !user.acceptedTerms &&
+      !blockedAccount &&
+      dismissedTermsForUid !== user.uid
+    ) {
+      setTermsVisible(true);
+      return;
+    }
+
+    if (
+      user?.acceptedTerms ||
+      authStatus !== 'authenticated' ||
+      blockedAccount
+    ) {
+      setTermsVisible(false);
+    }
+  }, [
+    authStatus,
+    blockedAccount,
+    dismissedTermsForUid,
+    user?.acceptedTerms,
+    user?.uid,
+  ]);
+
+  const handleAcceptTerms = async () => {
+    if (acceptingTerms) {
+      return;
+    }
+
+    try {
+      setAcceptingTerms(true);
+      const updatedUser = await userService.acceptTerms();
+      setUser(prev =>
+        prev ? { ...prev, ...updatedUser, acceptedTerms: true } : prev,
+      );
+      setTermsVisible(false);
+      setDismissedTermsForUid(null);
+    } catch (error) {
+      if (__DEV__) {
+        console.log('[terms] failed to accept terms:', error);
+      }
+    } finally {
+      setAcceptingTerms(false);
+    }
+  };
+
   if (showIntroAnimation) {
     return (
       <SplashIntroAnimation onFinish={() => setShowIntroAnimation(false)} />
@@ -204,66 +267,86 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {blockedAccount ? (
-          <>
-            <Stack.Screen
-              name="AccountBlocked"
-            >
+    <>
+      <NavigationContainer theme={navigationTheme}>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {blockedAccount ? (
+            <>
+              <Stack.Screen name="AccountBlocked">
+                {props => (
+                  <AccountBlockedScreen
+                    {...props}
+                    key={`${blockedAccount.type}:${blockedAccount.source}`}
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+            </>
+          ) : authStatus === 'loading' ? (
+            <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
+          ) : authStatus === 'authenticated' ? (
+            <>
+              <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+              <Stack.Screen name="Mining" component={MiningScreen} />
+              <Stack.Screen
+                name="TransactionHistory"
+                component={TransactionHistoryScreen}
+              />
+              <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+              <Stack.Screen name="TicketList" component={TicketListScreen} />
+              <Stack.Screen
+                name="TicketDetail"
+                component={TicketDetailScreen}
+              />
+              <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+              <Stack.Screen
+                name="ReferAndEarn"
+                component={ReferAndEarnScreen}
+              />
+              <Stack.Screen name="MyProgress" component={MyProgressScreen} />
+              <Stack.Screen
+                name="ProfileDetails"
+                component={ProfileDetailsScreen}
+              />
+              <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+              <Stack.Screen name="OtherApps" component={OtherAppsScreen} />
+              <Stack.Screen name="CheckUpdate" component={CheckUpdateScreen} />
+              <Stack.Screen name="FAQ" component={FAQScreen} />
+              <Stack.Screen
+                name="TermsAndConditions"
+                component={TermsAndConditionsScreen}
+              />
+              <Stack.Screen name="ConnectUs" component={ConnectUsScreen} />
+            </>
+          ) : showSplash ? (
+            <Stack.Screen name="Splash">
               {props => (
-                <AccountBlockedScreen
+                <SplashScreen
                   {...props}
-                  key={`${blockedAccount.type}:${blockedAccount.source}`}
+                  onFinish={() => setShowSplash(false)}
                 />
               )}
             </Stack.Screen>
-            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
-          </>
-        ) : authStatus === 'loading' ? (
-          <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
-        ) : authStatus === 'authenticated' ? (
-          <>
-            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
-            <Stack.Screen name="Mining" component={MiningScreen} />
-            <Stack.Screen
-              name="TransactionHistory"
-              component={TransactionHistoryScreen}
-            />
-            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
-            <Stack.Screen name="TicketList" component={TicketListScreen} />
-            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
-            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-            <Stack.Screen name="ReferAndEarn" component={ReferAndEarnScreen} />
-            <Stack.Screen name="MyProgress" component={MyProgressScreen} />
-            <Stack.Screen
-              name="ProfileDetails"
-              component={ProfileDetailsScreen}
-            />
-            <Stack.Screen name="AboutUs" component={AboutUsScreen} />
-            <Stack.Screen name="OtherApps" component={OtherAppsScreen} />
-            <Stack.Screen name="CheckUpdate" component={CheckUpdateScreen} />
-            <Stack.Screen name="FAQ" component={FAQScreen} />
-            <Stack.Screen
-              name="TermsAndConditions"
-              component={TermsAndConditionsScreen}
-            />
-            <Stack.Screen name="ConnectUs" component={ConnectUsScreen} />
-          </>
-        ) : showSplash ? (
-          <Stack.Screen name="Splash">
-            {props => (
-              <SplashScreen {...props} onFinish={() => setShowSplash(false)} />
-            )}
-          </Stack.Screen>
-        ) : (
-          <>
-            <Stack.Screen name="SignIn" component={SignIn} />
-            <Stack.Screen name="SignUp" component={SignUp} />
-          </>
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+          ) : (
+            <>
+              <Stack.Screen name="SignIn" component={SignIn} />
+              <Stack.Screen name="SignUp" component={SignUp} />
+            </>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+      <TermsModal
+        visible={termsVisible}
+        accepting={acceptingTerms}
+        onAccept={handleAcceptTerms}
+        onClose={() => {
+          if (user?.uid) {
+            setDismissedTermsForUid(user.uid);
+          }
+          setTermsVisible(false);
+        }}
+      />
+    </>
   );
 };
 

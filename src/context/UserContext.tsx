@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useMemo, useState} from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 
 export type AppUser = {
   uid: string;
@@ -9,6 +9,7 @@ export type AppUser = {
   referredBy?: string | null;
   referralEarnings?: number;
   referralCount?: number;
+  acceptedTerms?: boolean;
 };
 
 type UserContextValue = {
@@ -32,7 +33,7 @@ export const getUserDisplayName = (user: AppUser | null | undefined) => {
   return 'User';
 };
 
-export const UserProvider = ({children}: {children: React.ReactNode}) => {
+export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
 
   const value = useMemo(

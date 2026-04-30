@@ -41,6 +41,7 @@ type SyncedUser = {
   referredBy?: string | null;
   referralEarnings?: number;
   referralCount?: number;
+  acceptedTerms?: boolean;
 };
 
 type BackendSyncResponse = {
@@ -85,10 +86,12 @@ const signOutFromProviders = async () => {
 };
 
 const syncWithBackendRequest = async (
-  idToken: string
+  idToken: string,
 ): Promise<BackendSyncResponse> => {
   try {
-    const response = await apiClient.post<BackendSyncResponse>('/auth/sync', { idToken });
+    const response = await apiClient.post<BackendSyncResponse>('/auth/sync', {
+      idToken,
+    });
     return response.data;
   } catch (error: any) {
     const isNetworkError = !error?.response;
@@ -96,20 +99,24 @@ const syncWithBackendRequest = async (
       if (__DEV__) {
         console.log(
           `Backend sync failed (baseURL: ${API_CONFIG.BASE_URL}):`,
-          error?.response?.data ?? error?.message ?? error
+          error?.response?.data ?? error?.message ?? error,
         );
       }
       throw error;
     }
 
     let lastError = error;
-    const fallbackUrls = getDevApiBaseUrls().filter((url: string) => url !== API_CONFIG.BASE_URL);
+    const fallbackUrls = getDevApiBaseUrls().filter(
+      (url: string) => url !== API_CONFIG.BASE_URL,
+    );
 
     for (const baseURL of fallbackUrls) {
       try {
         const data = await postSync(baseURL, idToken);
         if (__DEV__) {
-          console.log(`Backend sync succeeded via fallback baseURL: ${baseURL}`);
+          console.log(
+            `Backend sync succeeded via fallback baseURL: ${baseURL}`,
+          );
         }
         return data;
       } catch (fallbackError: any) {
@@ -119,8 +126,10 @@ const syncWithBackendRequest = async (
 
     if (__DEV__) {
       console.log(
-        `Backend sync failed on all base URLs: ${getDevApiBaseUrls().join(', ')}`,
-        lastError?.response?.data ?? lastError?.message ?? lastError
+        `Backend sync failed on all base URLs: ${getDevApiBaseUrls().join(
+          ', ',
+        )}`,
+        lastError?.response?.data ?? lastError?.message ?? lastError,
       );
     }
     throw lastError;
@@ -129,7 +138,7 @@ const syncWithBackendRequest = async (
 
 const syncFirebaseSession = async (
   user: FirebaseAuthTypes.User,
-  options?: { rollbackOnFailure?: boolean }
+  options?: { rollbackOnFailure?: boolean },
 ): Promise<BackendSyncResponse> => {
   const idToken = await getIdToken(user, true);
 
@@ -151,11 +160,14 @@ const ensureActiveBackendAccount = async (
   const syncResponse = await syncFirebaseSession(user, {
     rollbackOnFailure: true,
   });
-  const blockedAccount = getBlockedAccountFromStatus(syncResponse.user?.status, {
-    source: 'login',
-    email: syncResponse.user?.email ?? user.email ?? null,
-    reason: syncResponse.user?.bannedReason ?? null,
-  });
+  const blockedAccount = getBlockedAccountFromStatus(
+    syncResponse.user?.status,
+    {
+      source: 'login',
+      email: syncResponse.user?.email ?? user.email ?? null,
+      reason: syncResponse.user?.bannedReason ?? null,
+    },
+  );
 
   if (!blockedAccount) {
     return syncResponse;
@@ -171,7 +183,7 @@ const ensureActiveBackendAccount = async (
 const postSync = async (baseURL: string, idToken: string) => {
   const response = await apiClient.post<BackendSyncResponse>(
     `${baseURL}/auth/sync`,
-    { idToken }
+    { idToken },
   );
   return response.data;
 };
@@ -180,7 +192,9 @@ const unique = <T>(values: T[]) => [...new Set(values)];
 
 const getDeleteAccountBaseUrls = () => {
   const currentApiBaseUrl = apiClient.defaults.baseURL;
-  return unique([currentApiBaseUrl, ...getDevApiBaseUrls()].filter(Boolean) as string[]);
+  return unique(
+    [currentApiBaseUrl, ...getDevApiBaseUrls()].filter(Boolean) as string[],
+  );
 };
 
 const isMissingDeleteRouteError = (error: any) => {
@@ -195,7 +209,10 @@ const isMissingDeleteRouteError = (error: any) => {
     return data.includes('Cannot DELETE /api/user/account');
   }
 
-  return typeof data?.message === 'string' && data.message.includes('Cannot DELETE /api/user/account');
+  return (
+    typeof data?.message === 'string' &&
+    data.message.includes('Cannot DELETE /api/user/account')
+  );
 };
 
 const isMissingReactivateRouteError = (error: any) => {
@@ -210,7 +227,10 @@ const isMissingReactivateRouteError = (error: any) => {
     return data.includes('Cannot POST /api/user/account/reactivate');
   }
 
-  return typeof data?.message === 'string' && data.message.includes('Cannot POST /api/user/account/reactivate');
+  return (
+    typeof data?.message === 'string' &&
+    data.message.includes('Cannot POST /api/user/account/reactivate')
+  );
 };
 
 const deleteAccountRequest = async (token: string) => {
@@ -234,7 +254,7 @@ const deleteAccountRequest = async (token: string) => {
       if (__DEV__) {
         console.log(
           `[deleteAccount] request failed via baseURL ${baseURL}:`,
-          error?.response?.data ?? error?.message ?? error
+          error?.response?.data ?? error?.message ?? error,
         );
       }
 
@@ -251,7 +271,10 @@ const deleteAccountRequest = async (token: string) => {
   throw lastError;
 };
 
-const reactivateAccountRequest = async (email: string, sessionToken: string | null) => {
+const reactivateAccountRequest = async (
+  email: string,
+  sessionToken: string | null,
+) => {
   let lastError: any;
   const baseUrls = getDeleteAccountBaseUrls();
 
@@ -267,7 +290,7 @@ const reactivateAccountRequest = async (email: string, sessionToken: string | nu
               }
             : undefined,
           timeout: API_CONFIG.TIMEOUT,
-        }
+        },
       );
 
       apiClient.defaults.baseURL = baseURL;
@@ -278,7 +301,7 @@ const reactivateAccountRequest = async (email: string, sessionToken: string | nu
       if (__DEV__) {
         console.log(
           `[reactivateAccount] request failed via baseURL ${baseURL}:`,
-          error?.response?.data ?? error?.message ?? error
+          error?.response?.data ?? error?.message ?? error,
         );
       }
 
@@ -328,7 +351,7 @@ const getGoogleIdToken = async (): Promise<string> => {
   }
 
   throw new Error(
-    'Google Sign-In did not return an ID token. Verify WEB_CLIENT_ID and Android SHA keys in Firebase.'
+    'Google Sign-In did not return an ID token. Verify WEB_CLIENT_ID and Android SHA keys in Firebase.',
   );
 };
 
@@ -358,16 +381,30 @@ export const authService = {
   /**
    * Register a new user with email and password
    */
-  async signUp(email: string, password: string): Promise<FirebaseAuthTypes.User> {
-    const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
+  async signUp(
+    email: string,
+    password: string,
+  ): Promise<FirebaseAuthTypes.User> {
+    const userCredential = await createUserWithEmailAndPassword(
+      firebaseAuth,
+      email.trim(),
+      password,
+    );
     return userCredential.user;
   },
 
   /**
    * Log in an existing user with email and password
    */
-  async signIn(email: string, password: string): Promise<FirebaseAuthTypes.User> {
-    const userCredential = await signInWithEmailAndPassword(firebaseAuth, email.trim(), password);
+  async signIn(
+    email: string,
+    password: string,
+  ): Promise<FirebaseAuthTypes.User> {
+    const userCredential = await signInWithEmailAndPassword(
+      firebaseAuth,
+      email.trim(),
+      password,
+    );
     await ensureActiveBackendAccount(userCredential.user);
     return userCredential.user;
   },
@@ -383,15 +420,18 @@ export const authService = {
     const googleCredential = GoogleAuthProvider.credential(googleIdToken);
 
     // 3. Sign-in the user with the credential
-    const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
+    const userCredential = await signInWithCredential(
+      firebaseAuth,
+      googleCredential,
+    );
 
     await ensureActiveBackendAccount(userCredential.user);
     return userCredential.user;
   },
 
-  async syncCurrentSession(
-    options?: { rollbackOnFailure?: boolean }
-  ): Promise<BackendSyncResponse | null> {
+  async syncCurrentSession(options?: {
+    rollbackOnFailure?: boolean;
+  }): Promise<BackendSyncResponse | null> {
     const user = firebaseAuth.currentUser ?? (await this.waitForAuthRestore());
 
     if (!user) {
@@ -412,10 +452,7 @@ export const authService = {
    * Log out the current user
    */
   async clearSession() {
-    await Promise.allSettled([
-      AsyncStorage.clear(),
-      signOutFromProviders(),
-    ]);
+    await Promise.allSettled([AsyncStorage.clear(), signOutFromProviders()]);
   },
 
   async signOut() {
@@ -425,10 +462,7 @@ export const authService = {
       } as any);
     } catch (error) {
       if (__DEV__) {
-        console.log(
-          'Failed to stop mining session before sign-out:',
-          error
-        );
+        console.log('Failed to stop mining session before sign-out:', error);
       }
     }
 
@@ -445,14 +479,16 @@ export const authService = {
     try {
       await deleteAccountRequest(token);
     } catch (error: any) {
-      console.error('[deleteAccount] error.response?.data:', error?.response?.data);
+      console.error(
+        '[deleteAccount] error.response?.data:',
+        error?.response?.data,
+      );
 
       const status = error?.response?.status;
       const code = error?.response?.data?.code;
 
       const isAlreadyDeletedState =
-        code === 'ACCOUNT_ALREADY_DELETED' ||
-        status === 409;
+        code === 'ACCOUNT_ALREADY_DELETED' || status === 409;
 
       if (!isAlreadyDeletedState) {
         throw error;
@@ -477,7 +513,10 @@ export const authService = {
       throw new Error('Unable to determine which account to reactivate.');
     }
 
-    return reactivateAccountRequest(normalizedEmail, blockedAccount?.sessionToken ?? null);
+    return reactivateAccountRequest(
+      normalizedEmail,
+      blockedAccount?.sessionToken ?? null,
+    );
   },
 
   /**
@@ -490,11 +529,11 @@ export const authService = {
     }
 
     await firebaseUpdateProfile(user, updates);
-    
+
     // Force a token refresh and sync with backend to ensure MongoDB is updated too
     const idToken = await getIdToken(user, true);
     await syncWithBackendRequest(idToken);
-    
+
     return user;
   },
 };

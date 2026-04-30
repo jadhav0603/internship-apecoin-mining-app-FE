@@ -17,6 +17,7 @@ export type BackendUser = {
   referredBy?: string | null;
   referralEarnings?: number;
   referralCount?: number;
+  acceptedTerms?: boolean;
   lastLogin?: string;
   createdAt?: string;
 };
@@ -48,19 +49,19 @@ export const userService = {
         typeof data?.name === 'string' && data.name
           ? data.name
           : typeof data?.displayName === 'string' && data.displayName
-            ? data.displayName
-            : typeof data?.username === 'string'
-              ? data.username
-              : '',
+          ? data.displayName
+          : typeof data?.username === 'string'
+          ? data.username
+          : '',
       email: typeof data?.email === 'string' ? data.email : '',
       photoURL:
         typeof data?.imageUrl === 'string' && data.imageUrl
           ? data.imageUrl
           : typeof data?.photoURL === 'string'
-            ? data.photoURL
-            : typeof data?.photoUrl === 'string'
-              ? data.photoUrl
-              : '',
+          ? data.photoURL
+          : typeof data?.photoUrl === 'string'
+          ? data.photoUrl
+          : '',
     };
   },
 
@@ -73,7 +74,7 @@ export const userService = {
   uploadProfileImage: async (
     imageUri: string,
     mimeType = 'image/jpeg',
-    fileName = 'avatar.jpg'
+    fileName = 'avatar.jpg',
   ): Promise<UploadProfileImageResponse> => {
     const formData = new FormData();
     formData.append('image', {
@@ -89,13 +90,18 @@ export const userService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      }
+      },
     );
     return res.data;
   },
 
   updateProfile: async (name: string): Promise<BackendUser> => {
     const res = await API.put<BackendUser>('/user/update-profile', { name });
+    return res.data;
+  },
+
+  acceptTerms: async (): Promise<BackendUser> => {
+    const res = await API.put<BackendUser>('/user/terms/accept');
     return res.data;
   },
 };
