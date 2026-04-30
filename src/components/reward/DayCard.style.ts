@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   container: {
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
     top: 14,
     fontSize: 13,
     fontWeight: '900',
-    color: '#e6d159',
+    color: COLORS.gold400,
     letterSpacing: 1,
     textAlign: 'center',
     width: '100%',
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
     bottom: 26,
     fontSize: 12,
     fontWeight: '500',
-    color: '#eaaf0f',
+    color: COLORS.gold500,
     textAlign: 'center',
     width: '100%',
   },
@@ -74,7 +75,7 @@ const styles = StyleSheet.create({
 
   claimedOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: COLORS.blackAlpha60,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
 
   claimedText: {
     fontSize: 26,
-    color: '#39FF14',
+    color: COLORS.successNeon,
     fontWeight: 'bold',
   },
 });

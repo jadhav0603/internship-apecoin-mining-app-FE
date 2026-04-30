@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
+import { COLORS } from '../../constants/COLORS';
 import {
   MAX_TICKET_ATTACHMENTS,
   TICKET_THEME,
@@ -10,7 +11,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: TICKET_THEME.inputBorder,
-    backgroundColor: '#0F150D',
+    backgroundColor: COLORS.green950Tone6,
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 24,
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: COLORS.blackAlpha70,
     alignItems: 'center',
     justifyContent: 'center',
   },

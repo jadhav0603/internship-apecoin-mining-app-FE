@@ -1,11 +1,12 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { THEME } from './theme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(4, 6, 4, 0.72)',
+    backgroundColor: COLORS.green950Alpha72,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -17,11 +18,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 28,
-    backgroundColor: 'rgba(24, 28, 22, 0.98)',
+    backgroundColor: COLORS.green900Alpha98,
     borderWidth: 1,
-    borderColor: 'rgba(170, 255, 0, 0.16)',
+    borderColor: COLORS.lime500Alpha16,
     alignItems: 'center',
-    shadowColor: '#000000',
+    shadowColor: COLORS.black,
     shadowOpacity: 0.35,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
@@ -34,9 +35,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.whiteAlpha08,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
   iconGlow: {
     ...StyleSheet.absoluteFill,
     borderRadius: 38,
-    backgroundColor: 'rgba(170, 255, 0, 0.12)',
+    backgroundColor: COLORS.lime500Alpha12,
     transform: [{ scale: 1.18 }],
   },
   title: {

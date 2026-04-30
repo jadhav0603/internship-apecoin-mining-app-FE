@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 18,
-    backgroundColor: 'rgba(0,0,0,0.72)',
+    backgroundColor: COLORS.blackAlpha72,
   },
   scrim: {
     position: 'absolute',
@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: 'rgba(10, 5, 0, 0.44)',
+    backgroundColor: COLORS.orange950Alpha44,
   },
   cardShadow: {
     width: '100%',
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: '#ffffff',
+    color: COLORS.white,
     fontFamily: FONTS.black,
     fontSize: 18,
     letterSpacing: 0,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: COLORS.whiteAlpha08,
     borderWidth: 1,
     borderColor: COLORS.glassBorder,
   },
@@ -98,14 +98,14 @@ const styles = StyleSheet.create({
     borderColor: COLORS.glassBorder,
   },
   introHeading: {
-    color: '#ffffff',
+    color: COLORS.white,
     fontFamily: FONTS.bold,
     fontSize: 16,
     lineHeight: 22,
     marginBottom: 7,
   },
   introDescription: {
-    color: '#aaa',
+    color: COLORS.neutral300,
     fontFamily: FONTS.medium,
     fontSize: 13,
     lineHeight: 20,
@@ -126,14 +126,14 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
   sectionTitle: {
-    color: '#ffffff',
+    color: COLORS.white,
     fontFamily: FONTS.bold,
     fontSize: 15,
     lineHeight: 21,
     marginBottom: 8,
   },
   sectionContent: {
-    color: '#aaa',
+    color: COLORS.neutral300,
     fontFamily: FONTS.medium,
     fontSize: 13,
     lineHeight: 21,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   pointText: {
     flex: 1,
-    color: '#aaa',
+    color: COLORS.neutral300,
     fontFamily: FONTS.medium,
     fontSize: 13,
     lineHeight: 21,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   errorText: {
-    color: '#d4d4d4',
+    color: COLORS.neutral200,
     fontFamily: FONTS.medium,
     fontSize: 14,
     lineHeight: 21,

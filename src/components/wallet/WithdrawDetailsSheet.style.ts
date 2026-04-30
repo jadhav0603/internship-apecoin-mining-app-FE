@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { THEME, formatAmount } from './theme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   root: {
@@ -9,18 +10,18 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: COLORS.blackAlpha50,
   },
   sheet: {
-    backgroundColor: '#171b16',
+    backgroundColor: COLORS.green900Tone12,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 28,
     borderWidth: 1,
-    borderColor: 'rgba(170, 255, 0, 0.12)',
-    shadowColor: '#000000',
+    borderColor: COLORS.lime500Alpha12,
+    shadowColor: COLORS.black,
     shadowOpacity: 0.35,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: -8 },
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 5,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: COLORS.whiteAlpha18,
     alignSelf: 'center',
   },
   headerRow: {
@@ -51,15 +52,15 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.whiteAlpha06,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.whiteAlpha08,
   },
   summaryCard: {
     marginTop: 18,
     borderRadius: 22,
     padding: 18,
-    backgroundColor: 'rgba(28, 32, 24, 0.96)',
+    backgroundColor: COLORS.lime900Alpha96,
     borderWidth: 1,
     borderColor: THEME.borderMuted,
   },
@@ -84,9 +85,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: COLORS.whiteAlpha03,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: COLORS.whiteAlpha06,
   },
   metaPillLabel: {
     color: THEME.textMuted,
@@ -117,7 +118,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 22,
     padding: 16,
-    backgroundColor: 'rgba(28, 32, 24, 0.96)',
+    backgroundColor: COLORS.lime900Alpha96,
     borderWidth: 1,
     borderColor: THEME.borderMuted,
   },
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(170, 255, 0, 0.08)',
+    backgroundColor: COLORS.lime500Alpha08Tone2,
     marginRight: 12,
   },
   breakdownLabel: {

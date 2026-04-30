@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { THEME } from './theme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   cardShell: {
@@ -13,7 +14,7 @@ const styles = StyleSheet.create({
   aura: {
     ...StyleSheet.absoluteFill,
     borderRadius: 22,
-    backgroundColor: 'rgba(170, 255, 0, 0.08)',
+    backgroundColor: COLORS.lime500Alpha08Tone2,
     shadowColor: THEME.neonGreen,
     shadowOpacity: 1,
     shadowRadius: 22,
@@ -22,7 +23,7 @@ const styles = StyleSheet.create({
   clipMask: {
     overflow: 'hidden',
     borderRadius: 22,
-    backgroundColor: 'rgba(170, 255, 0, 0.08)',
+    backgroundColor: COLORS.lime500Alpha08Tone2,
   },
   gradientOrbit: {
     position: 'absolute',
@@ -37,10 +38,10 @@ const styles = StyleSheet.create({
   content: {
     margin: 2,
     borderRadius: 20,
-    backgroundColor: '#181818',
+    backgroundColor: COLORS.neutral900Tone3,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(170, 255, 0, 0.18)',
+    borderColor: COLORS.lime500Alpha18Tone2,
   },
 });
 

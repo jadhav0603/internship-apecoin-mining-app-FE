@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     overflow: 'hidden',
     padding: 1.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
   },
   borderBeam: {
     position: 'absolute',
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tapIcon: {
-    textShadowColor: 'rgba(166, 255, 0, 0.22)',
+    textShadowColor: COLORS.lime500Alpha22,
     textShadowOffset: { width: 0, height: 3 },
     textShadowRadius: 10,
   },
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(166, 255, 0, 0.18)',
+    backgroundColor: COLORS.lime500Alpha18,
   },
   idlePulseRing: {
     position: 'absolute',
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: 'rgba(214, 255, 107, 0.38)',
+    borderColor: COLORS.yellow300Alpha38,
     shadowColor: COLORS.primary,
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
-    backgroundColor: 'rgba(166, 255, 0, 0.08)',
+    borderColor: COLORS.whiteAlpha22,
+    backgroundColor: COLORS.lime500Alpha08,
   },
   idleTapHint: {
     position: 'absolute',

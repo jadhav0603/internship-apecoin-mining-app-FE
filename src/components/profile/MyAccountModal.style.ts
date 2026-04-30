@@ -1,11 +1,12 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { PROFILE_THEME, getInitial } from './profileTheme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(4, 8, 4, 0.82)',
+    backgroundColor: COLORS.green950Alpha82,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
@@ -26,7 +27,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 2, // Gradient border thickness
-    backgroundColor: '#10160e',
+    backgroundColor: COLORS.green950Tone5,
   },
   rotatingGradient: {
     position: 'absolute',
@@ -36,7 +37,7 @@ const styles = StyleSheet.create({
   cardInner: {
     width: '100%',
     borderRadius: 30, // matches wrapper radius - padding
-    backgroundColor: 'rgba(16, 22, 14, 0.98)',
+    backgroundColor: COLORS.green950Alpha98Tone2,
     paddingHorizontal: 28,
     paddingTop: 28,
     paddingBottom: 26,
@@ -58,9 +59,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.whiteAlpha04,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: COLORS.whiteAlpha06,
   },
   avatarWrapper: {
     alignSelf: 'center',
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 52,
     borderWidth: 3,
     borderColor: PROFILE_THEME.neonGreen,
-    backgroundColor: '#1b2419',
+    backgroundColor: COLORS.green900Tone2,
     padding: 3,
     shadowColor: PROFILE_THEME.neonGreen,
     shadowOpacity: 0.28,
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#7c7f76',
+    backgroundColor: COLORS.neutral500,
   },
   initialText: {
     color: PROFILE_THEME.white,
@@ -114,13 +115,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: PROFILE_THEME.neonGreen,
     borderWidth: 2,
-    borderColor: '#182014',
+    borderColor: COLORS.green900Tone3,
   },
   fieldGroup: {
     marginBottom: 24,
   },
   fieldLabel: {
-    color: 'rgba(255,255,255,0.62)',
+    color: COLORS.whiteAlpha62,
     fontSize: 14,
     fontFamily: FONTS.medium,
     fontWeight: '500',
@@ -131,8 +132,8 @@ const styles = StyleSheet.create({
     minHeight: 62,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: '#1a2318',
+    borderColor: COLORS.whiteAlpha06,
+    backgroundColor: COLORS.green900Tone4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   emailBox: {
-    backgroundColor: '#171e15',
+    backgroundColor: COLORS.green900Tone5,
   },
   fieldValue: {
     color: PROFILE_THEME.white,
@@ -153,14 +154,14 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   emailValue: {
-    color: 'rgba(255,255,255,0.62)',
+    color: COLORS.whiteAlpha62,
   },
   logoutButton: {
     height: 62,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255,92,92,0.35)',
-    backgroundColor: 'rgba(48, 30, 23, 0.92)',
+    borderColor: COLORS.red300Alpha35,
+    backgroundColor: COLORS.orange900Alpha92,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -180,8 +181,8 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   editBox: {
-    borderColor: 'rgba(170,255,0,0.4)',
-    backgroundColor: '#1c281a',
+    borderColor: COLORS.lime500Alpha40,
+    backgroundColor: COLORS.green900Tone6,
   },
   editActions: {
     flexDirection: 'row',

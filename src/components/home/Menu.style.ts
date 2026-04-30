@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1A2B1A',
+    backgroundColor: COLORS.green900,
     borderRadius: 20,
     padding: 16,
     margin: 5,
@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.whiteAlpha06,
   },
 
   overlay: {
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     // left: 0,
     // right: 0,
     // bottom: 0,
-    // backgroundColor: "rgba(0,0,0,0.6)",
+    // backgroundColor: COLORS.blackAlpha60,
     // zIndex: 9998,
     // elevation: 998,
   },
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
 
   menuOverlay: {
     flex: 1,
-    // backgroundColor: 'rgba(0,0,0,0.65)',
+    // backgroundColor: COLORS.blackAlpha65,
     paddingTop: 50,
     paddingHorizontal: 18,
   },
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
 
   menuTitle: {
-    color: "#fff",
+    color: COLORS.white,
     fontSize: 18,
     fontWeight: "700",
   },
@@ -95,12 +95,12 @@ const styles = StyleSheet.create({
   },
 
   menuItem: {
-    color: "#fff",
+    color: COLORS.white,
     fontSize: 16,
     textAlign: "right",
   },
   logoutText: {
-    color: 'red',
+    color: COLORS.red,
   },
 });
 

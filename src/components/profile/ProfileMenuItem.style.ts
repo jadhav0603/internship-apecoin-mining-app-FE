@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { PROFILE_THEME } from './profileTheme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   pressableWrap: {
@@ -17,21 +18,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.whiteAlpha08,
     overflow: 'hidden',
-    shadowColor: '#000000',
+    shadowColor: COLORS.black,
     shadowOpacity: 0.18,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
   menuItemActive: {
-    borderColor: 'rgba(170,255,0,0.24)',
+    borderColor: COLORS.lime500Alpha24,
     shadowColor: PROFILE_THEME.neonGreen,
     shadowOpacity: 0.12,
   },
   menuItemDanger: {
-    borderColor: 'rgba(255,92,92,0.22)',
+    borderColor: COLORS.red300Alpha22,
   },
   menuItemDisabled: {
     opacity: 0.7,
@@ -43,7 +44,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(170,255,0,0.08)',
+    backgroundColor: COLORS.lime500Alpha08Tone2,
   },
   menuIconBox: {
     width: 46,
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: COLORS.whiteAlpha06,
   },
   menuCopy: {
     flex: 1,
@@ -69,28 +70,28 @@ const styles = StyleSheet.create({
   },
   menuHint: {
     marginTop: 4,
-    color: 'rgba(255,255,255,0.54)',
+    color: COLORS.whiteAlpha54,
     fontSize: 12,
     fontFamily: FONTS.medium,
     lineHeight: 17,
   },
   menuHintDanger: {
-    color: 'rgba(255,180,180,0.66)',
+    color: COLORS.red200Alpha66,
   },
   chevronWrap: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: 'rgba(170,255,0,0.08)',
+    backgroundColor: COLORS.lime500Alpha08Tone2,
     borderWidth: 1,
-    borderColor: 'rgba(170,255,0,0.12)',
+    borderColor: COLORS.lime500Alpha12,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
   },
   chevronWrapDanger: {
-    backgroundColor: 'rgba(255,92,92,0.08)',
-    borderColor: 'rgba(255,92,92,0.14)',
+    backgroundColor: COLORS.red300Alpha08,
+    borderColor: COLORS.red300Alpha14,
   },
 });
 

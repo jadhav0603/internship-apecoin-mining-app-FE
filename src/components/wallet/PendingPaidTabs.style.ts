@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { THEME } from './theme';
+import { COLORS } from '../../constants/COLORS';
 
 const TOGGLE_SHELL_PADDING = 6;
 
@@ -15,7 +16,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionEyebrow: {
-    color: 'rgba(255,255,255,0.5)',
+    color: COLORS.whiteAlpha50,
     fontSize: 11,
     fontFamily: FONTS.medium,
     textTransform: 'uppercase',
@@ -32,12 +33,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.whiteAlpha06,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.whiteAlpha08,
   },
   sectionBadgeText: {
-    color: 'rgba(255,255,255,0.72)',
+    color: COLORS.whiteAlpha72,
     fontSize: 12,
     fontFamily: FONTS.medium,
   },
@@ -46,9 +47,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 22,
     padding: TOGGLE_SHELL_PADDING,
-    backgroundColor: 'rgba(7, 12, 8, 0.84)',
+    backgroundColor: COLORS.green950Alpha84,
     borderWidth: 1,
-    borderColor: 'rgba(157, 231, 95, 0.16)',
+    borderColor: COLORS.lime400Alpha16,
     overflow: 'hidden',
   },
   toggleIndicator: {
@@ -57,10 +58,10 @@ const styles = StyleSheet.create({
     bottom: TOGGLE_SHELL_PADDING,
     left: TOGGLE_SHELL_PADDING,
     borderRadius: 16,
-    backgroundColor: '#6E9918',
+    backgroundColor: COLORS.lime700,
     borderWidth: 1,
-    borderColor: 'rgba(214,255,120,0.4)',
-    shadowColor: 'rgba(170,255,0,0.55)',
+    borderColor: COLORS.lime300Alpha40,
+    shadowColor: COLORS.lime500Alpha55,
     shadowOpacity: 0.25,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     
   },
   toggleTextInactive: {
-    color: 'rgba(255,255,255,0.48)',
+    color: COLORS.whiteAlpha48,
     fontSize: 15,
     fontFamily: FONTS.medium,
   },
@@ -95,7 +96,7 @@ const styles = StyleSheet.create({
     minWidth: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(8, 13, 7, 0.74)',
+    backgroundColor: COLORS.green950Alpha74,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
     minWidth: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.whiteAlpha04,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   countTextInactive: {
-    color: 'rgba(255,255,255,0.54)',
+    color: COLORS.whiteAlpha54,
     fontSize: 12,
     fontFamily: FONTS.medium,
   },
@@ -146,21 +147,21 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 22,
     padding: 18,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.whiteAlpha04,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.whiteAlpha08,
   },
   skeletonLineWide: {
     width: '56%',
     height: 16,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: COLORS.whiteAlpha08,
   },
   skeletonLineShort: {
     width: '34%',
     height: 14,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: COLORS.whiteAlpha06,
     marginTop: 12,
   },
   emptyContainer: {
@@ -168,9 +169,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: COLORS.whiteAlpha04,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: COLORS.whiteAlpha06,
   },
   emptyText: {
     marginTop: 12,

@@ -5,7 +5,7 @@ import { FONTS } from '../../constants/FONTS';
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
+    backgroundColor: COLORS.blackAlpha72,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 18,
@@ -18,9 +18,9 @@ const styles = StyleSheet.create({
     paddingTop: 22,
     paddingBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(166, 255, 0, 0.14)',
+    borderColor: COLORS.lime500Alpha14,
     overflow: 'hidden',
-    shadowColor: '#8DFF59',
+    shadowColor: COLORS.green300,
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.12,
     shadowRadius: 24,
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: 'rgba(141, 255, 89, 0.08)',
+    backgroundColor: COLORS.green300Alpha08,
   },
   closeBtn: {
     position: 'absolute',
@@ -44,9 +44,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: COLORS.whiteAlpha08,
     zIndex: 2,
   },
   title: {
@@ -64,12 +64,12 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   descriptionIcon: {
-    color: '#A6FF00',
+    color: COLORS.activeBorder,
     fontSize: 18,
     marginBottom: 8,
   },
   description: {
-    color: 'rgba(221, 231, 213, 0.72)',
+    color: COLORS.lime100Alpha72,
     textAlign: 'center',
     fontSize: 13,
     lineHeight: 20,
@@ -95,10 +95,10 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 2,
     marginTop: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: COLORS.whiteAlpha12,
   },
   connectorSegmentActive: {
-    backgroundColor: 'rgba(141, 255, 89, 0.9)',
+    backgroundColor: COLORS.green300Alpha90,
   },
   connectorSpacer: {
     flex: 1,
@@ -114,20 +114,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderColor: COLORS.whiteAlpha14,
     marginBottom: 10,
   },
   optionCircleActive: {
-    shadowColor: '#8DFF59',
+    shadowColor: COLORS.green300,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.45,
     shadowRadius: 14,
     elevation: 8,
-    borderColor: 'rgba(220, 255, 209, 0.42)',
+    borderColor: COLORS.green100Alpha42,
   },
   optionCircleLocked: {
     opacity: 0.7,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: COLORS.whiteAlpha10,
   },
   lockIcon: {
     fontSize: 15,
@@ -144,10 +144,10 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semibold,
   },
   optionLabelLocked: {
-    color: 'rgba(170, 178, 166, 0.62)',
+    color: COLORS.neutral300Alpha62,
   },
   note: {
-    color: 'rgba(221, 231, 213, 0.48)',
+    color: COLORS.lime100Alpha48,
     fontSize: 11,
     lineHeight: 16,
     textAlign: 'center',
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#FF8C2A',
+    shadowColor: COLORS.orange400,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
     shadowRadius: 18,
@@ -169,13 +169,13 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   confirmText: {
-    color: '#FFF8F0',
+    color: COLORS.orange100,
     fontSize: 16,
     fontFamily: FONTS.bold,
     letterSpacing: 0.3,
   },
   confirmTextDisabled: {
-    color: 'rgba(255, 255, 255, 0.58)',
+    color: COLORS.whiteAlpha58,
   },
 });
 

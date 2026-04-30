@@ -4,7 +4,7 @@ import { COLORS } from '../../constants/COLORS';
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: COLORS.blackAlpha70,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     overflow: 'hidden',
     padding: 2,
-    backgroundColor: '#0a1a0a',
+    backgroundColor: COLORS.green950Tone2,
   },
   rotatingGradient: {
     position: 'absolute',

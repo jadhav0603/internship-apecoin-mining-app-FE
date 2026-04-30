@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   backdrop: {
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   secondaryButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: COLORS.transparent,
   },
   buttonText: {
     fontSize: 16,

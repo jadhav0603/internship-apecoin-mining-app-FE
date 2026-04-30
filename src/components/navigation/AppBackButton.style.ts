@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   button: {
@@ -7,9 +8,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(122, 151, 46, 0.18)',
+    backgroundColor: COLORS.yellow600Alpha18,
     borderWidth: 1,
-    borderColor: 'rgba(202, 231, 125, 0.14)',
+    borderColor: COLORS.yellow300Alpha14,
   },
   buttonPressed: {
     opacity: 0.82,

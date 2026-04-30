@@ -4,7 +4,7 @@ import { COLORS } from '../../constants/COLORS';
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: COLORS.blackAlpha60,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingTop: 80,
@@ -15,8 +15,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    shadowColor: '#000',
+    borderColor: COLORS.whiteAlpha10,
+    shadowColor: COLORS.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
     marginHorizontal: 10,
   },
 });

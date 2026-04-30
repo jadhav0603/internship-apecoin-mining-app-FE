@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { THEME } from './theme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   row: {
@@ -20,19 +21,19 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
   pendingDot: {
-    backgroundColor: '#7DF35F',
-    borderColor: 'rgba(125,243,95,0.28)',
+    backgroundColor: COLORS.green300Tone2,
+    borderColor: COLORS.green300Alpha28,
   },
   paidDot: {
-    backgroundColor: '#82EFCB',
-    borderColor: 'rgba(130,239,203,0.28)',
+    backgroundColor: COLORS.teal300,
+    borderColor: COLORS.teal300Alpha28,
   },
   timelineConnector: {
     flex: 1,
     width: 2,
     marginTop: 8,
     marginBottom: -8,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: COLORS.whiteAlpha12,
   },
   card: {
     flex: 1,
@@ -40,10 +41,10 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    backgroundColor: 'rgba(10, 55, 28, 0.84)',
+    backgroundColor: COLORS.green900Alpha84,
     borderWidth: 1.2,
-    borderColor: 'rgba(173, 242, 106, 0.38)',
-    shadowColor: 'rgba(170,255,0,0.18)',
+    borderColor: COLORS.lime300Alpha38,
+    shadowColor: COLORS.lime500Alpha18Tone2,
     shadowOpacity: 0.16,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   },
   typeText: {
     flex: 1,
-    color: 'rgba(255,255,255,0.72)',
+    color: COLORS.whiteAlpha72,
     fontSize: 13,
     fontFamily: FONTS.medium,
     marginRight: 10,
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     marginLeft: 6,
-    color: 'rgba(255,255,255,0.74)',
+    color: COLORS.whiteAlpha74,
     fontSize: 12,
     fontFamily: FONTS.medium,
   },
@@ -93,12 +94,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    backgroundColor: 'rgba(158, 191, 60, 0.18)',
+    backgroundColor: COLORS.yellow500Alpha18,
     borderWidth: 1,
-    borderColor: 'rgba(202,239,103,0.52)',
+    borderColor: COLORS.yellow300Alpha52,
   },
   pendingBadgeText: {
-    color: '#F1FFC8',
+    color: COLORS.yellow100,
     fontSize: 12,
     fontFamily: FONTS.bold,
     fontWeight: '700',
@@ -107,12 +108,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    backgroundColor: 'rgba(105, 240, 174, 0.14)',
+    backgroundColor: COLORS.teal300Alpha14,
     borderWidth: 1,
-    borderColor: 'rgba(130,239,203,0.46)',
+    borderColor: COLORS.teal300Alpha46,
   },
   paidBadgeText: {
-    color: '#D8FFF0',
+    color: COLORS.teal100,
     fontSize: 12,
     fontFamily: FONTS.bold,
     fontWeight: '700',

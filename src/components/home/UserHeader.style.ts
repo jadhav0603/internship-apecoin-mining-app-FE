@@ -1,8 +1,9 @@
 import { StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1A2B1A',
+    backgroundColor: COLORS.green900,
     padding: 16,
     borderRadius: 20,
     flexDirection: 'row',
@@ -16,7 +17,7 @@ const styles = StyleSheet.create({
   borderRadius: 30,
   overflow: 'hidden',
   borderWidth: 2,
-  borderColor: '#39FF14',
+  borderColor: COLORS.successNeon,
   marginRight: 12,
 },
 
@@ -32,7 +33,7 @@ avatarFallback: {
 },
 
 avatarText: {
-  color: '#fff',
+  color: COLORS.white,
   fontSize: 22,
   fontWeight: 'bold',
 },
@@ -48,7 +49,7 @@ avatarText: {
   //   borderRadius: 25,
   //   marginRight: 12,
   //   borderWidth: 2,
-  //   borderColor: '#A6FF00',
+  //   borderColor: COLORS.activeBorder,
   // },
 
   row: {
@@ -57,41 +58,41 @@ avatarText: {
   },
 
   name: {
-    color: '#fff',
+    color: COLORS.white,
     fontSize: 18,
     fontWeight: '700',
     marginRight: 8,
   },
 
   plan: {
-    backgroundColor: '#A6FF00',
+    backgroundColor: COLORS.activeBorder,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
 
   planText: {
-    color: '#000',
+    color: COLORS.black,
     fontSize: 12,
     fontWeight: '600',
   },
 
   email: {
-    color: 'rgba(255,255,255,0.5)',
+    color: COLORS.whiteAlpha50,
     fontSize: 13,
   },
   loadingText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
   },
 
   menuBtn: {
     padding: 10,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: COLORS.whiteAlpha10,
   },
 
   menuIcon: {
-    color: '#fff',
+    color: COLORS.white,
     fontSize: 18,
   },
 });

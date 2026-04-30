@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   pressable: {
@@ -10,7 +11,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#0A0F08',
+    backgroundColor: COLORS.green950Tone3,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 1.5, // Border width
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   label: {
-    color: '#E0E0E0',
+    color: COLORS.neutral100,
     fontSize: 13,
     fontFamily: FONTS.bold,
     fontWeight: '700',

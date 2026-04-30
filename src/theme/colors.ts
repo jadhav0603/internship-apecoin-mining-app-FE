@@ -1,25 +1,26 @@
+import { COLORS } from '../constants/COLORS';
 export const Colors = {
   // Backgrounds
-  bgPrimary: '#0A0A0A',
-  bgCard: 'rgba(255, 255, 255, 0.08)',
+  bgPrimary: COLORS.neutral950,
+  bgCard: COLORS.whiteAlpha08,
 
   // Accent
-  neonGreen: '#B6FF3B',
-  neonGreenDark: '#8FCC1E',
+  neonGreen: COLORS.brandLimeSoft,
+  neonGreenDark: COLORS.brandLimeMuted,
 
   // Text
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255, 255, 255, 0.55)',
-  textMuted: 'rgba(255, 255, 255, 0.35)',
+  textPrimary: COLORS.white,
+  textSecondary: COLORS.whiteAlpha55,
+  textMuted: COLORS.whiteAlpha35,
 
   // Glass / borders
-  glassBorder: 'rgba(255, 255, 255, 0.18)',
-  glassBg: 'rgba(255, 255, 255, 0.07)',
+  glassBorder: COLORS.whiteAlpha18,
+  glassBg: COLORS.whiteAlpha07,
 
   // Gradients (used in arrays)
-  overlayGradient: ['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.88)'] as string[],
+  overlayGradient: [COLORS.blackAlpha15, COLORS.blackAlpha55, COLORS.blackAlpha88] as string[],
 
   // Misc
-  error: '#FF5C5C',
-  checkboxBorder: 'rgba(255,255,255,0.4)',
+  error: COLORS.danger,
+  checkboxBorder: COLORS.whiteAlpha40,
 };

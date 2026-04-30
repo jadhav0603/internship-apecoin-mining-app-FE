@@ -1,4 +1,5 @@
 import { Dimensions, StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/COLORS';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const NUM_COLUMNS = 3;
@@ -13,7 +14,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: HORIZONTAL_PADDING,
     paddingVertical: 28,
-    backgroundColor: 'transparent',
+    backgroundColor: COLORS.transparent,
   },
   row: {
     flexDirection: 'row',

@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import {Colors} from '../../theme/colors';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -8,16 +9,16 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: COLORS.neutral900,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: COLORS.whiteAlpha08,
     paddingHorizontal: 20,
     height: 54,
   },
   containerFocused: {
     borderColor: Colors.neonGreen,
-    backgroundColor: 'rgba(182,255,59,0.05)',
+    backgroundColor: COLORS.lime400Alpha05,
   },
   containerError: {
     borderColor: Colors.error,
@@ -28,7 +29,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 15,
     letterSpacing: 0.2,
   },

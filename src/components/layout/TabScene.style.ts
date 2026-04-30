@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderWidth: 1,
     borderColor: COLORS.glassBorder,
-    backgroundColor: 'rgba(13, 20, 9, 0.88)',
+    backgroundColor: COLORS.lime950Alpha88,
     gap: 6,
   },
   metricLabel: {

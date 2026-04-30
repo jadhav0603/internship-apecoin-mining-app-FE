@@ -5,7 +5,7 @@ import { FONTS } from '../../constants/FONTS';
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: COLORS.blackAlpha75,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -13,10 +13,10 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: '#121A12',
+    backgroundColor: COLORS.card,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: 'rgba(166, 255, 0, 0.15)',
+    borderColor: COLORS.lime500Alpha15,
     overflow: 'hidden',
   },
   header: {
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#121A12',
+    borderColor: COLORS.card,
   },
   infoSection: {
     alignItems: 'center',
@@ -94,12 +94,12 @@ const styles = StyleSheet.create({
   editProfileButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(166, 255, 0, 0.08)',
+    backgroundColor: COLORS.lime500Alpha08,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(166, 255, 0, 0.2)',
+    borderColor: COLORS.lime500Alpha20,
   },
   editProfileIcon: {
     marginRight: 8,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.medium,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: COLORS.whiteAlpha10,
     marginBottom: 20,
   },
   saveButton: {
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   saveButtonText: {
-    color: '#000',
+    color: COLORS.black,
     fontSize: 16,
     fontFamily: FONTS.bold,
   },

@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import {Colors} from '../../theme/colors';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   container: {
@@ -12,7 +13,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    shadowColor: '#fff',
+    shadowColor: COLORS.white,
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.08,
     shadowRadius: 8,
@@ -22,10 +23,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  gBlue:   {fontSize: 14, fontWeight: '800', color: '#4285F4'},
-  gRed:    {fontSize: 14, fontWeight: '800', color: '#EA4335'},
-  gYellow: {fontSize: 14, fontWeight: '800', color: '#FBBC05'},
-  gGreen:  {fontSize: 14, fontWeight: '800', color: '#34A853'},
+  gBlue:   {fontSize: 14, fontWeight: '800', color: COLORS.googleBlue},
+  gRed:    {fontSize: 14, fontWeight: '800', color: COLORS.googleRed},
+  gYellow: {fontSize: 14, fontWeight: '800', color: COLORS.googleYellow},
+  gGreen:  {fontSize: 14, fontWeight: '800', color: COLORS.googleGreen},
 });
 
 export default styles;

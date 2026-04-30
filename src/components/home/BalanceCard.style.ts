@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 2, // border thickness
-    backgroundColor: '#449d21ff',
+    backgroundColor: COLORS.green600,
   },
   rotatingGradient: {
     position: 'absolute',
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     borderRadius: 24, // 26 - 2
-    backgroundColor: 'rgba(9, 14, 7, 0.96)',
+    backgroundColor: COLORS.green950Alpha96,
     padding: 8,
     gap: 18,
   },
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: COLORS.whiteAlpha05,
   },
   metricIconWrap: {
     width: 38,
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(166, 255, 0, 0.08)',
+    backgroundColor: COLORS.lime500Alpha08,
   },
   metricContent: {
     flex: 1,

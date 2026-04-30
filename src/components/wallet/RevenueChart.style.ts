@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { THEME, formatCompactValue } from './theme';
+import { COLORS } from '../../constants/COLORS';
 
 const CHART_HEIGHT = 160;
 const BAR_WIDTH = 8;
@@ -27,7 +28,7 @@ const styles = StyleSheet.create({
     borderColor: THEME.neonGreen,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    backgroundColor: '#2a2a1a',
+    backgroundColor: COLORS.yellow900,
   },
   badgeText: {
     color: THEME.neonGreen,
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
     height: 1,
     borderStyle: 'dashed',
     borderWidth: 0.5,
-    borderColor: '#3a3a3a',
+    borderColor: COLORS.neutral800Tone2,
   },
   chartScrollContent: {
     minWidth: '100%',
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     marginTop: 12,
-    color: '#7f7f7f',
+    color: COLORS.neutral500Tone4,
     fontSize: 12,
     fontFamily: FONTS.medium,
   },

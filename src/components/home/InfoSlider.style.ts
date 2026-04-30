@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     gap: 16,
     // Professional Shadow
-    shadowColor: '#000',
+    shadowColor: COLORS.black,
     shadowOpacity: 0.15,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
@@ -42,11 +42,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: 'rgba(166, 255, 0, 0.1)',
+    backgroundColor: COLORS.lime500Alpha10,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(166, 255, 0, 0.2)',
+    borderColor: COLORS.lime500Alpha20,
   },
   content: {
     flex: 1,
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: 'rgba(166, 255, 0, 0.2)',
+    backgroundColor: COLORS.lime500Alpha20,
   },
   activeDot: {
     width: 22,

@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   valueBadgeText: {
-    color: '#FFFFFF',
+    color: COLORS.white,
     fontSize: 14,
     fontFamily: FONTS.bold,
     fontWeight: '700',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(166, 255, 0, 0.14)',
+    backgroundColor: COLORS.lime500Alpha14,
   },
   monthLabel: {
     color: COLORS.textMuted,

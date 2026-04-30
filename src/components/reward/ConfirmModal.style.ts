@@ -1,11 +1,12 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { PROFILE_THEME } from '../profile/profileTheme';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(4, 8, 4, 0.75)',
+    backgroundColor: COLORS.green950Alpha75,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -15,8 +16,8 @@ const styles = StyleSheet.create({
     maxWidth: 340,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(170,255,0,0.3)',
-    backgroundColor: '#10160e',
+    borderColor: COLORS.lime500Alpha30,
+    backgroundColor: COLORS.green950Tone5,
     padding: 24,
     shadowColor: PROFILE_THEME.neonGreen,
     shadowOpacity: 0.15,
@@ -25,7 +26,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   cardDanger: {
-    borderColor: 'rgba(255,92,92,0.3)',
+    borderColor: COLORS.red300Alpha30,
     shadowColor: PROFILE_THEME.danger,
   },
   title: {
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
     color: PROFILE_THEME.danger,
   },
   message: {
-    color: 'rgba(255,255,255,0.7)',
+    color: COLORS.whiteAlpha70,
     fontSize: 16,
     fontFamily: FONTS.medium,
     textAlign: 'center',
@@ -61,16 +62,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cancelButton: {
-    backgroundColor: 'transparent',
-    borderColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: COLORS.transparent,
+    borderColor: COLORS.whiteAlpha15,
   },
   confirmButtonPrimary: {
-    backgroundColor: 'rgba(170,255,0,0.15)',
-    borderColor: 'rgba(170,255,0,0.4)',
+    backgroundColor: COLORS.lime500Alpha15Tone2,
+    borderColor: COLORS.lime500Alpha40,
   },
   confirmButtonDanger: {
-    backgroundColor: 'rgba(255,92,92,0.15)',
-    borderColor: 'rgba(255,92,92,0.4)',
+    backgroundColor: COLORS.red300Alpha15,
+    borderColor: COLORS.red300Alpha40,
   },
   buttonPressed: {
     opacity: 0.7,

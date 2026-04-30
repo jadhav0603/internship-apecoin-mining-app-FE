@@ -77,7 +77,7 @@ borderBottomRightRadius: 100,
     elevation: 5,
   },
   buttonText: {
-    color: '#000000',
+    color: COLORS.black,
     fontSize: 18,
     fontWeight: '700',
   },

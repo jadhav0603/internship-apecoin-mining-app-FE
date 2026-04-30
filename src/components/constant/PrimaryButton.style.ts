@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import {Colors} from '../../theme/colors';
+import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
   button: {
@@ -18,7 +19,7 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   label: {
-    color: '#0A0A0A',
+    color: COLORS.neutral950,
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
