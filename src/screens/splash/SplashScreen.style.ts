@@ -1,9 +1,9 @@
-import { StyleSheet, Dimensions } from 'react-native';
-import { COLORS } from '../../constants/COLORS'
+import { Dimensions, StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/COLORS';
 
 const { width } = Dimensions.get('window');
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     // borderRadius: height * 4,
     // alignSelf: "center",
     borderBottomLeftRadius: 100,
-borderBottomRightRadius: 100,
+    borderBottomRightRadius: 100,
   },
   gradientOverlay: {
     ...StyleSheet.absoluteFill,
@@ -54,7 +54,7 @@ borderBottomRightRadius: 100,
     color: COLORS.textPrimary,
     lineHeight: 46,
     // marginBottom: 8,
-    marginTop: -28
+    marginTop: -28,
   },
   subtitle: {
     fontSize: 16,
@@ -62,7 +62,7 @@ borderBottomRightRadius: 100,
     // marginBottom: 40,
     fontWeight: '400',
     lineHeight: 24,
-    marginTop: -25
+    marginTop: -25,
   },
   button: {
     backgroundColor: COLORS.primary,
@@ -82,3 +82,5 @@ borderBottomRightRadius: 100,
     fontWeight: '700',
   },
 });
+
+export default styles;

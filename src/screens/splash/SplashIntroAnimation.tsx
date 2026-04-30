@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { StatusBar, StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { COLORS } from '../../constants/COLORS';
+import styles from './SplashIntroAnimation.style';
 
 type SplashIntroAnimationProps = {
   onFinish: () => void;
@@ -46,18 +47,5 @@ const SplashIntroAnimation = ({ onFinish }: SplashIntroAnimationProps) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.backgroundDeep,
-  },
-  animation: {
-    width: '100%',
-    height: '100%',
-  },
-});
 
 export default SplashIntroAnimation;

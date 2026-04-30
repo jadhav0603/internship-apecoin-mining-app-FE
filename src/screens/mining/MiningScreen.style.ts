@@ -156,6 +156,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 50,
   },
+  actionSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginVertical: 15,
+  },
+  actionFooter: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
   timerCore: {
     width: 190,
     height: 190,

@@ -5,6 +5,7 @@ import TermsModal from '../../components/terms/TermsModal';
 import { userService } from '../../services/userService';
 import { useUser } from '../../context/UserContext';
 import { COLORS } from '../../constants/COLORS';
+import styles from './TermsAndConditionsScreen.style';
 
 const TermsAndConditionsScreen = () => {
   const navigation = useNavigation();
@@ -47,12 +48,5 @@ const TermsAndConditionsScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.backgroundDeep,
-  },
-});
 
 export default TermsAndConditionsScreen;

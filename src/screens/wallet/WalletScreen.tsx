@@ -35,7 +35,7 @@ import {
   type WithdrawRecord,
 } from '../../services/withdrawService';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
-import styles from './wallet.styles';
+import styles from './WalletScreen.style';
 
 const WalletScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(44);
