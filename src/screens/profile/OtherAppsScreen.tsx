@@ -23,7 +23,7 @@ import AppBackButton from '../../components/navigation/AppBackButton';
 import { globalSettingsService } from '../../services/globalSettingsService';
 import type { OtherAppItem } from '../../services/globalSettingsService';
 
-const JUNGLE_BACKGROUND = require('../../assets/images/drawer-bg2.webp');
+const JUNGLE_BACKGROUND = require('../../assets/images/daily_reward_background.webp');
 const APP_ICONS: Record<string, ImageSourcePropType> = {
   'pengu.png': require('../../assets/images/Pengu-icon.png'),
   pengu: require('../../assets/images/Pengu-icon.png'),
