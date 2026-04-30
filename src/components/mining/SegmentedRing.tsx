@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { COLORS } from '../../constants/COLORS';
-import styles from './segmentedRing.styles';
+import styles from './SegmentedRing.style';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 

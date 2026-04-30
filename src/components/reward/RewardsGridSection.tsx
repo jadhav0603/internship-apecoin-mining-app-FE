@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, Dimensions } from 'react-native';
 import DayCard from './DayCard';
+import styles from './RewardsGridSection.style';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -65,26 +67,5 @@ const RewardsGridSection: React.FC<RewardsGridSectionProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  sectionWrapper: {
-    width: '100%',
-    paddingHorizontal: HORIZONTAL_PADDING,
-    paddingVertical: 28,
-    backgroundColor: 'transparent',
-  },
-  row: {
-    flexDirection: 'row',
-    marginBottom: CARD_GAP,
-  },
-  // Applied only to incomplete last rows (e.g., a single Day 7 card)
-  rowCentered: {
-    justifyContent: 'center',
-  },
-  cardContainer: {
-    width: CARD_WIDTH,
-    marginRight: CARD_GAP,
-  },
-});
 
 export default RewardsGridSection;

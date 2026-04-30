@@ -3,6 +3,22 @@ import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 
 const styles = StyleSheet.create({
+  shell: {
+    borderRadius: 32,
+    overflow: 'hidden',
+    padding: 1.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  borderBeam: {
+    position: 'absolute',
+    width: '300%',
+    height: '300%',
+    top: '-100%',
+    left: '-100%',
+  },
+  borderBeamFill: {
+    flex: 1,
+  },
   pressable: {
     width: '100%',
   },
@@ -44,6 +60,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
+  },
+  innerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tapIcon: {
     textShadowColor: 'rgba(166, 255, 0, 0.22)',

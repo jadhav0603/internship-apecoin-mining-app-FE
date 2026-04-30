@@ -99,6 +99,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "right",
   },
+  logoutText: {
+    color: 'red',
+  },
 });
 
 export default styles;

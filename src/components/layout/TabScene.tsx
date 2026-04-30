@@ -4,7 +4,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/COLORS';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
-import styles from './tabScene.styles';
+import styles from './TabScene.style';
 
 type SceneMetric = {
   label: string;

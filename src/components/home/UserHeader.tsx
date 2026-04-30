@@ -1,9 +1,9 @@
 import React from 'react';
-import {View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, Text, Image, TouchableOpacity} from 'react-native';
 import {getUserDisplayName, useUser} from '../../context/UserContext';
 import { useNavigation } from '@react-navigation/native';
 
-import styles from './UserHeader.styles';
+import styles from './UserHeader.style';
 import LinearGradient from 'react-native-linear-gradient';
 
 const UserHeader = () => {
@@ -11,7 +11,7 @@ const UserHeader = () => {
   const navigation = useNavigation<any>();
 
   if (!user) {
-    return <Text style={localStyles.loadingText}>Loading...</Text>;
+    return <Text style={styles.loadingText}>Loading...</Text>;
   }
 
   return (
@@ -69,11 +69,5 @@ const UserHeader = () => {
     </View>
   );
 };
-
-const localStyles = StyleSheet.create({
-  loadingText: {
-    color: '#FFFFFF',
-  },
-});
 
 export default UserHeader;

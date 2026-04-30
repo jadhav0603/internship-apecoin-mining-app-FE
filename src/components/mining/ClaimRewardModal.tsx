@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { Modal, Pressable, Text, View, Animated, StyleSheet } from 'react-native';
+import { Modal, Pressable, Text, View, Animated } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useMining } from '../../context/MiningContext';
 import { useWallet } from '../../context/WalletContext';
@@ -11,6 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
+import styles from './ClaimRewardModal.style';
 
 const ClaimRewardModal = () => {
   const {
@@ -116,112 +117,51 @@ const ClaimRewardModal = () => {
   return (
     <>
       <Modal transparent animationType="fade">
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-        <View
-          style={{
-            width: 300,
-            borderRadius: 26,
-            overflow: 'hidden',
-            padding: 2, // border thickness
-            backgroundColor: '#0a1a0a',
-          }}
-        >
+        <View style={styles.overlay}>
+        <View style={styles.frame}>
           <Animated.View
             style={[
-              {
-                position: 'absolute',
-                width: '150%',
-                height: '150%',
-                top: '-25%',
-                left: '-25%',
-              },
+              styles.rotatingGradient,
               { transform: [{ rotate: spin }] },
             ]}
           >
             <LinearGradient
               colors={['#39FF14', '#0a1a0a', '#14ff37ff', '#0a1a0a']}
               locations={[0, 0.25, 0.5, 0.75]}
-              style={StyleSheet.absoluteFill}
+              style={styles.gradientFill}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             />
           </Animated.View>
 
-          <View
-            style={{
-              backgroundColor: COLORS.backgroundLight,
-              borderRadius: 24,
-              padding: 20,
-            }}
-          >
+          <View style={styles.card}>
             <Pressable
               onPress={dismissClaimPopup}
               hitSlop={10}
-              style={{
-                position: 'absolute',
-                top: 14,
-                right: 14,
-                zIndex: 1,
-              }}
+              style={styles.closeButton}
             >
               <Ionicons name="close" size={22} color={COLORS.textSecondary} />
             </Pressable>
 
-            <Text
-              style={{
-                color: COLORS.textPrimary,
-                fontSize: 18,
-                textAlign: 'center',
-                marginBottom: 12,
-              }}
-            >
-              Mining Complete
-            </Text>
+            <Text style={styles.title}>Mining Complete</Text>
 
-            <Text
-              style={{
-                color: COLORS.primary,
-                fontSize: 22,
-                textAlign: 'center',
-                marginBottom: 10,
-              }}
-            >
+            <Text style={styles.amount}>
               {(claimRewardAmount || earned).toFixed(6)} APC
             </Text>
 
-            <View style={{ marginTop: 10 }}>
-              <Text style={{ color: COLORS.textSecondary }}>Duration: {hours}h</Text>
-              <Text style={{ color: COLORS.textSecondary }}>Multiplier: {multiplier}x</Text>
-              <Text style={{ color: COLORS.textSecondary }}>
+            <View style={styles.detailsGroup}>
+              <Text style={styles.detailText}>Duration: {hours}h</Text>
+              <Text style={styles.detailText}>Multiplier: {multiplier}x</Text>
+              <Text style={styles.detailText}>
                 Remaining: {formatTime(secondsLeft)}
               </Text>
             </View>
 
             <Pressable
               onPress={handleClaim}
-              style={{
-                marginTop: 20,
-                backgroundColor: COLORS.primary,
-                paddingVertical: 12,
-                borderRadius: 16,
-                alignItems: 'center',
-              }}
+              style={styles.claimButton}
             >
-              <Text
-                style={{
-                  color: COLORS.textDark,
-                  fontWeight: 'bold',
-                }}
-              >
-                CLAIM REWARD
-              </Text>
+              <Text style={styles.claimButtonText}>CLAIM REWARD</Text>
             </Pressable>
           </View>
         </View>

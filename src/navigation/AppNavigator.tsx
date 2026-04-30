@@ -29,7 +29,7 @@ import TermsAndConditionsScreen from '../screens/profile/TermsAndConditionsScree
 import ConnectUsScreen from '../screens/profile/ConnectUsScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
-import Loading from '../components/Loading';
+import Loading from '../components/constant/Loading';
 import TermsModal from '../components/terms/TermsModal';
 
 import { RootStackParamList } from './types';

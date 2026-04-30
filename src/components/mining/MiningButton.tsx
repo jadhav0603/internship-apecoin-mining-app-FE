@@ -16,7 +16,7 @@ import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../../constants/COLORS';
 import SegmentedRing from './SegmentedRing';
-import styles from './miningButton.styles';
+import styles from './MiningButton.style';
 import { useTimeModal } from '../../context/TimeModal';
 import { useMining } from '../../context/MiningContext';
 type MiningButtonProps = {
@@ -193,14 +193,14 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 
   return (
   
-      <View style={{ borderRadius: 32, overflow: 'hidden', padding: 1.5, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
+      <View style={styles.shell}>
         {/* Border Beam Animation */}
-        <Animated.View style={[{ position: 'absolute', width: '300%', height: '300%', top: '-100%', left: '-100%' }, animatedBorderStyle]}>
+        <Animated.View style={[styles.borderBeam, animatedBorderStyle]}>
           <LinearGradient
             colors={[COLORS.primary, 'transparent', '#10e830ff', 'transparent', COLORS.success, 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{ flex: 1 }}
+            style={styles.borderBeamFill}
           />
         </Animated.View>
 
@@ -230,7 +230,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
               end={{ x: 0.9, y: 1 }}
               style={styles.innerCore}
             >
-              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={styles.innerContent}>
                   <Pressable
       onPress={handleOpen}
       style={({ pressed }) => [

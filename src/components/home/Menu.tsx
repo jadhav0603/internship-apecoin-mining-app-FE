@@ -14,12 +14,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
-import styles from './Menu.styles';
+import styles from './Menu.style';
 import { COLORS } from '../../constants/COLORS';
 import { useAlert } from '../../context/AlertContext';
 import { authService } from '../../services/authService';
 import { isBlockedAccountError } from '../../session/blockedAccountState';
-import ConfirmModal from '../ConfirmModal';
+import ConfirmModal from '../reward/ConfirmModal';
 import DeleteAccountConfirmModal from '../profile/DeleteAccountConfirmModal';
 import UserHeader from './UserHeader';
 import type { RootStackParamList } from '../../navigation/types';
@@ -195,7 +195,7 @@ const Menu = () => {
                 ))}
 
                 <TouchableOpacity style={styles.menuItemBox} onPress={handleLogoutPress}>
-                  <Text style={[styles.menuItem, localStyles.logoutText]}>
+                  <Text style={[styles.menuItem, styles.logoutText]}>
                     Logout
                   </Text>
                 </TouchableOpacity>
@@ -226,11 +226,5 @@ const Menu = () => {
     </>
   );
 };
-
-const localStyles = {
-  logoutText: {
-    color: 'red',
-  },
-} as const;
 
 export default Menu;

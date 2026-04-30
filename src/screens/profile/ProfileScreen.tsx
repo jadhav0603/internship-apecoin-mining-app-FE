@@ -32,7 +32,7 @@ import { userService } from '../../services/userService';
 import { isBlockedAccountError } from '../../session/blockedAccountState';
 import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
 import MyProfileModal from '../../components/profile/MyProfileModal';
-import ConfirmModal from '../../components/ConfirmModal';
+import ConfirmModal from '../../components/reward/ConfirmModal';
 import DeleteAccountConfirmModal from '../../components/profile/DeleteAccountConfirmModal';
 import ProfileMenuItem from '../../components/profile/ProfileMenuItem';
 import {
