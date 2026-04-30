@@ -231,3 +231,106 @@ export const COLORS = {
   yellow700Alpha22: 'rgba(96,120,28,0.22)',
   yellow900: '#2A2A1A',
 } as const;
+
+
+// export const COLORS = {
+//   primary: '#339CFF',
+//   primaryDark: '#1E7BE6',
+//   background: '#0A0F1A',
+//   backgroundDeep: '#04070A',
+//   backgroundLight: '#0A1B2B',
+//   backgroundOlive: '#0F2E42',
+//   backgroundGradientStart: '#143E52',
+//   backgroundGradientMid: '#081622',
+//   backgroundGradientEnd: '#04070A',
+//   card: '#121A1F',
+//   cardStrong: '#12161F',
+//   cardMuted: 'rgba(18, 26, 31, 0.82)',
+//   glass: 'rgba(20, 34, 48, 0.34)',
+//   glassBorder: 'rgba(124, 205, 255, 0.16)',
+//   input: '#1B1F24',
+//   textPrimary: '#FFFFFF',
+//   textSecondary: '#B0B0B0',
+//   textMuted: '#6F8290',
+//   textDark: '#080D13',
+//   placeholder: '#6B6B6B',
+//   border: '#2A2A2A',
+//   activeBorder: '#339CFF',
+//   ringTrack: 'rgba(71, 173, 214, 0.18)',
+//   ringInactive: 'rgba(62, 150, 184, 0.16)',
+//   ringGlow: 'rgba(75, 169, 255, 0.58)',
+//   ringGlowSoft: 'rgba(75, 169, 255, 0.18)',
+//   surfaceGlow: 'rgba(112, 198, 255, 0.2)',
+//   success: '#6BD6FF',
+//   whiteSoft: 'rgba(255, 255, 255, 0.86)',
+//   white: '#FFFFFF',
+//   black: '#000000',
+//   transparent: 'transparent',
+//   danger: '#FF5C5C',
+
+//   googleBlue: '#4285F4',
+//   googleRed: '#EA4335',
+//   googleYellow: '#FBBC05',
+//   googleGreen: '#34A853',
+
+//   brandLimeSoft: '#66B9FF',
+//   brandLimeMuted: '#1E8FCC',
+//   successNeon: '#14A3FF',
+
+//   blackAlpha50: 'rgba(0,0,0,0.5)',
+//   blackAlpha70: 'rgba(0,0,0,0.7)',
+
+//   cyan300: '#61A8FF',
+
+//   // 🔵 Converted Blues (previous greens/limes)
+//   blue300: '#59B0FF',
+//   blue300Alpha08: 'rgba(89,176,255,0.08)',
+//   blue300Alpha28: 'rgba(89,176,255,0.28)',
+//   blue300Alpha90: 'rgba(89,176,255,0.9)',
+
+//   blue500: '#339CFF',
+//   blue500Alpha15: 'rgba(51,156,255,0.15)',
+//   blue500Alpha40: 'rgba(51,156,255,0.4)',
+
+//   blue600: '#2175B5',
+//   blue600Tone2: '#206FA9',
+
+//   blue850: '#1E2A2E',
+//   blue850Tone2: '#1A2E3A',
+
+//   blue900: '#1A1F2B',
+//   blue900Alpha62: 'rgba(17,21,39,0.62)',
+//   blue900Alpha84: 'rgba(10,28,55,0.84)',
+
+//   blue950: '#05080F',
+//   blue950Alpha72: 'rgba(4,6,8,0.72)',
+//   blue950Alpha80: 'rgba(4,8,8,0.8)',
+
+//   indigo300: '#AA66FF',
+
+//   neutral100: '#E0E0E0',
+//   neutral200: '#D4D4D4',
+//   neutral300: '#AAAAAA',
+//   neutral500: '#7C7F76',
+//   neutral600: '#666666',
+//   neutral800: '#444444',
+//   neutral900: '#1E1E1E',
+//   neutral950: '#0A0A0A',
+
+//   orange100: '#FFF8F0',
+//   orange400: '#FF8C2A',
+
+//   red: 'red',
+//   red300: '#FF6B6B',
+
+//   teal100: '#D8FFF0',
+//   teal300: '#82EFCB',
+//   teal500: '#00FFCC',
+
+//   whiteAlpha10: 'rgba(255,255,255,0.1)',
+//   whiteAlpha50: 'rgba(255,255,255,0.5)',
+//   whiteAlpha70: 'rgba(255,255,255,0.7)',
+
+//   yellow100: '#F1FFC8',
+//   yellow900: '#2A2A1A',
+// } as const;
