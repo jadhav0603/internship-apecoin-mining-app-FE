@@ -1,18 +1,9 @@
-import React, { useRef, useState } from 'react';
-import {
-  Text,
-  TouchableOpacity,
-  View,
-  Animated,
-  Dimensions,
-  ImageBackground,
-  ScrollView,
-} from 'react-native';
+import React, { useState } from 'react';
+import { TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
 
 import styles from './Menu.styles';
 import { COLORS } from '../../constants/COLORS';
@@ -23,8 +14,7 @@ import ConfirmModal from '../ConfirmModal';
 import DeleteAccountConfirmModal from '../profile/DeleteAccountConfirmModal';
 import UserHeader from './UserHeader';
 import type { RootStackParamList } from '../../navigation/types';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
+import ProfileSettingsModal from '../profile/ProfileSettingsModal';
 
 type MenuNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,24 +25,6 @@ const Menu = () => {
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
-
-  const toggleMenu = () => {
-    if (menuOpen) {
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_WIDTH,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setMenuOpen(false));
-    } else {
-      setMenuOpen(true);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  };
 
   const handleLogout = async () => {
     setLogoutVisible(false);
@@ -62,27 +34,6 @@ const Menu = () => {
     } catch (err) {
       console.log("Logout error", err);
     }
-  };
-
-  const handleLogoutPress = () => {
-    if (menuOpen) {
-      toggleMenu();
-    }
-
-    setLogoutVisible(true);
-  };
-
-  const handleTransactionHistory = () => {
-    toggleMenu();
-    navigation.navigate('TransactionHistory');
-  };
-
-  const handleDeleteAccountPress = () => {
-    if (menuOpen) {
-      toggleMenu();
-    }
-
-    setDeleteAccountVisible(true);
   };
 
   const handleDeleteAccount = async () => {
@@ -118,93 +69,59 @@ const Menu = () => {
     }
   };
 
-  const menuItems: Array<{
-    label: string;
-    onPress?: () => void;
-  }> = [
-    {
-      label: 'Transaction History',
-      onPress: handleTransactionHistory,
-    },
-    { label: 'Other App' },
-    { label: 'Report' },
-    { label: 'FAQ' },
-    { label: 'Terms & Conditions' },
-    { label: 'Connect Us' },
-    { label: 'Delete Account', onPress: handleDeleteAccountPress },
-  ];
-
   return (
     <>
-      {/* HEADER */}
       <View style={styles.topRow}>
         <UserHeader />
 
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={toggleMenu}
+          onPress={() => setMenuOpen(true)}
         >
-          <Ionicons name="menu" size={22} color={COLORS.textPrimary} />
+          <Ionicons name="menu-outline" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
 
-      {/* OVERLAY */}
-      {menuOpen && (
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={toggleMenu}
-        />
-      )}
-
-      {/* FULL SCREEN MENU */}
-      <Animated.View
-        pointerEvents={menuOpen ? "auto" : "none"}
-        style={[
-          styles.menuContainer,
-          { transform: [{ translateX: slideAnim }] },
-        ]}
-      >
-        <View style={styles.drawer}>
-          <ImageBackground
-            source={require('../../assets/images/drawer-bg2.webp')}
-            style={styles.menuBg}
-            imageStyle={styles.menuBgImage}
-          >
-            <View style={styles.menuOverlay}>
-
-              {/* Header */}
-              <View style={styles.menuHeader}>
-                <Text style={styles.menuTitle}>Menu</Text>
-
-                <TouchableOpacity onPress={toggleMenu}>
-                  <AntDesign name="close" size={22} color="#fff" />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {menuItems.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.menuItemBox}
-                    onPress={item.onPress}
-                    disabled={!item.onPress}
-                  >
-                    <Text style={styles.menuItem}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity style={styles.menuItemBox} onPress={handleLogoutPress}>
-                  <Text style={[styles.menuItem, localStyles.logoutText]}>
-                    Logout
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-
-            </View>
-          </ImageBackground>
-        </View>
-      </Animated.View>
+      <ProfileSettingsModal
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onTransactionHistory={() => {
+          setMenuOpen(false);
+          navigation.navigate('TransactionHistory');
+        }}
+        onLeaderboard={() => {
+          setMenuOpen(false);
+          navigation.navigate('Leaderboard');
+        }}
+        onOtherApps={() => {
+          setMenuOpen(false);
+          navigation.navigate('OtherApps');
+        }}
+        onCheckUpdate={() => {
+          setMenuOpen(false);
+          navigation.navigate('CheckUpdate');
+        }}
+        onFAQ={() => {
+          setMenuOpen(false);
+          navigation.navigate('FAQ');
+        }}
+        onTermsAndConditions={() => {
+          setMenuOpen(false);
+          navigation.navigate('TermsAndConditions');
+        }}
+        onConnectUs={() => {
+          setMenuOpen(false);
+          navigation.navigate('ConnectUs');
+        }}
+        onDeleteAccount={() => {
+          setMenuOpen(false);
+          setDeleteAccountVisible(true);
+        }}
+        onLogout={() => {
+          setMenuOpen(false);
+          setLogoutVisible(true);
+        }}
+      />
 
       <ConfirmModal
         visible={logoutVisible}
@@ -226,11 +143,5 @@ const Menu = () => {
     </>
   );
 };
-
-const localStyles = {
-  logoutText: {
-    color: 'red',
-  },
-} as const;
 
 export default Menu;
