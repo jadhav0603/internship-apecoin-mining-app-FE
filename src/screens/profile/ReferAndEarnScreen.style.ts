@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Clipboard,
   Pressable,
   ScrollView,

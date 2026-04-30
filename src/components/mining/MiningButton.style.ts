@@ -21,10 +21,60 @@ const styles = StyleSheet.create({
   },
   pressable: {
     width: '100%',
+      height: '100%', 
+  alignItems: 'center',   
+  justifyContent: 'center', 
   },
   pressablePressed: {
     opacity: 0.92,
+
   },
+  centerWrapper: {
+  width: '100%',
+  height: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+centerWrap: {
+  width: 90,
+  height: 90,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+absoluteCenter: {
+  position: 'absolute',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+centerGlow: {
+  position: 'absolute',
+  width: 50,
+  height: 50,
+  borderRadius: 25,
+  backgroundColor: COLORS.primary,
+  opacity: 0.3,
+},
+
+// centerGlow: {
+//   position: 'absolute',
+//   width: 60,
+//   height: 60,
+//   borderRadius: 30,
+//   backgroundColor: COLORS.primary,
+//   opacity: 0.3,
+// },
+
+iconWrapper: {
+  width: 40,
+  height: 40,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+
   card: {
     overflow: 'hidden',
     borderRadius: 32,

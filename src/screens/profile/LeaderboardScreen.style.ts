@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Pressable,

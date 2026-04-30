@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, ViewStyle, ActivityIndicator, View } from 'react-native';
-import {Colors} from '../../theme/colors';
+import { TouchableOpacity, Text, ViewStyle } from 'react-native';
+import Loading from './Loading';
 import styles from './PrimaryButton.style';
 
 
@@ -26,7 +26,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       activeOpacity={0.82}
       disabled={disabled || loading}>
       {loading ? (
-        <ActivityIndicator color={Colors.bgPrimary} size="small" />
+        <Loading size="small" text={null} />
       ) : (
         <Text style={styles.label}>{label}</Text>
       )}

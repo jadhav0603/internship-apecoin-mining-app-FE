@@ -21,8 +21,8 @@ export const THEME = {
 
 export const formatAmount = (value: number) =>
   new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 6,
+    maximumFractionDigits: 6,
   }).format(value);
 
 export const formatCompactValue = (value: number) =>

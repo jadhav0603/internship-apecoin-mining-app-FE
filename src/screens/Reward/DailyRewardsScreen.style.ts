@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Dimensions,
   Image,
   ImageBackground,

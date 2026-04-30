@@ -1,6 +1,5 @@
 import React, { ReactNode, useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Linking,
   RefreshControl,
@@ -18,6 +17,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { RootStackParamList } from '../../navigation/types';
 import { COLORS } from '../../constants/COLORS';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import styles from './AboutUsScreen.style';
 import {
   AboutSocialLink,
@@ -205,9 +205,7 @@ const AboutUsScreen = () => {
       </View>
 
       {loading ? (
-        <View style={styles.stateContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
+        <Loading fullScreen size="medium" text="Loading about us..." />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Modal,
   Pressable,
@@ -13,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
 import { COLORS } from '../../constants/COLORS';
+import Loading from '../constant/Loading';
 import SafeBlurView from '../constant/SafeBlurView';
 import styles from './DeleteAccountConfirmModal.style';
 
@@ -186,7 +186,7 @@ const DeleteAccountConfirmModal = ({
                     style={styles.primaryButtonGradient}
                   >
                     {isSubmitting ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Loading size="small" text={null} />
                     ) : (
                       <>
                         <Ionicons name="warning-outline" size={18} color="#FFFFFF" />

@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Animated,
@@ -23,6 +22,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import MultiLineChart, {
@@ -407,10 +407,7 @@ const TransactionHistoryScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BACKGROUND} />
 
       {loading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator size="large" color={COLORS.primaryDark} />
-          <Text style={styles.centerStateText}>Loading transactions...</Text>
-        </View>
+        <Loading fullScreen size="medium" text="Loading transactions..." />
       ) : (
         <FlatList
           data={filteredTransactions}

@@ -6,8 +6,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import LottieView from 'lottie-react-native';
 import { COLORS } from '../constants/COLORS';
+import Loading from '../components/constant/Loading';
 
 type StartAdOptions = {
   onAdShown?: () => void;
@@ -93,13 +93,7 @@ export const useAdLoadingGate = ({
     >
       <View style={styles.overlay}>
         {status === 'loading' ? (
-          <LottieView
-            source={require('../assets/animations/loader.json')}
-            autoPlay
-            loop
-            style={styles.loader}
-            resizeMode="contain"
-          />
+          <Loading size="medium" text="Loading ad..." />
         ) : (
           <View style={styles.card}>
             <>
@@ -150,10 +144,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 12,
     textAlign: 'center',
-  },
-  loader: {
-    width: 160,
-    height: 160,
   },
   actions: {
     flexDirection: 'row',

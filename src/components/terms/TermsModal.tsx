@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   FlatList,
   ListRenderItem,
@@ -23,6 +22,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONTS } from '../../constants/FONTS';
 import { COLORS } from '../../constants/COLORS';
+import Loading from '../constant/Loading';
 import SafeBlurView from '../constant/SafeBlurView';
 import {
   TermsConditionsContent,
@@ -235,7 +235,7 @@ const TermsModal: React.FC<TermsModalProps> = ({
 
               {loading ? (
                 <View style={styles.stateContainer}>
-                  <ActivityIndicator color={ACCENT_END} size="large" />
+                  <Loading size="medium" text="Loading terms..." />
                 </View>
               ) : error ? (
                 <View style={styles.stateContainer}>
@@ -288,7 +288,7 @@ const TermsModal: React.FC<TermsModalProps> = ({
                     style={styles.acceptButton}
                   >
                     {accepting ? (
-                      <ActivityIndicator color="#120900" size="small" />
+                      <Loading size="small" text={null} />
                     ) : (
                       <Text style={styles.acceptButtonText}>
                         {content?.buttonText ?? ''}

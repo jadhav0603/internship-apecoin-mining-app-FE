@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Image,
   ImageSourcePropType,
@@ -14,6 +13,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
+import Loading from '../constant/Loading';
 import { PROFILE_THEME, getInitial } from './profileTheme';
 import SafeBlurView from '../constant/SafeBlurView';
 import styles from './MyAccountModal.style';
@@ -188,7 +188,7 @@ const MyAccountModal = ({
                 />
                 <View style={styles.editActions}>
                   {isUpdatingUsername ? (
-                    <ActivityIndicator color={PROFILE_THEME.neonGreen} size="small" />
+                    <Loading size="small" text={null} />
                   ) : (
                     <>
                       <Pressable

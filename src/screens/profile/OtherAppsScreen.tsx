@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   ImageBackground,
@@ -20,6 +19,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import { globalSettingsService } from '../../services/globalSettingsService';
 import type { OtherAppItem } from '../../services/globalSettingsService';
 import styles from './OtherAppsScreen.style';
@@ -321,9 +321,7 @@ const OtherAppsScreen = () => {
         </View>
 
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
+          <Loading fullScreen size="medium" text="Loading apps..." />
         ) : (
           <AppList
             apps={apps}

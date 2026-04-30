@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   LayoutAnimation,
   Platform,
@@ -18,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import styles from './FAQScreen.style';
 import {
   FaqItem,
@@ -199,9 +199,7 @@ const FAQScreen = () => {
       </LinearGradient>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
+        <Loading fullScreen size="medium" text="Loading FAQs..." />
       ) : (
         <FlatList
           data={items}

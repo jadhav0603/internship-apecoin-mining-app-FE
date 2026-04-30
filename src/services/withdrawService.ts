@@ -4,6 +4,7 @@ export type WithdrawRequestPayload = {
   userId: string;
   email: string;
   amount: number;
+  upiId: string;
 };
 
 export type WithdrawStatus = 'pending' | 'paid';
@@ -14,6 +15,7 @@ export type WithdrawRecord = {
   userId: string;
   email: string;
   amount: number;
+  upiId?: string;
   isActive: boolean;
   status: WithdrawStatus;
   withdrawalDate: string;

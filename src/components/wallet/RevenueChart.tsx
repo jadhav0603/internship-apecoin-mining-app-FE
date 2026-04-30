@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { ActivityIndicator, Animated, ScrollView, Text, View } from 'react-native';
+import { Animated, ScrollView, Text, View } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import type { MiningHistoryDatum } from '../../hooks/useMiningWalletData';
 import type { WeekDayDatum } from '../../hooks/useRewardsData';
 import type { ReferralWeekDatum } from '../../services/referralService';
 import NeonBorderCard from './NeonBorderCard';
+import Loading from '../constant/Loading';
 import { THEME, formatCompactValue } from './theme';
 import styles from './RevenueChart.style';
 
@@ -249,7 +250,7 @@ const RevenueChart = ({
               {(item.key === 'reward' && loading) ||
               (item.key === 'mining' && miningLoading) ||
               (item.key === 'referral' && referralLoading) ? (
-                <ActivityIndicator size="small" color={THEME.white} style={styles.legendLoader} />
+                <Loading size="small" text={null} style={styles.legendLoader} />
               ) : (
                 <Text style={styles.legendValue}>{item.value}</Text>
               )}

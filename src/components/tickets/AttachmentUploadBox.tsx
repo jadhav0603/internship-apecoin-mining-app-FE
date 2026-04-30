@@ -1,7 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
+import Loading from '../constant/Loading';
 import {
   MAX_TICKET_ATTACHMENTS,
   TICKET_THEME,
@@ -36,7 +37,7 @@ const AttachmentUploadBox = ({
     <Pressable style={styles.uploadBox} onPress={onPick}>
       <View style={styles.uploadIconWrap}>
         {isUploading ? (
-          <ActivityIndicator color={TICKET_THEME.accent} />
+          <Loading size="small" text={null} />
         ) : (
           <Ionicons name="cloud-upload-outline" size={26} color={TICKET_THEME.accent} />
         )}
@@ -56,7 +57,7 @@ const AttachmentUploadBox = ({
             <Image source={{ uri: item.url ?? item.uri }} style={styles.previewImage} />
             {item.uploading ? (
               <View style={styles.previewOverlay}>
-                <ActivityIndicator color={TICKET_THEME.accent} />
+                <Loading size="small" text={null} />
               </View>
             ) : null}
             <Pressable style={styles.removeButton} onPress={() => onRemove(item.id)}>

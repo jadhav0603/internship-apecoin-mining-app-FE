@@ -6,12 +6,12 @@ import {
   Modal,
   TouchableOpacity,
   Dimensions,
-  ActivityIndicator,
   Animated,
   Easing,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import LottieView from 'lottie-react-native';
+import Loading from '../constant/Loading';
 import SafeBlurView from '../constant/SafeBlurView';
 import styles from './ClaimPopupModal.style';
 
@@ -226,7 +226,7 @@ const ClaimPopupModal: React.FC<ClaimPopupModalProps> = ({
                   activeOpacity={0.85}
                 >
                   {claiming ? (
-                    <ActivityIndicator color="#000" size="small" />
+                    <Loading size="small" text={null} />
                   ) : (
                     <Text style={styles.claimButtonText}>CLAIM NOW</Text>
                   )}

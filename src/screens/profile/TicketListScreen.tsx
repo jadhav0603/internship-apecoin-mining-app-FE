@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -12,6 +11,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TicketCard from '../../components/tickets/TicketCard';
 import TicketHeader from '../../components/tickets/TicketHeader';
+import Loading from '../../components/constant/Loading';
 import { TICKET_THEME } from '../../components/tickets/ticketTheme';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
@@ -77,7 +77,7 @@ const TicketListScreen = () => {
         ListEmptyComponent={
           isLoading ? (
             <View style={styles.stateWrap}>
-              <ActivityIndicator color={TICKET_THEME.accent} />
+              <Loading size="small" text="Loading reports..." />
             </View>
           ) : (
             <View style={styles.stateWrap}>

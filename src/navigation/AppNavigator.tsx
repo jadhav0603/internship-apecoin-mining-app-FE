@@ -62,7 +62,9 @@ const navigationTheme: Theme = {
   },
 };
 
-const AuthLoadingScreen = () => <Loading text="L O A D I N G . . . . ." />;
+const AuthLoadingScreen = () => (
+  <Loading fullScreen text="L O A D I N G . . . . ." />
+);
 
 const mapFirebaseUserToAppUser = (
   firebaseUser: NonNullable<ReturnType<typeof getAuth>['currentUser']>,

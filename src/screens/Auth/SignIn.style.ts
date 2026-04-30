@@ -10,7 +10,6 @@ import {
   StatusBar,
   TextInput,
   Modal,
-  ActivityIndicator,
 } from 'react-native';
 import {Colors} from '../../theme/colors';
 

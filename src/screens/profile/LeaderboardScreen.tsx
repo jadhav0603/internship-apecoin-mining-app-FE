@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Pressable,
@@ -36,6 +35,7 @@ import {
   type LeaderboardEntry,
 } from '../../hooks/useLeaderboard';
 import { RootStackParamList } from '../../navigation/types';
+import Loading from '../../components/constant/Loading';
 import styles from './LeaderboardScreen.style';
 
 const { width } = Dimensions.get('window');
@@ -365,7 +365,7 @@ const LeaderboardScreen = () => {
             onPress={refresh}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#B9FF66" />
+              <Loading size="small" text={null} />
             ) : (
               <Ionicons name="refresh-outline" size={19} color="#FFFFFF" />
             )}
@@ -374,9 +374,7 @@ const LeaderboardScreen = () => {
 
         {showInitialLoading ? (
           <View style={styles.stateContainer}>
-            <View style={styles.stateIconWrap}>
-              <ActivityIndicator size="large" color="#B9FF66" />
-            </View>
+            <Loading size="medium" text={null} style={styles.stateIconWrap} />
             <Text style={styles.stateTitle}>Loading top miners</Text>
             <Text style={styles.stateMessage}>
               Pulling the latest mining and referral rankings.

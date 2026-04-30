@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   RefreshControl,
@@ -16,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
+import Loading from '../../components/constant/Loading';
 import AttachmentUploadBox, {
   type TicketAttachmentItem,
 } from '../../components/tickets/AttachmentUploadBox';
@@ -399,7 +399,7 @@ const ReportIssueScreen = () => {
             <View style={styles.previousReportsContent}>
               {isLoadingReports ? (
                 <View style={styles.compactState}>
-                  <ActivityIndicator color={TICKET_THEME.accent} />
+                  <Loading size="small" text={null} />
                 </View>
               ) : previousReports.length ? (
                 <View style={styles.reportPreviewList}>
@@ -553,7 +553,7 @@ const ReportIssueScreen = () => {
           disabled={isSubmitting || isUploadingAttachments}
         >
           {isSubmitting ? (
-            <ActivityIndicator color={TICKET_THEME.background} />
+            <Loading size="small" text={null} />
           ) : (
             <Text style={styles.submitButtonText}>Submit Report</Text>
           )}

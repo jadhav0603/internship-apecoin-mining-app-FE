@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Dimensions,
   Image,
   ImageBackground,
@@ -15,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../../api/apiClient';
 import { authService } from '../../services/authService';
 import ClaimPopupModal from '../../components/reward/ClaimPopupModal';
+import Loading from '../../components/constant/Loading';
 import SuccessOverlay from '../../components/constant/SuccessOverlay';
 import RewardsGridSection from '../../components/reward/RewardsGridSection';
 import { useAlert } from '../../context/AlertContext';
@@ -240,11 +240,7 @@ const DailyRewardsScreen = () => {
   const currentReward = rewards.find((r) => r.day === currentDay);
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#39FF14" />
-      </View>
-    );
+    return <Loading fullScreen size="medium" text="Loading rewards..." />;
   }
 
   return (

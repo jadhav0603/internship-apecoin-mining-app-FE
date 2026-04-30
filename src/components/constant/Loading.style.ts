@@ -2,19 +2,17 @@ import { StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/COLORS';
 
 const styles = StyleSheet.create({
- container: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-  backgroundColor: COLORS.transparent, 
-},
+  container: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.transparent,
+  },
+  containerFullScreen: {
+    flex: 1,
+  },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  lottie: {
-    width: 180,
-    height: 180,
   },
   text: {
     marginTop: 16,

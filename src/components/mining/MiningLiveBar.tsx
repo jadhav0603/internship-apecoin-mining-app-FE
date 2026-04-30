@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,13 +21,12 @@ const MiningLiveBar = () => {
   if (!isMining) return null;
 
   const formatTime = (totalSeconds: number) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
 
     const pad = (n: number) => n.toString().padStart(2, '0');
-
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
   const bottomOffset =
@@ -37,22 +37,34 @@ const MiningLiveBar = () => {
 
   return (
     <View style={getContainerStyle(bottomOffset)}>
-      <View>
-        <Text style={styles.label}>Mining in progress</Text>
-        <Text style={styles.value}>
-          â± {formatTime(secondsLeft)} â€¢ ðŸ’° {earned.toFixed(11)}
-        </Text>
-      </View>
-
-      <Pressable
-        onPress={() => navigation.navigate('Mining')}
-        style={({ pressed }) => [
-          styles.actionButton,
-          pressed && styles.actionButtonPressed,
-        ]}
+      <LinearGradient
+        colors={['#1d1e1d', '#02040c']}
+        style={styles.gradient}
       >
-        <Text style={styles.actionText}>VIEW</Text>
-      </Pressable>
+        <View style={styles.glow} />
+
+        <View style={styles.left}>
+          <Text style={styles.label}>⛏ MINING LIVE</Text>
+          <Text style={styles.value}>
+            ⏱ {formatTime(secondsLeft)}   💰 {earned.toFixed(6)}
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={() => navigation.navigate('Mining')}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <LinearGradient
+            colors={['#00ff00', '#78ff29']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.buttonText}>VIEW</Text>
+          </LinearGradient>
+        </Pressable>
+      </LinearGradient>
     </View>
   );
 };

@@ -11,11 +11,11 @@ import {
   StatusBar,
   TextInput,
   Modal,
-  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import Loading from '../../components/constant/Loading';
 import {authService} from '../../services/authService';
 import {Colors} from '../../theme/colors';
 import {RootStackParamList} from '../../navigation/types';
@@ -111,8 +111,7 @@ const SignIn: React.FC<Props> = ({navigation}) => {
       <Modal transparent visible={loading} animationType="fade">
         <View style={styles.loadingOverlay}>
           <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color="#A6FF00" />
-            <Text style={styles.loadingText}>Signing you in…</Text>
+            <Loading size="medium" text="Signing you in..." />
           </View>
         </View>
       </Modal>

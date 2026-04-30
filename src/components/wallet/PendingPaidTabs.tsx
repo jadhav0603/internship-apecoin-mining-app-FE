@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, LayoutChangeEvent, Pressable, Text, View } from 'react-native';
+import { Animated, LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import TransactionItem, { WalletTransaction } from './TransactionItem';
 import { THEME } from './theme';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Loading from '../constant/Loading';
 import styles from './PendingPaidTabs.style';
 
 
@@ -59,7 +60,7 @@ const PendingPaidTabs = ({
 
   const renderLoadingState = () => (
     <View style={styles.stateContainer}>
-      <ActivityIndicator size="small" color={THEME.neonGreen} />
+      <Loading size="small" text={null} />
       <Text style={styles.stateText}>Loading recent withdrawals...</Text>
       {[0, 1].map(index => (
         <View key={index} style={styles.skeletonRow}>

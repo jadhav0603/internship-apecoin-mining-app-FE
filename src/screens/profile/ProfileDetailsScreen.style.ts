@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { COLORS } from '../../constants/COLORS';

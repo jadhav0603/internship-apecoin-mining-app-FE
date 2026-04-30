@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, LayoutChangeEvent, Text, View } from 'react-native';
+import { Animated, LayoutChangeEvent, Text, View } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import { useMiningWalletData } from '../../hooks/useMiningWalletData';
 import { useReferralData } from '../../hooks/useReferralData';
 import { useRewardsData } from '../../hooks/useRewardsData';
+import Loading from '../constant/Loading';
 import {
   PROFILE_THEME,
   formatAmount,
@@ -107,7 +108,7 @@ const CoinsSummaryCard = () => {
     <View style={styles.card}>
       <Text style={styles.label}>Total Coins</Text>
       {isLoading ? (
-        <ActivityIndicator size="small" color={PROFILE_THEME.neonGreen} style={styles.loader} />
+        <Loading size="small" text={null} style={styles.loader} />
       ) : (
         <Text style={styles.amount}>
           {formatAmount(totalCoins)}
@@ -155,7 +156,7 @@ const CoinsSummaryCard = () => {
               <Text style={styles.legendLabel}>{item.label}</Text>
             </View>
             {item.loading ? (
-              <ActivityIndicator size="small" color={PROFILE_THEME.white} style={styles.legendLoader} />
+              <Loading size="small" text={null} style={styles.legendLoader} />
             ) : (
               <Text style={styles.legendValue}>{formatCompactAmount(item.value)}</Text>
             )}

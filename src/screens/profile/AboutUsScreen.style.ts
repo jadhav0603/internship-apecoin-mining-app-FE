@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Image,
   Linking,
   RefreshControl,

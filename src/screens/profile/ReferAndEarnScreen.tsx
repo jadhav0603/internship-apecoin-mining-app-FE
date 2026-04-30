@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Clipboard,
   Pressable,
   ScrollView,
@@ -21,6 +20,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LottieView from 'lottie-react-native';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import { FONTS } from '../../constants/FONTS';
 import { getUserDisplayName, useUser } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
@@ -280,7 +280,7 @@ const ReferAndEarnScreen = () => {
             >
               <Text style={styles.statLabel}>Referral Earnings</Text>
               {loading ? (
-                <ActivityIndicator size="small" color="#B7FF31" />
+                <Loading size="small" text={null} />
               ) : (
                 <>
                   <Text style={styles.statValue}>
@@ -294,7 +294,7 @@ const ReferAndEarnScreen = () => {
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Successful Referrals</Text>
               {loading ? (
-                <ActivityIndicator size="small" color="#B7FF31" />
+                <Loading size="small" text={null} />
               ) : (
                 <Text style={styles.statValue}>{referralCount}</Text>
               )}
@@ -375,7 +375,7 @@ const ReferAndEarnScreen = () => {
                 ]}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#10140b" />
+                  <Loading size="small" text={null} />
                 ) : (
                   <Text style={styles.claimButtonText}>
                     {hasAppliedReferral ? 'Applied' : 'Claim'}

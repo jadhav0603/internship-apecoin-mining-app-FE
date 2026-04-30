@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   RefreshControl,

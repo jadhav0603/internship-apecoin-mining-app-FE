@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +15,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../constants/COLORS';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
 import { userService } from '../../services/userService';
@@ -95,7 +95,7 @@ const ProfileDetailsScreen = () => {
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={isUpdating}>
           {isUpdating ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Loading size="small" text={null} />
           ) : (
             <Text style={styles.saveText}>Save</Text>
           )}
@@ -115,7 +115,7 @@ const ProfileDetailsScreen = () => {
             />
             {isUploading && (
               <View style={styles.uploadOverlay}>
-                <ActivityIndicator color={COLORS.primary} />
+                <Loading size="small" text={null} />
               </View>
             )}
             <TouchableOpacity

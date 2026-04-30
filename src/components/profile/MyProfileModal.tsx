@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Image, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Image, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../constants/COLORS';
@@ -7,6 +7,7 @@ import { FONTS } from '../../constants/FONTS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
 import { authService } from '../../services/authService';
+import Loading from '../constant/Loading';
 import { userService } from '../../services/userService';
 import styles from './MyProfileModal.style';
 
@@ -151,7 +152,7 @@ const MyProfileModal: React.FC<MyProfileModalProps> = ({ visible, onClose }) => 
                       disabled={loading}
                     >
                       {loading ? (
-                        <ActivityIndicator color="#000" />
+                        <Loading size="small" text={null} />
                       ) : (
                         <Text style={styles.saveButtonText}>Save Changes</Text>
                       )}

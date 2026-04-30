@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   RefreshControl,
   ScrollView,
@@ -11,6 +10,7 @@ import {
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Loading from '../../components/constant/Loading';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import { TICKET_THEME, getPriorityColor } from '../../components/tickets/ticketTheme';
 import { FONTS } from '../../constants/FONTS';
@@ -90,7 +90,7 @@ const TicketDetailScreen = () => {
 
         {isLoading ? (
           <View style={styles.stateCard}>
-            <ActivityIndicator color={TICKET_THEME.accent} />
+            <Loading size="small" text="Loading ticket..." />
           </View>
         ) : errorMessage || !ticket ? (
           <View style={styles.stateCard}>
