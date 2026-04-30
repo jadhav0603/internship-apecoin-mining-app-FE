@@ -358,7 +358,7 @@ const ProfileScreen = () => {
             onPress={() => setSettingsVisible(true)}
           >
             <Ionicons
-              name="settings-outline"
+              name="menu-outline"
               size={24}
               color={COLORS.textPrimary}
             />
