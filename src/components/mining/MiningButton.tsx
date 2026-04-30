@@ -192,14 +192,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
   };
 
   return (
-    <Pressable
-      onPress={handleOpen}
-      style={({ pressed }) => [
-        styles.pressable,
-        pressed && styles.pressablePressed,
-        isMining && { opacity: 0.95 },
-      ]}
-    >
+  
       <View style={{ borderRadius: 32, overflow: 'hidden', padding: 1.5, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
         {/* Border Beam Animation */}
         <Animated.View style={[{ position: 'absolute', width: '300%', height: '300%', top: '-100%', left: '-100%' }, animatedBorderStyle]}>
@@ -238,6 +231,14 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
               style={styles.innerCore}
             >
               <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <Pressable
+      onPress={handleOpen}
+      style={({ pressed }) => [
+        styles.pressable,
+        pressed && styles.pressablePressed,
+        isMining && { opacity: 0.95 },
+      ]}
+    >
                 {isMining ? (
                   <>
                     <Animated.View
@@ -293,6 +294,7 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
                     </Animated.Text>
                   </View>
                 )}
+                </Pressable>
               </View>
             </LinearGradient>
           </SegmentedRing>
@@ -309,6 +311,6 @@ export default function MiningButton({ onPress }: MiningButtonProps) {
 </Text>
         </LinearGradient>
       </View>
-    </Pressable>
+    
   );
 }
