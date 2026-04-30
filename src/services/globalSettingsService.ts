@@ -61,6 +61,22 @@ export type OtherAppItem = {
   isActive: boolean;
 };
 
+export type TermsSection = {
+  title: string;
+  content?: string;
+  points?: string[];
+};
+
+export type TermsConditionsContent = {
+  title: string;
+  intro?: {
+    heading?: string;
+    description?: string;
+  };
+  sections: TermsSection[];
+  buttonText: string;
+};
+
 type GlobalSettingsResponse = {
   success: boolean;
   aboutUs: AboutUsContent | null;
@@ -76,6 +92,11 @@ type OtherAppsSettingsResponse = {
   apps: OtherAppItem[];
 };
 
+type TermsConditionsSettingsResponse = {
+  key: 'terms_conditions';
+  value: TermsConditionsContent | null;
+};
+
 export const globalSettingsService = {
   async getAboutUs(): Promise<AboutUsContent | null> {
     const response = await API.get<GlobalSettingsResponse>('/global-settings', {
@@ -86,9 +107,12 @@ export const globalSettingsService = {
   },
 
   async getFaq(): Promise<FaqItem[]> {
-    const response = await API.get<FaqSettingsResponse>('/global-settings/faq', {
-      skipAutoSignOut: true,
-    } as any);
+    const response = await API.get<FaqSettingsResponse>(
+      '/global-settings/faq',
+      {
+        skipAutoSignOut: true,
+      } as any,
+    );
 
     return response.data.value ?? [];
   },
@@ -102,5 +126,16 @@ export const globalSettingsService = {
     );
 
     return response.data.apps ?? [];
+  },
+
+  async getTermsConditions(): Promise<TermsConditionsContent | null> {
+    const response = await API.get<TermsConditionsSettingsResponse>(
+      '/global-settings/terms-conditions',
+      {
+        skipAutoSignOut: true,
+      } as any,
+    );
+
+    return response.data.value ?? null;
   },
 };
