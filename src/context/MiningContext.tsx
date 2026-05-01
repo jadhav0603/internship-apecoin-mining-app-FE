@@ -16,6 +16,7 @@ export interface MiningData {
   multiplier: number;
   status: 'mining' | 'idle' | 'claimed';
   miningStartTime: string | null;
+  miningEndTime?: string | null;
   selectedHour: number;
   selectedMiningPower: string;
   isActive: boolean;
@@ -120,6 +121,9 @@ const getDisplayEarnedCoins = (data: MiningData) => {
   return 0;
 };
 
+const getServerEndTime = (data: MiningData) =>
+  data.miningEndTime ?? data.sessionEndTime ?? null;
+
 const deriveStateFromDB = (data: MiningData) => {
   if (typeof data.remainingSeconds === 'number') {
     return {
@@ -129,7 +133,25 @@ const deriveStateFromDB = (data: MiningData) => {
         data.remainingSeconds <= 0 ||
         data.status !== 'mining' ||
         !data.isActive,
-    };
+      };
+  }
+
+  const serverEndTime = getServerEndTime(data);
+  if (serverEndTime) {
+    const endTime = new Date(serverEndTime).getTime();
+
+    if (!Number.isNaN(endTime)) {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+
+      return {
+        remaining,
+        earnedCoins: getDisplayEarnedCoins(data),
+        isComplete:
+          remaining <= 0 ||
+          data.status !== 'mining' ||
+          !data.isActive,
+      };
+    }
   }
 
   if (data.status !== 'mining' || !data.miningStartTime) {
@@ -242,7 +264,7 @@ export const MiningProvider = ({ children }: any) => {
     const { remaining, earnedCoins, isComplete } =
       deriveStateFromDB(updatedData);
     const claimKey =
-      updatedData.sessionEndTime ??
+      getServerEndTime(updatedData) ??
       updatedData.miningStartTime ??
       `${updatedData.email}-${updatedData.selectedHour}`;
     const canClaimReward =
