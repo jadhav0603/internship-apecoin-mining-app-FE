@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -16,9 +15,11 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../constants/COLORS';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
 import { userService } from '../../services/userService';
+import styles from './ProfileDetailsScreen.style';
 
 const ProfileDetailsScreen = () => {
   const navigation = useNavigation();
@@ -86,7 +87,7 @@ const ProfileDetailsScreen = () => {
           COLORS.backgroundGradientMid,
           COLORS.backgroundGradientEnd,
         ]}
-        style={StyleSheet.absoluteFill}
+        style={styles.absoluteFill}
       />
 
       <View style={styles.header}>
@@ -94,7 +95,7 @@ const ProfileDetailsScreen = () => {
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity onPress={handleSave} disabled={isUpdating}>
           {isUpdating ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
+            <Loading size="small" text={null} />
           ) : (
             <Text style={styles.saveText}>Save</Text>
           )}
@@ -114,14 +115,14 @@ const ProfileDetailsScreen = () => {
             />
             {isUploading && (
               <View style={styles.uploadOverlay}>
-                <ActivityIndicator color={COLORS.primary} />
+                <Loading size="small" text={null} />
               </View>
             )}
             <TouchableOpacity
               style={styles.cameraButton}
               onPress={handleChangePhoto}
             >
-              <Ionicons name="camera" size={20} color="#000" />
+              <Ionicons name="camera" size={20} color={COLORS.black} />
             </TouchableOpacity>
           </View>
           <Text style={styles.changePhotoText}>Change Profile Photo</Text>
@@ -170,83 +171,5 @@ const ProfileDetailsScreen = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: 'bold' },
-  saveText: { color: COLORS.primary, fontSize: 16, fontWeight: 'bold' },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 30 },
-  avatarContainer: { alignItems: 'center', marginBottom: 40 },
-  avatarWrapper: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: COLORS.primary,
-    padding: 3,
-  },
-  avatar: { width: '100%', height: '100%', borderRadius: 60 },
-  uploadOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cameraButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: COLORS.primary,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: COLORS.background,
-  },
-  changePhotoText: {
-    color: COLORS.primary,
-    marginTop: 15,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  form: { width: '100%' },
-  inputGroup: { marginBottom: 25 },
-  label: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    letterSpacing: 1,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    paddingHorizontal: 15,
-    height: 56,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, color: COLORS.textPrimary, fontSize: 16 },
-  disabledInput: { backgroundColor: 'rgba(255,255,255,0.02)' },
-  helperText: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-});
 
 export default ProfileDetailsScreen;

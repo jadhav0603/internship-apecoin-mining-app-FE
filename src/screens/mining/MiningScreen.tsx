@@ -22,7 +22,7 @@ import Svg, {
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import SegmentedRing from '../../components/mining/SegmentedRing';
 import { COLORS } from '../../constants/COLORS';
-import styles from './mining.styles';
+import styles from './MiningScreen.style';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation } from '@react-navigation/native';
 import AppBackButton from '../../components/navigation/AppBackButton';
@@ -316,23 +316,9 @@ const MiningScreen = () => {
         </View>
 
         {/* Action buttons and stats */}
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            marginVertical: 15,
-          }}
-        >
-          <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                paddingHorizontal: 16,
-                marginBottom: 16,
-              }}
-            >
+        <View style={styles.actionSection}>
+          <View style={styles.actionFooter}>
+            <View style={styles.actionButtonsRow}>
               <MiningActionButton
                 label="Purchase Speed"
                 icon="bolt"

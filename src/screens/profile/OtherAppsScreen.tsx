@@ -1,6 +1,5 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   ImageBackground,
@@ -20,8 +19,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import AppBackButton from '../../components/navigation/AppBackButton';
+import Loading from '../../components/constant/Loading';
 import { globalSettingsService } from '../../services/globalSettingsService';
 import type { OtherAppItem } from '../../services/globalSettingsService';
+import styles from './OtherAppsScreen.style';
 
 const JUNGLE_BACKGROUND = require('../../assets/images/daily_reward_background.webp');
 const APP_ICONS: Record<string, ImageSourcePropType> = {
@@ -301,12 +302,12 @@ const OtherAppsScreen = () => {
         ]}
         start={{ x: 0.12, y: 0 }}
         end={{ x: 0.88, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        style={styles.absoluteFill}
       />
       <ImageBackground
         source={JUNGLE_BACKGROUND}
         resizeMode="cover"
-        style={StyleSheet.absoluteFill}
+        style={styles.absoluteFill}
         imageStyle={styles.backgroundImage}
       />
       <View style={styles.topGlow} />
@@ -320,9 +321,7 @@ const OtherAppsScreen = () => {
         </View>
 
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
+          <Loading fullScreen size="medium" text="Loading apps..." />
         ) : (
           <AppList
             apps={apps}
@@ -336,236 +335,5 @@ const OtherAppsScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  backgroundImage: {
-    opacity: 0.13,
-  },
-  topGlow: {
-    position: 'absolute',
-    top: -92,
-    right: -70,
-    width: 230,
-    height: 230,
-    borderRadius: 115,
-    backgroundColor: 'rgba(166,255,0,0.18)',
-  },
-  bottomGlow: {
-    position: 'absolute',
-    bottom: -120,
-    left: -82,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: 'rgba(0,198,255,0.14)',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    minHeight: 74,
-    paddingHorizontal: 18,
-    paddingBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.bold,
-    fontSize: 22,
-    lineHeight: 29,
-    textAlign: 'center',
-    letterSpacing: 0,
-  },
-  headerSpacer: {
-    width: 42,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    paddingHorizontal: 18,
-    paddingTop: 6,
-    paddingBottom: 34,
-  },
-  listContentEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  separator: {
-    height: 14,
-  },
-  cardBorder: {
-    borderRadius: 16,
-    padding: 1,
-    shadowColor: '#000000',
-    shadowOpacity: 0.34,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
-  },
-  card: {
-    minHeight: 176,
-    borderRadius: 15,
-    padding: 14,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(9,15,9,0.84)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  cardGlow: {
-    position: 'absolute',
-    top: -42,
-    right: -34,
-    width: 108,
-    height: 108,
-    borderRadius: 54,
-    opacity: 0.16,
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-  },
-  iconFrame: {
-    width: 60,
-    height: 60,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 13,
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 10,
-  },
-  icon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-  },
-  iconFallback: {
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.black,
-    fontSize: 25,
-    lineHeight: 30,
-  },
-  lockDot: {
-    position: 'absolute',
-    right: -3,
-    bottom: -3,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(3,7,4,0.92)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-  },
-  copy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 28,
-  },
-  name: {
-    flex: 1,
-    color: COLORS.textPrimary,
-    fontFamily: FONTS.bold,
-    fontSize: 17,
-    lineHeight: 22,
-    letterSpacing: 0,
-    paddingRight: 8,
-  },
-  badge: {
-    maxWidth: 112,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-  },
-  badgeText: {
-    fontFamily: FONTS.semibold,
-    fontSize: 10,
-    lineHeight: 13,
-    letterSpacing: 0,
-  },
-  tagline: {
-    color: '#AAAAAA',
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    letterSpacing: 0,
-    marginTop: 2,
-  },
-  description: {
-    color: '#888888',
-    fontFamily: FONTS.regular,
-    fontSize: 13,
-    lineHeight: 19,
-    letterSpacing: 0,
-    marginTop: 6,
-  },
-  buttonPressable: {
-    marginTop: 18,
-    borderRadius: 14,
-  },
-  buttonPressed: {
-    transform: [{ scale: 0.99 }],
-  },
-  button: {
-    height: 44,
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-    lineHeight: 18,
-    marginLeft: 8,
-    letterSpacing: 0,
-  },
-  buttonTextDisabled: {
-    color: COLORS.textMuted,
-  },
-  emptyCard: {
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 220,
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 26,
-    backgroundColor: 'rgba(9,15,9,0.76)',
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-  },
-  emptyText: {
-    color: COLORS.textSecondary,
-    fontFamily: FONTS.medium,
-    fontSize: 15,
-    lineHeight: 20,
-    marginTop: 12,
-    letterSpacing: 0,
-  },
-});
 
 export default OtherAppsScreen;

@@ -11,7 +11,7 @@ import Animated, {
   withRepeat,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { styles } from './splash.styles';
+import styles from './SplashScreen.style';
 
 const SplashScreen = ({ onFinish }: any) => {
   const buttonScale = useSharedValue(1);

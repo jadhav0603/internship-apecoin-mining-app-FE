@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useMemo,
@@ -10,7 +11,7 @@ import React, {
 import CustomAlert, {
   type CustomAlertButton,
   type CustomAlertPresentationOptions,
-} from '../components/CustomAlert';
+} from '../components/constant/CustomAlert';
 import { EVENT_NAMES, globalEvents } from '../utils/GlobalEventEmitter';
 
 export type AlertType = 'success' | 'error' | 'warning' | 'info' | 'confirm';
@@ -125,7 +126,7 @@ const getAlertSignature = (
     alert.cancelText ?? '',
   ].join('::');
 
-const AlertProvider = ({ children }: { children: React.ReactNode }) => {
+const AlertProvider = ({ children }: { children: ReactNode }) => {
   const [alertState, setAlertState] = useState<AlertState>(DEFAULT_ALERT_STATE);
   const queueRef = useRef<QueuedAlert[]>([]);
 

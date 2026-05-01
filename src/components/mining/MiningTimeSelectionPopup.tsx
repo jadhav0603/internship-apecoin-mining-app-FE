@@ -5,7 +5,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import styles from './miningTimeSelectionPopup.styles';
+import styles from './MiningTimeSelectionPopup.style';
 import { useTimeModal } from '../../context/TimeModal';
 import { useMining } from '../../context/MiningContext';
 import { RootStackParamList } from '../../navigation/types';

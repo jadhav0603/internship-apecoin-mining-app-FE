@@ -1,50 +1,6 @@
-// import React from 'react';
-// import { View, Text, Pressable } from 'react-native';
-// import { useMining } from '../../context/MiningContext';
-// import { useNavigation } from '@react-navigation/native';
-// import { useRoute } from '@react-navigation/native';
-
-// const MiningLiveBar = () => {
-//   const { isMining, secondsLeft, earned } = useMining();
-//   const navigation = useNavigation<any>();
-
-//   const route = useRoute();
-
-// if (route.name === 'Mining') return null;
-
-//   if (!isMining) return null;
-
-//   return (
-//  <View
-//       style={{
-//         position: 'absolute',
-//         bottom: 120, // 👈 above tab bar
-//         left: 16,
-//         right: 16,
-//         backgroundColor: '#111',
-//         padding: 12,
-//         borderRadius: 16,
-//         flexDirection: 'row',
-//         justifyContent: 'space-between',
-//         alignItems: 'center',
-//         zIndex: 999,
-//       }}
-//     >
-//       <Text style={{ color: 'white' }}>
-//         ⏱ {secondsLeft}s | 💰 {earned.toFixed(4)}
-//       </Text>
-
-//       <Pressable onPress={() => navigation.navigate('Mining')}>
-//         <Text style={{ color: 'lime' }}>VIEW</Text>
-//       </Pressable>
-//     </View>
-//   );
-// };
-
-// export default MiningLiveBar;
-
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { useMining } from '../../context/MiningContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -52,9 +8,8 @@ import {
   FLOATING_TAB_BAR_BASE_HEIGHT,
   FLOATING_TAB_BAR_BOTTOM_OFFSET,
   MINING_LIVE_BAR_GAP,
-  MINING_LIVE_BAR_HEIGHT,
-  MINING_LIVE_BAR_HORIZONTAL_MARGIN,
 } from '../../constants/bottomLayout';
+import styles, { getContainerStyle } from './MiningLiveBar.style';
 
 const MiningLiveBar = () => {
   const { isMining, secondsLeft, earned } = useMining();
@@ -66,78 +21,50 @@ const MiningLiveBar = () => {
   if (!isMining) return null;
 
   const formatTime = (totalSeconds: number) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
 
     const pad = (n: number) => n.toString().padStart(2, '0');
-
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
+  const bottomOffset =
+    FLOATING_TAB_BAR_BASE_HEIGHT +
+    insets.bottom +
+    FLOATING_TAB_BAR_BOTTOM_OFFSET +
+    MINING_LIVE_BAR_GAP;
+
   return (
-    <View
-      style={{
-        position: 'absolute',
-        bottom:
-          FLOATING_TAB_BAR_BASE_HEIGHT +
-          insets.bottom +
-          FLOATING_TAB_BAR_BOTTOM_OFFSET +
-          MINING_LIVE_BAR_GAP,
-        left: MINING_LIVE_BAR_HORIZONTAL_MARGIN,
-        right: MINING_LIVE_BAR_HORIZONTAL_MARGIN,
-        minHeight: MINING_LIVE_BAR_HEIGHT,
-        backgroundColor: '#1A1A1A',
-        padding: 14,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-
-        // shadow / elevation
-        shadowColor: '#000',
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        elevation: 8,
-      }}
-    >
-      {/* LEFT CONTENT */}
-      <View>
-        <Text style={{ color: '#aaa', fontSize: 12 }}>Mining in progress</Text>
-
-        <Text
-          style={{
-            color: '#fff',
-            fontSize: 16,
-            fontWeight: '600',
-            marginTop: 2,
-          }}
-        >
-          ⏱ {formatTime(secondsLeft)} • 💰 {earned.toFixed(11)}
-        </Text>
-      </View>
-
-      {/* BUTTON */}
-      <Pressable
-        onPress={() => navigation.navigate('Mining')}
-        style={({ pressed }) => ({
-          backgroundColor: '#40a920ff',
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 20,
-          transform: [{ scale: pressed ? 0.95 : 1 }],
-        })}
+    <View style={getContainerStyle(bottomOffset)}>
+      <LinearGradient
+        colors={['#1d1e1d', '#02040c']}
+        style={styles.gradient}
       >
-        <Text
-          style={{
-            color: '#000',
-            fontWeight: '700',
-            fontSize: 13,
-          }}
+        <View style={styles.glow} />
+
+        <View style={styles.left}>
+          <Text style={styles.label}>⛏ MINING LIVE</Text>
+          <Text style={styles.value}>
+            ⏱ {formatTime(secondsLeft)}   💰 {earned.toFixed(6)}
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={() => navigation.navigate('Mining')}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
         >
-          VIEW
-        </Text>
-      </Pressable>
+          <LinearGradient
+            colors={['#00ff00', '#78ff29']}
+            style={styles.buttonGradient}
+          >
+            <Text style={styles.buttonText}>VIEW</Text>
+          </LinearGradient>
+        </Pressable>
+      </LinearGradient>
     </View>
   );
 };

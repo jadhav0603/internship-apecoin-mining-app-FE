@@ -6,7 +6,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { COLORS } from '../../constants/COLORS';
 import MiningButton from '../../components/mining/MiningButton';
 import Menu from '../../components/home/Menu';
-import styles from './home.styles';
+import styles from './HomeScreen.style';
 import BalanceCard from '../../components/home/BalanceCard';
 import InfoSlider from '../../components/home/InfoSlider';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';

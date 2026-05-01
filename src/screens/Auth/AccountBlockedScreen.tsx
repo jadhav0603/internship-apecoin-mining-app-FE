@@ -21,6 +21,7 @@ import {
   useBlockedAccount,
 } from '../../session/blockedAccountState';
 import { authService } from '../../services/authService';
+import styles from './AccountBlockedScreen.style';
 
 const ALERT_PRESENTATION = {
   blurBackground: true,
@@ -235,7 +236,7 @@ const AccountBlockedScreen = ({ route, navigation }: Props) => {
         colors={['#040704', '#0B1209', '#111B10']}
         start={{ x: 0.08, y: 0 }}
         end={{ x: 0.92, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        style={styles.backgroundFill}
       />
       <View style={[styles.topGlow, { backgroundColor: content.glow }]} />
       <View style={styles.gridAura} />
@@ -363,179 +364,5 @@ const AccountBlockedScreen = ({ route, navigation }: Props) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.backgroundDeep,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  topGlow: {
-    position: 'absolute',
-    top: -80,
-    alignSelf: 'center',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    opacity: 0.85,
-  },
-  gridAura: {
-    position: 'absolute',
-    inset: 0,
-    backgroundColor: 'rgba(255,255,255,0.01)',
-  },
-  heroCard: {
-    backgroundColor: 'rgba(8, 14, 8, 0.82)',
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: 22,
-    paddingVertical: 28,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.35,
-    shadowRadius: 28,
-    elevation: 16,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 10,
-  },
-  closeButtonPressed: {
-    backgroundColor: 'rgba(255,255,255,0.10)',
-  },
-  iconShell: {
-    alignSelf: 'center',
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    marginBottom: 22,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  iconShellGradient: {
-    flex: 1,
-    borderRadius: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconCore: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  eyebrow: {
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    fontSize: 12,
-    letterSpacing: 2.2,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  title: {
-    color: COLORS.textPrimary,
-    textAlign: 'center',
-    fontSize: 30,
-    fontWeight: '800',
-    marginBottom: 12,
-  },
-  subtitle: {
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    fontSize: 15,
-    lineHeight: 24,
-    marginBottom: 22,
-  },
-  reasonCard: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    padding: 16,
-    marginBottom: 20,
-  },
-  reasonLabel: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-    marginBottom: 6,
-  },
-  reasonText: {
-    color: COLORS.textPrimary,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  actionStack: {
-    gap: 12,
-  },
-  primaryAction: {
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  primaryActionGradient: {
-    minHeight: 56,
-    borderRadius: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  primaryActionText: {
-    color: COLORS.textDark,
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-  },
-  secondaryAction: {
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  secondaryActionInner: {
-    minHeight: 56,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  secondaryActionInnerPressed: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  secondaryActionText: {
-    color: COLORS.textPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  helperText: {
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 18,
-  },
-});
 
 export default AccountBlockedScreen;

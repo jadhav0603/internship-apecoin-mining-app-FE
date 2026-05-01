@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   FlatList,
   ListRenderItem,
@@ -18,17 +17,20 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONTS } from '../../constants/FONTS';
 import { COLORS } from '../../constants/COLORS';
+import Loading from '../constant/Loading';
+import SafeBlurView from '../constant/SafeBlurView';
 import {
   TermsConditionsContent,
   TermsSection,
   globalSettingsService,
 } from '../../services/globalSettingsService';
+import styles from './TermsModal.style';
+
 
 type TermsModalProps = {
   visible: boolean;
@@ -167,7 +169,7 @@ const TermsModal: React.FC<TermsModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <BlurView
+        <SafeBlurView
           style={StyleSheet.absoluteFill as unknown as object}
           blurType="dark"
           blurAmount={22}
@@ -233,7 +235,7 @@ const TermsModal: React.FC<TermsModalProps> = ({
 
               {loading ? (
                 <View style={styles.stateContainer}>
-                  <ActivityIndicator color={ACCENT_END} size="large" />
+                  <Loading size="medium" text="Loading terms..." />
                 </View>
               ) : error ? (
                 <View style={styles.stateContainer}>
@@ -286,7 +288,7 @@ const TermsModal: React.FC<TermsModalProps> = ({
                     style={styles.acceptButton}
                   >
                     {accepting ? (
-                      <ActivityIndicator color="#120900" size="small" />
+                      <Loading size="small" text={null} />
                     ) : (
                       <Text style={styles.acceptButtonText}>
                         {content?.buttonText ?? ''}
@@ -302,225 +304,5 @@ const TermsModal: React.FC<TermsModalProps> = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-    backgroundColor: 'rgba(0,0,0,0.72)',
-  },
-  scrim: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: 'rgba(10, 5, 0, 0.44)',
-  },
-  cardShadow: {
-    width: '100%',
-    maxWidth: 430,
-    borderRadius: 20,
-    shadowColor: ACCENT_START,
-    shadowOpacity: 0.34,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 18 },
-    elevation: 22,
-  },
-  borderFrame: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 1.2,
-  },
-  card: {
-    flex: 1,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: COLORS.card,
-  },
-  header: {
-    minHeight: 70,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 20,
-    paddingRight: 12,
-  },
-  title: {
-    flex: 1,
-    color: '#ffffff',
-    fontFamily: FONTS.black,
-    fontSize: 18,
-    letterSpacing: 0,
-  },
-  closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-  },
-  closeButtonPressed: {
-    transform: [{ scale: 0.94 }],
-    backgroundColor: COLORS.glass,
-  },
-  divider: {
-    height: 2,
-    marginHorizontal: 22,
-    borderRadius: 999,
-    shadowColor: ACCENT_END,
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-  },
-  listContent: {
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  list: {
-    flex: 1,
-  },
-  listTopSpacer: {
-    height: 2,
-  },
-  introCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    backgroundColor: COLORS.glass,
-    borderWidth: 1,
-    borderColor: COLORS.glassBorder,
-  },
-  introHeading: {
-    color: '#ffffff',
-    fontFamily: FONTS.bold,
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 7,
-  },
-  introDescription: {
-    color: '#aaa',
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  sectionCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  sectionCardPressed: {
-    borderColor: COLORS.activeBorder,
-    shadowColor: ACCENT_START,
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    transform: [{ scale: 0.99 }],
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontFamily: FONTS.bold,
-    fontSize: 15,
-    lineHeight: 21,
-    marginBottom: 8,
-  },
-  sectionContent: {
-    color: '#aaa',
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    lineHeight: 21,
-  },
-  pointRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 8,
-  },
-  bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: ACCENT_END,
-    marginTop: 7,
-    marginRight: 10,
-    shadowColor: ACCENT_END,
-    shadowOpacity: 0.75,
-    shadowRadius: 5,
-  },
-  pointText: {
-    flex: 1,
-    color: '#aaa',
-    fontFamily: FONTS.medium,
-    fontSize: 13,
-    lineHeight: 21,
-  },
-  stateContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  errorText: {
-    color: '#d4d4d4',
-    fontFamily: FONTS.medium,
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    minWidth: 116,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.activeBorder,
-    backgroundColor: COLORS.glass,
-  },
-  retryText: {
-    color: ACCENT_END,
-    fontFamily: FONTS.bold,
-    fontSize: 14,
-  },
-  footer: {
-    paddingHorizontal: 18,
-    paddingTop: 12,
-    backgroundColor: COLORS.cardStrong,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  acceptButtonOuter: {
-    borderRadius: 999,
-    shadowColor: ACCENT_START,
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  acceptButtonDisabled: {
-    opacity: 0.56,
-  },
-  acceptButton: {
-    minHeight: 54,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  acceptButtonText: {
-    color: COLORS.textDark,
-    fontFamily: FONTS.black,
-    fontSize: 15,
-    letterSpacing: 0,
-  },
-  buttonPressed: {
-    transform: [{ scale: 0.97 }],
-  },
-});
 
 export default TermsModal;

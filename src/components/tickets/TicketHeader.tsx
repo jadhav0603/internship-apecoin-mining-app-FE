@@ -1,8 +1,10 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import AppBackButton from '../navigation/AppBackButton';
 import { TICKET_THEME } from './ticketTheme';
+import styles from './TicketHeader.style';
+
 
 type TicketHeaderProps = {
   title: string;
@@ -33,38 +35,5 @@ const TicketHeader = ({
     )}
   </View>
 );
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  title: {
-    flex: 1,
-    color: TICKET_THEME.textPrimary,
-    fontSize: 24,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginHorizontal: 12,
-  },
-  actionButton: {
-    minWidth: 44,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: {
-    color: TICKET_THEME.accent,
-    fontSize: 14,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
-  },
-  placeholder: {
-    width: 44,
-  },
-});
 
 export default TicketHeader;

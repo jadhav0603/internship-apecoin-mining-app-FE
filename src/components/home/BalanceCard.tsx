@@ -1,6 +1,6 @@
 // import React, { Component } from 'react'
 // import { Text, View } from 'react-native'
-// import styles from './BalanceCard.styles'
+// import styles from './BalanceCard.style'
 // import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 // import { COLORS } from '../../constants/COLORS';
 // import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -48,7 +48,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Text, View, Pressable, Animated, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import styles from './BalanceCard.styles';
+import styles from './BalanceCard.style';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/COLORS';

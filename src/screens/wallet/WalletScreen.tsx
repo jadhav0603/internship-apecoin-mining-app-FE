@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   ImageBackground,
   Pressable,
@@ -21,8 +20,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import PendingPaidTabs from '../../components/wallet/PendingPaidTabs';
 import WithdrawDetailsSheet from '../../components/wallet/WithdrawDetailsSheet';
+import WithdrawRequestModal from '../../components/wallet/WithdrawRequestModal';
 import type { WalletTransaction } from '../../components/wallet/TransactionItem';
 import WithdrawSuccessModal from '../../components/wallet/WithdrawSuccessModal';
+import Loading from '../../components/constant/Loading';
 import { THEME, formatAmount } from '../../components/wallet/theme';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import type { RootStackParamList } from '../../navigation/types';
@@ -35,7 +36,7 @@ import {
   type WithdrawRecord,
 } from '../../services/withdrawService';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
-import styles from './wallet.styles';
+import styles from './WalletScreen.style';
 
 const WalletScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(44);
@@ -46,8 +47,13 @@ const WalletScreen = () => {
   const { refreshBalance } = useWallet();
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [showWithdrawRequestModal, setShowWithdrawRequestModal] =
+    useState(false);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
     useState(false);
+  const [savedUpiId, setSavedUpiId] = useState('');
+  const [submittedWithdrawAmount, setSubmittedWithdrawAmount] = useState(0);
+  const [submittedUpiId, setSubmittedUpiId] = useState('');
   const [historyRefreshKey, setHistoryRefreshKey] = useState<number | undefined>(
     undefined,
   );
@@ -155,11 +161,23 @@ const WalletScreen = () => {
     },
   ] as const;
 
-  const handleWithdrawPress = async () => {
+  const handleWithdrawPress = () => {
     if (isWithdrawDisabled) {
       return;
     }
 
+    if (!user?.uid || !user?.email) {
+      showError(
+        'User details are missing for this withdrawal request.',
+        'Unable to continue',
+      );
+      return;
+    }
+
+    setShowWithdrawRequestModal(true);
+  };
+
+  const handleWithdrawSubmit = async (upiId: string) => {
     if (!user?.uid || !user?.email) {
       showError(
         'User details are missing for this withdrawal request.',
@@ -175,8 +193,13 @@ const WalletScreen = () => {
         userId: user.uid,
         email: user.email,
         amount: rawBalance,
+        upiId,
       });
 
+      setSavedUpiId(upiId);
+      setSubmittedUpiId(upiId);
+      setSubmittedWithdrawAmount(rawBalance);
+      setShowWithdrawRequestModal(false);
       await refreshBalance();
       await refreshWithdrawRecords();
       setHistoryRefreshKey(Date.now());
@@ -304,7 +327,7 @@ const WalletScreen = () => {
                   style={styles.withdrawActionGradient}
                 >
                   {withdrawLoading ? (
-                    <ActivityIndicator size="small" color={THEME.white} />
+                    <Loading size="small" text={null} />
                   ) : (
                     <>
                       <View style={styles.withdrawActionIconBox}>
@@ -399,9 +422,22 @@ const WalletScreen = () => {
         </ScrollView>
       </SafeAreaView>
 
+      <WithdrawRequestModal
+        visible={showWithdrawRequestModal}
+        amount={rawBalance}
+        loading={withdrawLoading}
+        initialUpiId={savedUpiId}
+        onClose={() => setShowWithdrawRequestModal(false)}
+        onSubmit={handleWithdrawSubmit}
+      />
       <WithdrawSuccessModal
         visible={showWithdrawSuccessModal}
         onClose={() => setShowWithdrawSuccessModal(false)}
+        subtitle={
+          submittedUpiId
+            ? `Your request for ${formatAmount(submittedWithdrawAmount)} APE to ${submittedUpiId} is now pending review.`
+            : 'Your request is successful but still pending'
+        }
       />
       <WithdrawDetailsSheet
         visible={selectedWithdrawRecord !== null}

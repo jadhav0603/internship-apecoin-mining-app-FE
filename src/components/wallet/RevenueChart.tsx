@@ -1,18 +1,14 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Animated, ScrollView, Text, View } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
 import type { MiningHistoryDatum } from '../../hooks/useMiningWalletData';
 import type { WeekDayDatum } from '../../hooks/useRewardsData';
 import type { ReferralWeekDatum } from '../../services/referralService';
 import NeonBorderCard from './NeonBorderCard';
+import Loading from '../constant/Loading';
 import { THEME, formatCompactValue } from './theme';
+import styles from './RevenueChart.style';
+
 
 type RevenueChartProps = {
   weekData: WeekDayDatum[];
@@ -254,7 +250,7 @@ const RevenueChart = ({
               {(item.key === 'reward' && loading) ||
               (item.key === 'mining' && miningLoading) ||
               (item.key === 'referral' && referralLoading) ? (
-                <ActivityIndicator size="small" color={THEME.white} style={styles.legendLoader} />
+                <Loading size="small" text={null} style={styles.legendLoader} />
               ) : (
                 <Text style={styles.legendValue}>{item.value}</Text>
               )}
@@ -267,132 +263,5 @@ const RevenueChart = ({
     </NeonBorderCard>
   );
 };
-
-const styles = StyleSheet.create({
-  chartCard: {
-    marginHorizontal: 16,
-    marginTop: 24,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    color: THEME.white,
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-  },
-  badge: {
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: THEME.neonGreen,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    backgroundColor: '#2a2a1a',
-  },
-  badgeText: {
-    color: THEME.neonGreen,
-    fontSize: 13,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  chartWrap: {
-    marginTop: 22,
-    height: CHART_HEIGHT + 30,
-    justifyContent: 'flex-end',
-  },
-  dashLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    borderStyle: 'dashed',
-    borderWidth: 0.5,
-    borderColor: '#3a3a3a',
-  },
-  chartScrollContent: {
-    minWidth: '100%',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    paddingHorizontal: 4,
-  },
-  dayColumn: {
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  barTrack: {
-    height: CHART_HEIGHT,
-    justifyContent: 'flex-end',
-  },
-  barGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  bar: {
-    width: BAR_WIDTH,
-    borderRadius: 4,
-    alignSelf: 'flex-end',
-  },
-  todayBarGlow: {
-    shadowOpacity: 0.92,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
-  },
-  dayLabel: {
-    marginTop: 12,
-    color: '#7f7f7f',
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-  },
-  dayLabelToday: {
-    color: THEME.neonGreen,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  legendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'stretch',
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: THEME.borderMuted,
-  },
-  legendItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginBottom: 8,
-  },
-  legendLabel: {
-    color: THEME.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  legendValue: {
-    color: THEME.white,
-    fontSize: 18,
-    fontFamily: FONTS.black,
-    fontWeight: '800',
-    marginTop: 4,
-  },
-  legendDivider: {
-    width: 1,
-    backgroundColor: THEME.borderMuted,
-    marginHorizontal: 4,
-  },
-  legendLoader: {
-    marginTop: 4,
-  },
-});
 
 export default RevenueChart;

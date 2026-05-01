@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Modal,
   Pressable,
@@ -9,11 +8,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { FONTS } from '../../constants/FONTS';
 import { COLORS } from '../../constants/COLORS';
+import Loading from '../constant/Loading';
+import SafeBlurView from '../constant/SafeBlurView';
+import styles from './DeleteAccountConfirmModal.style';
+
 
 type DeleteAccountConfirmModalProps = {
   visible: boolean;
@@ -94,7 +96,7 @@ const DeleteAccountConfirmModal = ({
       onRequestClose={isSubmitting ? undefined : onClose}
     >
       <View style={styles.overlay}>
-        <BlurView
+        <SafeBlurView
           style={StyleSheet.absoluteFill as unknown as object}
           blurType="dark"
           blurAmount={16}
@@ -184,7 +186,7 @@ const DeleteAccountConfirmModal = ({
                     style={styles.primaryButtonGradient}
                   >
                     {isSubmitting ? (
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Loading size="small" text={null} />
                     ) : (
                       <>
                         <Ionicons name="warning-outline" size={18} color="#FFFFFF" />
@@ -201,145 +203,5 @@ const DeleteAccountConfirmModal = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(4, 8, 4, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 22,
-  },
-  cardWrap: {
-    width: '100%',
-    maxWidth: 380,
-  },
-  cardBorder: {
-    borderRadius: 28,
-    padding: 1,
-  },
-  card: {
-    borderRadius: 27,
-    backgroundColor: 'rgba(10, 15, 10, 0.98)',
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 22,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  iconBadge: {
-    alignSelf: 'center',
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,92,92,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,92,92,0.28)',
-    marginBottom: 18,
-  },
-  title: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontSize: 24,
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-    marginBottom: 12,
-  },
-  warningText: {
-    color: 'rgba(255,255,255,0.72)',
-    textAlign: 'center',
-    fontSize: 15,
-    lineHeight: 23,
-    fontFamily: FONTS.medium,
-    marginBottom: 18,
-  },
-  tipCard: {
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 14,
-  },
-  tipLabel: {
-    color: COLORS.textMuted,
-    fontSize: 11,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  tipValue: {
-    color: COLORS.primary,
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
-  inputShell: {
-    minHeight: 56,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 18,
-  },
-  input: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: FONTS.semibold,
-    letterSpacing: 1.2,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  secondaryButton: {
-    flex: 1,
-    minHeight: 54,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  primaryButton: {
-    flex: 1.2,
-    minHeight: 54,
-    borderRadius: 18,
-    overflow: 'hidden',
-  },
-  primaryButtonGradient: {
-    flex: 1,
-    borderRadius: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontFamily: FONTS.bold,
-    fontWeight: '800',
-  },
-  buttonPressed: {
-    opacity: 0.92,
-  },
-  buttonDisabled: {
-    opacity: 0.55,
-  },
-});
 
 export default DeleteAccountConfirmModal;

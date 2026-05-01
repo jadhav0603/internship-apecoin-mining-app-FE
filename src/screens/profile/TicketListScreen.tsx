@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -12,10 +11,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import TicketCard from '../../components/tickets/TicketCard';
 import TicketHeader from '../../components/tickets/TicketHeader';
+import Loading from '../../components/constant/Loading';
 import { TICKET_THEME } from '../../components/tickets/ticketTheme';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
 import { ticketService, type TicketItem } from '../../services/ticketService';
+import styles from './TicketListScreen.style';
 
 const TicketListScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -67,7 +68,7 @@ const TicketListScreen = () => {
           paddingHorizontal: 18,
           flexGrow: 1,
         }}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListHeaderComponent={
           <View style={styles.listHeader}>
             <TicketHeader title="My Reports" onBack={() => navigation.goBack()} />
@@ -76,7 +77,7 @@ const TicketListScreen = () => {
         ListEmptyComponent={
           isLoading ? (
             <View style={styles.stateWrap}>
-              <ActivityIndicator color={TICKET_THEME.accent} />
+              <Loading size="small" text="Loading reports..." />
             </View>
           ) : (
             <View style={styles.stateWrap}>
@@ -100,39 +101,5 @@ const TicketListScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: TICKET_THEME.background,
-  },
-  listHeader: {
-    marginBottom: 10,
-  },
-  stateWrap: {
-    flex: 1,
-    backgroundColor: TICKET_THEME.card,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: TICKET_THEME.cardBorder,
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  stateTitle: {
-    color: TICKET_THEME.textPrimary,
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    fontWeight: '700',
-  },
-  stateDescription: {
-    color: TICKET_THEME.textSecondary,
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginTop: 8,
-  },
-});
 
 export default TicketListScreen;
