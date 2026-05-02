@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { io as socketIO, Socket } from 'socket.io-client';
 import auth from '@react-native-firebase/auth';
 import API from '../services/api';
@@ -14,11 +13,11 @@ import { API_CONFIG } from '../api/config';
 export interface MiningData {
   email: string;
   multiplier: number;
-  status: 'mining' | 'idle' | 'claimed';
+  status: 'mining' | 'idle' | 'claimed' | 'withdrawn';
   miningStartTime: string | null;
   miningEndTime?: string | null;
   selectedHour: number;
-  selectedMiningPower: string;
+  selectedMiningPower: unknown;
   isActive: boolean;
   speed: string;
   baseDollarValue: number;
@@ -26,12 +25,21 @@ export interface MiningData {
   totalEarned: number;
   currentMiningPoints: number;
   isPaidPlan: boolean;
+  dollarPlanPerSec?: number;
   adsWatchedCount: number;
   apeDollarValue?: number;
+  serverTime?: string;
+  serverTimeOffsetMs?: number;
   remainingSeconds?: number;
   sessionEndTime?: string | null;
   canClaim?: boolean;
   shouldShowClaimPopup?: boolean;
+  multiplierHistory?: Array<{
+    multiplier?: number;
+    startTime?: string;
+    endTime?: string | null;
+  }>;
+  currentApeCoins?: number;
   [key: string]: any;
 }
 
@@ -49,55 +57,126 @@ type MiningContextType = {
   startMining: (h: number) => Promise<void>;
   stopMining: () => Promise<void>;
   setMultiplier: (m: number) => Promise<void>;
+  refreshMiningStatus: () => Promise<void>;
   dismissClaimPopup: () => void;
   openClaimPopup: () => void;
 };
 
-const LEGACY_MINING_STORAGE_KEY = 'MINING_DATA';
-const getMiningStorageKey = (userId: string) => `MINING_DATA:${userId}`;
+const DEFAULT_BASE_DOLLAR_VALUE = 0.002;
+const DEFAULT_DOLLAR_TO_BONK_RATE = 0.1;
+const MINING_DECIMAL_PLACES = 6;
+
 const getSocketUrl = () => API_CONFIG.BASE_URL.replace(/\/api$/, '');
 
-const getElapsedSeconds = (data: MiningData, now = Date.now()) => {
-  if (!data.miningStartTime) {
-    return 0;
+const roundCoins = (value: number) =>
+  Number.isFinite(value) ? Number(value.toFixed(MINING_DECIMAL_PLACES)) : 0;
+
+const toTimestamp = (value: string | Date | null | undefined) => {
+  if (!value) {
+    return null;
   }
 
-  const startTime = new Date(data.miningStartTime).getTime();
-
-  if (Number.isNaN(startTime)) {
-    return 0;
-  }
-
-  const rawElapsed = Math.floor((now - startTime) / 1000);
-  const totalSeconds = (data.selectedHour ?? 1) * 3600;
-
-  return Math.max(0, Math.min(rawElapsed, totalSeconds));
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? null : timestamp;
 };
 
-const getLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
-  const currentCoins =
-    typeof data.currentMiningPoints === 'number' && Number.isFinite(data.currentMiningPoints)
-      ? data.currentMiningPoints
-      : typeof data.currentApeCoins === 'number' && Number.isFinite(data.currentApeCoins)
-        ? data.currentApeCoins
-        : null;
+const isFreePlan = (selectedMiningPower: unknown) => {
+  if (
+    selectedMiningPower &&
+    typeof selectedMiningPower === 'object' &&
+    !Array.isArray(selectedMiningPower)
+  ) {
+    const plan = selectedMiningPower as Record<string, unknown>;
+    const monthValue =
+      typeof plan.month === 'string' ? plan.month.trim().toLowerCase() : '';
+    const priceValue =
+      typeof plan.price === 'string' || typeof plan.price === 'number'
+        ? String(plan.price).trim()
+        : '';
 
-  if (currentCoins !== null) {
-    return currentCoins;
+    return monthValue === 'free' || priceValue === '0' || priceValue === '0000';
   }
 
-  if (data.status !== 'mining' || !data.miningStartTime || !data.isActive) {
-    return data.currentMiningPoints ?? 0;
+  const normalizedValue =
+    typeof selectedMiningPower === 'string'
+      ? selectedMiningPower.replace(/\s+/g, '').toLowerCase()
+      : '';
+
+  return (
+    normalizedValue === '0-0' ||
+    normalizedValue === '1kh/s-free' ||
+    normalizedValue.includes('free')
+  );
+};
+
+const getDollarToBonkRate = (data: MiningData) => {
+  if (
+    typeof data.dollarToBonkRate === 'number' &&
+    Number.isFinite(data.dollarToBonkRate) &&
+    data.dollarToBonkRate > 0
+  ) {
+    return data.dollarToBonkRate;
   }
 
-  const base = data.baseDollarValue ?? 0.002;
-  const apeValue =
-    data.apeDollarValue && data.apeDollarValue > 0 ? data.apeDollarValue : 0.1;
-  const activeMultiplier = data.multiplier ?? 1;
-  const apePerHour = (base / apeValue) * activeMultiplier;
-  const apePerSecond = apePerHour / 3600;
+  if (
+    typeof data.apeDollarValue === 'number' &&
+    Number.isFinite(data.apeDollarValue) &&
+    data.apeDollarValue > 0
+  ) {
+    return data.apeDollarValue;
+  }
 
-  return getElapsedSeconds(data, now) * apePerSecond;
+  return DEFAULT_DOLLAR_TO_BONK_RATE;
+};
+
+const getRatePerSecond = (data: MiningData, multiplierValue: number) => {
+  const baseDollarValue =
+    typeof data.baseDollarValue === 'number' && Number.isFinite(data.baseDollarValue)
+      ? data.baseDollarValue
+      : DEFAULT_BASE_DOLLAR_VALUE;
+  const dollarToBonkRate = getDollarToBonkRate(data);
+
+  if (dollarToBonkRate <= 0) {
+    return 0;
+  }
+
+  const rateValue = baseDollarValue / dollarToBonkRate;
+  const bonkPerHour = rateValue * multiplierValue;
+  const baseRatePerSecond = bonkPerHour / 3600;
+  const paidPlanRatePerSecond =
+    data.isPaidPlan && !isFreePlan(data.selectedMiningPower)
+      ? Math.max(0, Number(data.dollarPlanPerSec) || 0)
+      : 0;
+
+  return baseRatePerSecond + paidPlanRatePerSecond;
+};
+
+const getServerNow = (data: MiningData, now = Date.now()) =>
+  now + (data.serverTimeOffsetMs ?? 0);
+
+const getSessionEndTimestamp = (data: MiningData) => {
+  const explicitEndTime = toTimestamp(data.miningEndTime ?? data.sessionEndTime ?? null);
+  if (explicitEndTime !== null) {
+    return explicitEndTime;
+  }
+
+  const startTime = toTimestamp(data.miningStartTime);
+  if (startTime === null) {
+    return null;
+  }
+
+  return startTime + (data.selectedHour ?? 1) * 3600 * 1000;
+};
+
+const getElapsedSeconds = (data: MiningData, now = Date.now()) => {
+  const startTime = toTimestamp(data.miningStartTime);
+  if (startTime === null) {
+    return 0;
+  }
+
+  const rawElapsed = Math.floor((getServerNow(data, now) - startTime) / 1000);
+  const totalSeconds = (data.selectedHour ?? 1) * 3600;
+  return Math.max(0, Math.min(rawElapsed, totalSeconds));
 };
 
 const isClaimableMiningSession = (data: MiningData) =>
@@ -110,64 +189,127 @@ const isActiveMiningSession = (data: MiningData) =>
   Boolean(data.miningStartTime) &&
   Boolean(data.isActive);
 
-const getDisplayEarnedCoins = (data: MiningData) => {
-  const canClaimReward = isClaimableMiningSession(data);
-  const isActiveSession = isActiveMiningSession(data);
+const calculateLiveEarnedCoins = (data: MiningData, now = Date.now()) => {
+  const startTime = toTimestamp(data.miningStartTime);
+  if (startTime === null) {
+    return 0;
+  }
 
-  if (isActiveSession || canClaimReward) {
-    return getLiveEarnedCoins(data);
+  const sessionEndTime = getSessionEndTimestamp(data);
+  const calcUntil = Math.min(getServerNow(data, now), sessionEndTime ?? Number.MAX_SAFE_INTEGER);
+
+  if (calcUntil <= startTime) {
+    return 0;
+  }
+
+  const totalSessionSeconds = (calcUntil - startTime) / 1000;
+  const multiplierHistory = Array.isArray(data.multiplierHistory)
+    ? [...data.multiplierHistory].sort(
+        (a, b) =>
+          (toTimestamp(a.startTime ?? null) ?? 0) -
+          (toTimestamp(b.startTime ?? null) ?? 0),
+      )
+    : [];
+
+  let coveredSeconds = 0;
+  let totalPoints = 0;
+
+  for (const historyItem of multiplierHistory) {
+    const historyStart = toTimestamp(historyItem.startTime ?? null);
+    if (historyStart === null) {
+      continue;
+    }
+
+    const historyEnd = historyItem.endTime
+      ? toTimestamp(historyItem.endTime)
+      : calcUntil;
+    if (historyEnd === null) {
+      continue;
+    }
+
+    const segmentStart = Math.max(startTime, historyStart);
+    const segmentEnd = Math.min(calcUntil, historyEnd);
+    const durationSeconds = (segmentEnd - segmentStart) / 1000;
+
+    if (durationSeconds <= 0) {
+      continue;
+    }
+
+    totalPoints +=
+      durationSeconds *
+      getRatePerSecond(data, Number(historyItem.multiplier) || 1);
+    coveredSeconds += durationSeconds;
+  }
+
+  if (coveredSeconds < totalSessionSeconds) {
+    totalPoints +=
+      (totalSessionSeconds - coveredSeconds) *
+      getRatePerSecond(data, data.multiplier ?? 1);
+  }
+
+  return roundCoins(totalPoints);
+};
+
+const getDisplayEarnedCoins = (data: MiningData, now = Date.now()) => {
+  if (isActiveMiningSession(data)) {
+    return calculateLiveEarnedCoins(data, now);
+  }
+
+  if (isClaimableMiningSession(data)) {
+    return roundCoins(data.currentMiningPoints ?? data.currentApeCoins ?? 0);
   }
 
   return 0;
 };
 
-const getServerEndTime = (data: MiningData) =>
-  data.miningEndTime ?? data.sessionEndTime ?? null;
+const deriveStateFromDB = (data: MiningData, now = Date.now()) => {
+  const sessionEndTime = getSessionEndTimestamp(data);
+  const liveRemainingFromTime =
+    sessionEndTime === null
+      ? null
+      : Math.max(0, Math.ceil((sessionEndTime - getServerNow(data, now)) / 1000));
 
-const deriveStateFromDB = (data: MiningData) => {
   if (typeof data.remainingSeconds === 'number') {
+    const remaining =
+      isActiveMiningSession(data) && liveRemainingFromTime !== null
+        ? liveRemainingFromTime
+        : Math.max(0, data.remainingSeconds);
+
     return {
-      remaining: Math.max(0, data.remainingSeconds),
-      earnedCoins: getDisplayEarnedCoins(data),
+      remaining,
+      earnedCoins: getDisplayEarnedCoins(data, now),
       isComplete:
-        data.remainingSeconds <= 0 ||
+        remaining <= 0 ||
         data.status !== 'mining' ||
         !data.isActive,
-      };
+    };
   }
 
-  const serverEndTime = getServerEndTime(data);
-  if (serverEndTime) {
-    const endTime = new Date(serverEndTime).getTime();
-
-    if (!Number.isNaN(endTime)) {
-      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
-
-      return {
-        remaining,
-        earnedCoins: getDisplayEarnedCoins(data),
-        isComplete:
-          remaining <= 0 ||
-          data.status !== 'mining' ||
-          !data.isActive,
-      };
-    }
+  if (liveRemainingFromTime !== null) {
+    return {
+      remaining: liveRemainingFromTime,
+      earnedCoins: getDisplayEarnedCoins(data, now),
+      isComplete:
+        liveRemainingFromTime <= 0 ||
+        data.status !== 'mining' ||
+        !data.isActive,
+    };
   }
 
   if (data.status !== 'mining' || !data.miningStartTime) {
     return {
       remaining: 0,
-      earnedCoins: getDisplayEarnedCoins(data),
+      earnedCoins: getDisplayEarnedCoins(data, now),
       isComplete: true,
     };
   }
 
   const totalSeconds = (data.selectedHour ?? 1) * 3600;
-  const remaining = Math.max(0, totalSeconds - getElapsedSeconds(data));
+  const remaining = Math.max(0, totalSeconds - getElapsedSeconds(data, now));
 
   return {
     remaining,
-    earnedCoins: getDisplayEarnedCoins(data),
+    earnedCoins: getDisplayEarnedCoins(data, now),
     isComplete: remaining <= 0,
   };
 };
@@ -187,19 +329,12 @@ export const MiningProvider = ({ children }: any) => {
   ]);
   const [showClaimPopup, setShowClaimPopup] = useState(false);
   const [hasUnclaimedReward, setHasUnclaimedReward] = useState(false);
-  const [pendingClaimCoins, setPendingClaimCoins] = useState<number | null>(
-    null,
-  );
+  const [pendingClaimCoins, setPendingClaimCoins] = useState<number | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
-  const multiplierRef = useRef(multiplier);
-  const miningDataRef = useRef(miningData);
+  const miningDataRef = useRef<MiningData | null>(null);
   const lastAutoShownClaimKeyRef = useRef<string | null>(null);
-  const miningStorageKeyRef = useRef<string | null>(null);
   const authRequestIdRef = useRef(0);
-  useEffect(() => {
-    multiplierRef.current = multiplier;
-  }, [multiplier]);
 
   useEffect(() => {
     miningDataRef.current = miningData;
@@ -219,57 +354,44 @@ export const MiningProvider = ({ children }: any) => {
     lastAutoShownClaimKeyRef.current = null;
   };
 
-  const syncMiningStorage = async (
-    storageKey: string,
-    data: Pick<MiningData, 'miningStartTime' | 'selectedHour' | 'multiplier'>,
-  ) => {
-    if (!data.miningStartTime) {
-      await AsyncStorage.removeItem(storageKey);
-      return;
-    }
+  const applyMiningData = (data: MiningData, stats?: Record<string, unknown>) => {
+    const receivedAt = Date.now();
+    const serverTime = toTimestamp((stats?.serverTime as string | undefined) ?? data.serverTime);
 
-    const startTime = new Date(data.miningStartTime).getTime();
-
-    if (Number.isNaN(startTime)) {
-      await AsyncStorage.removeItem(storageKey);
-      return;
-    }
-
-    await AsyncStorage.setItem(
-      storageKey,
-      JSON.stringify({
-        startTime,
-        duration: (data.selectedHour ?? 1) * 3600,
-        multiplier: data.multiplier ?? 1,
-        earned: 0,
-      }),
-    );
-  };
-
-  const applyMiningData = (data: MiningData, stats?: any) => {
-    const updatedData = {
+    const updatedData: MiningData = {
       ...data,
       ...(stats || {}),
-      apeDollarValue: stats?.apeDollarValue ?? data.apeDollarValue ?? 0.1,
+      apeDollarValue:
+        typeof stats?.apeDollarValue === 'number'
+          ? (stats.apeDollarValue as number)
+          : data.apeDollarValue ?? DEFAULT_DOLLAR_TO_BONK_RATE,
+      dollarToBonkRate:
+        typeof data.dollarToBonkRate === 'number' && data.dollarToBonkRate > 0
+          ? data.dollarToBonkRate
+          : typeof stats?.dollarToBonkRate === 'number'
+            ? (stats.dollarToBonkRate as number)
+            : typeof stats?.apeDollarValue === 'number'
+              ? (stats.apeDollarValue as number)
+              : data.apeDollarValue ?? DEFAULT_DOLLAR_TO_BONK_RATE,
+      serverTime: (stats?.serverTime as string | undefined) ?? data.serverTime,
+      serverTimeOffsetMs: serverTime === null ? 0 : serverTime - receivedAt,
     };
 
-    if (stats?.miningMultipliers) {
-      setMultipliers(stats.miningMultipliers);
+    if (Array.isArray(stats?.miningMultipliers)) {
+      setMultipliers(stats?.miningMultipliers as number[]);
     }
 
     setMiningData(updatedData);
     setMultiplierState(updatedData.multiplier ?? 1);
     setHours(updatedData.selectedHour ?? 1);
 
-    const { remaining, earnedCoins, isComplete } =
-      deriveStateFromDB(updatedData);
+    const { remaining, earnedCoins, isComplete } = deriveStateFromDB(updatedData);
     const claimKey =
-      getServerEndTime(updatedData) ??
+      updatedData.miningEndTime ??
+      updatedData.sessionEndTime ??
       updatedData.miningStartTime ??
       `${updatedData.email}-${updatedData.selectedHour}`;
-    const canClaimReward =
-      isComplete &&
-      isClaimableMiningSession(updatedData);
+    const canClaimReward = isComplete && isClaimableMiningSession(updatedData);
 
     if (!isComplete) {
       setIsMining(true);
@@ -297,6 +419,21 @@ export const MiningProvider = ({ children }: any) => {
         lastAutoShownClaimKeyRef.current = null;
       }
     }
+  };
+
+  const refreshMiningStatus = async () => {
+    const response = await API.get('/mining/status');
+
+    if (response.data?.mining) {
+      const restoredMining = {
+        ...response.data.mining,
+        ...(response.data.stats ?? {}),
+      };
+      applyMiningData(restoredMining, response.data.stats);
+      return;
+    }
+
+    resetMiningState();
   };
 
   useEffect(() => {
@@ -364,71 +501,22 @@ export const MiningProvider = ({ children }: any) => {
   useEffect(() => {
     const unsubscribeAuth = auth().onAuthStateChanged(firebaseUser => {
       const requestId = ++authRequestIdRef.current;
-      const storageKey = firebaseUser?.uid
-        ? getMiningStorageKey(firebaseUser.uid)
-        : null;
-
-      miningStorageKeyRef.current = storageKey;
       resetMiningState();
-      void AsyncStorage.removeItem(LEGACY_MINING_STORAGE_KEY);
 
-      if (!firebaseUser || !storageKey) {
+      if (!firebaseUser) {
         return;
       }
 
       const fetchStatus = async () => {
         try {
-          const response = await API.get('/mining/status');
-
+          await refreshMiningStatus();
+        } catch (error: any) {
           if (authRequestIdRef.current !== requestId) {
             return;
           }
 
-          if (response.data?.mining) {
-            const restoredMining = {
-              ...response.data.mining,
-              ...(response.data.stats ?? {}),
-            };
-            console.log(
-              '[mining] restored from backend:',
-              restoredMining.miningStartTime,
-            );
-            applyMiningData(restoredMining, response.data.stats);
-
-            const { isComplete } = deriveStateFromDB(restoredMining);
-            if (isComplete) {
-              await AsyncStorage.removeItem(storageKey);
-            } else {
-              await syncMiningStorage(storageKey, restoredMining);
-            }
-            return;
-          }
-
-          resetMiningState();
-          await AsyncStorage.removeItem(storageKey);
-        } catch {
-          const saved = await AsyncStorage.getItem(storageKey);
-
-          if (authRequestIdRef.current !== requestId) {
-            return;
-          }
-
-          if (!saved) {
+          if (error?.response?.status === 401) {
             resetMiningState();
-            return;
-          }
-
-          const data = JSON.parse(saved);
-          const elapsed = Math.floor((Date.now() - data.startTime) / 1000);
-          const remaining = data.duration - elapsed;
-
-          if (remaining > 0) {
-            setIsMining(true);
-            setSecondsLeft(remaining);
-            setHours(Math.max(1, Math.ceil(data.duration / 3600)));
-            setMultiplierState(data.multiplier ?? 1);
-          } else {
-            await AsyncStorage.removeItem(storageKey);
           }
         }
       };
@@ -452,18 +540,6 @@ export const MiningProvider = ({ children }: any) => {
     setEarned(0);
     setShowClaimPopup(false);
 
-    if (miningStorageKeyRef.current) {
-      await AsyncStorage.setItem(
-        miningStorageKeyRef.current,
-        JSON.stringify({
-          startTime: Date.now(),
-          duration: totalSeconds,
-          multiplier: 1,
-          earned: 0,
-        }),
-      );
-    }
-
     try {
       const response = await API.post('/mining/start', {
         selectedHour: h,
@@ -477,32 +553,20 @@ export const MiningProvider = ({ children }: any) => {
           ...(response.data.stats ?? {}),
         };
         applyMiningData(restoredMining, response.data.stats);
-        if (miningStorageKeyRef.current) {
-          await syncMiningStorage(miningStorageKeyRef.current, restoredMining);
-        }
       }
     } catch (err) {
       console.error('[mining] failed to save to backend:', err);
     }
   };
 
-  // ✅ 2-SECOND POLLING
   useEffect(() => {
-    if (!isMining) return;
+    if (!isMining) {
+      return;
+    }
 
     const poll = setInterval(async () => {
       try {
-        const response = await API.get('/mining/status');
-        if (response.data?.mining) {
-          const restoredMining = {
-            ...response.data.mining,
-            ...(response.data.stats ?? {}),
-          };
-          applyMiningData(restoredMining, response.data.stats);
-          if (miningStorageKeyRef.current) {
-            await syncMiningStorage(miningStorageKeyRef.current, restoredMining);
-          }
-        }
+        await refreshMiningStatus();
       } catch (e: any) {
         if (e?.response?.status === 401) {
           resetMiningState();
@@ -536,11 +600,6 @@ export const MiningProvider = ({ children }: any) => {
     setShowClaimPopup(false);
     setPendingClaimCoins(null);
     lastAutoShownClaimKeyRef.current = null;
-    if (miningStorageKeyRef.current) {
-      await AsyncStorage.removeItem(miningStorageKeyRef.current);
-    }
-    await AsyncStorage.removeItem(LEGACY_MINING_STORAGE_KEY);
-    // ✅ Immediately refresh wallet balance so it doesn't reset to 0 on page load
   };
 
   const setMultiplier = async (m: number) => {
@@ -558,7 +617,7 @@ export const MiningProvider = ({ children }: any) => {
             ...response.data.mining,
             ...(response.data.stats ?? {}),
           },
-          response.data.apeDollarValue,
+          response.data.stats,
         );
       }
       console.log('[mining] multiplier updated to', m);
@@ -569,41 +628,34 @@ export const MiningProvider = ({ children }: any) => {
             ...err.response.data.mining,
             ...(err.response.data.stats ?? {}),
           },
-          err.response.data.apeDollarValue,
+          err.response.data.stats,
         );
       }
       console.error('[mining] failed to update multiplier:', err);
     }
   };
 
-useEffect(() => {
-  if (!isMining) return;
-
-  const interval = setInterval(() => {
-    const d = miningDataRef.current;
-
-    setSecondsLeft(prev => {
-      if (prev <= 1) return 0;
-      return prev - 1;
-    });
-
-    if (d) {
-      setEarned(prev => {
-        const ratePerSec =
-          ((d.baseDollarValue ?? 0.002) /
-            (d.apeDollarValue && d.apeDollarValue > 0
-              ? d.apeDollarValue
-              : 0.1)) *
-          (multiplierRef.current ?? 1) /
-          3600;
-
-        return prev + ratePerSec;
-      });
+  useEffect(() => {
+    if (!isMining) {
+      return;
     }
-  }, 1000);
 
-  return () => clearInterval(interval);
-}, [isMining]);
+    const syncFromSnapshot = () => {
+      const data = miningDataRef.current;
+      if (!data) {
+        return;
+      }
+
+      const { remaining, earnedCoins } = deriveStateFromDB(data, Date.now());
+      setSecondsLeft(remaining);
+      setEarned(earnedCoins);
+    };
+
+    syncFromSnapshot();
+    const interval = setInterval(syncFromSnapshot, 1000);
+
+    return () => clearInterval(interval);
+  }, [isMining]);
 
   return (
     <MiningContext.Provider
@@ -621,6 +673,7 @@ useEffect(() => {
         startMining,
         stopMining,
         setMultiplier,
+        refreshMiningStatus,
         dismissClaimPopup: () => setShowClaimPopup(false),
         openClaimPopup: () => setShowClaimPopup(true),
       }}
