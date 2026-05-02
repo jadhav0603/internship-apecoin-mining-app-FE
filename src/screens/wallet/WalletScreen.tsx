@@ -61,7 +61,7 @@ const WalletScreen = () => {
     useState<WalletTransaction | null>(null);
   const {
     totalCollected,
-    miningTotal,
+    allMiningTotal,
     referralEarnings,
     pendingRecords,
     paidRecords,
@@ -74,6 +74,7 @@ const WalletScreen = () => {
 
   const rawBalance = Number.isFinite(liquidBalance) ? liquidBalance : 0;
   const displayBalance = Number(rawBalance.toFixed(6));
+  const totalMiningBalance = Number.isFinite(allMiningTotal) ? allMiningTotal : 0;
   const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
 
   useEffect(() => {
@@ -134,8 +135,8 @@ const WalletScreen = () => {
   const overviewCards = [
     {
       key: 'mining',
-      label: 'Mining',
-      value: formatAmount(miningTotal),
+      label: 'Total Balance',
+      value: formatAmount(totalMiningBalance),
       iconFamily: 'material' as const,
       icon: 'pickaxe',
       iconColor: '#9AFB65',
