@@ -1,14 +1,4 @@
-import {
-  FlatList,
-  Image,
-  Animated,
-  Pressable,
-  RefreshControl,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet } from 'react-native';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 
@@ -102,6 +92,29 @@ const styles = StyleSheet.create({
   },
   summaryBadgeText: {
     color: COLORS.success,
+    fontSize: 12,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+  },
+  summaryBadgeColumn: {
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  monthPickerButton: {
+    minWidth: 118,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+    backgroundColor: COLORS.cardStrong,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  monthPickerText: {
+    color: COLORS.textPrimary,
     fontSize: 12,
     fontFamily: FONTS.semibold,
     fontWeight: '600',
@@ -245,6 +258,18 @@ const styles = StyleSheet.create({
   separator: {
     height: 12,
   },
+  graphEmptyState: {
+    marginTop: 8,
+    backgroundColor: COLORS.card,
+    borderRadius: 24,
+    minHeight: 264,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+  },
   emptyState: {
     backgroundColor: COLORS.card,
     borderRadius: 24,
@@ -266,6 +291,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.58)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 22,
+  },
+  monthModalCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 28,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.glassBorder,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+  },
+  monthModalTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  monthOption: {
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: COLORS.cardStrong,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  monthOptionActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: 'rgba(166, 255, 0, 0.10)',
+  },
+  monthOptionText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontFamily: FONTS.semibold,
+    fontWeight: '600',
+  },
+  monthOptionTextActive: {
+    color: COLORS.textPrimary,
   },
 });
 
