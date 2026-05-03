@@ -56,7 +56,7 @@ type MiningContextType = {
   hasUnclaimedReward: boolean;
   startMining: (h: number) => Promise<void>;
   stopMining: () => Promise<void>;
-  setMultiplier: (m: number) => Promise<void>;
+  setMultiplier: (m: number) => Promise<boolean>;
   refreshMiningStatus: () => Promise<void>;
   dismissClaimPopup: () => void;
   openClaimPopup: () => void;
@@ -604,7 +604,7 @@ export const MiningProvider = ({ children }: any) => {
 
   const setMultiplier = async (m: number) => {
     if (!isMining) {
-      return;
+      return false;
     }
 
     setMultiplierState(m);
@@ -621,6 +621,7 @@ export const MiningProvider = ({ children }: any) => {
         );
       }
       console.log('[mining] multiplier updated to', m);
+      return true;
     } catch (err: any) {
       if (err?.response?.data?.mining) {
         applyMiningData(
@@ -632,6 +633,7 @@ export const MiningProvider = ({ children }: any) => {
         );
       }
       console.error('[mining] failed to update multiplier:', err);
+      return false;
     }
   };
 
