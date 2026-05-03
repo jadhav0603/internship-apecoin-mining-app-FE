@@ -65,6 +65,12 @@ if (__DEV__) {
 
 apiClient.interceptors.request.use(
   async config => {
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      const headers = axios.AxiosHeaders.from(config.headers);
+      headers.delete('Content-Type');
+      config.headers = headers;
+    }
+
     if (!config.headers?.Authorization) {
       const authorizationHeader = await getAuthorizationHeader();
 

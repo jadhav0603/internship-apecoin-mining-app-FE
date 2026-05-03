@@ -176,6 +176,7 @@ const ReportIssueScreen = () => {
           mediaType: 'photo',
           selectionLimit: MAX_TICKET_ATTACHMENTS - attachments.length,
           quality: 0.8,
+          includeBase64: true,
         },
         resolve,
       );
@@ -230,6 +231,7 @@ const ReportIssueScreen = () => {
       uploading: true,
     }));
 
+    console.log('selected attachments:', [...attachments, ...pendingItems]);
     setAttachments(current => [...current, ...pendingItems]);
     setIsUploadingAttachments(true);
 
@@ -475,8 +477,8 @@ const ReportIssueScreen = () => {
           />
         </Pressable>
 
-        {/* <Text style={styles.label}>Priority</Text>
-        <PrioritySelector value={priority} onChange={setPriority} /> */}
+        <Text style={styles.label}>Priority</Text>
+        <PrioritySelector value={priority} onChange={setPriority} />
 
         <Text style={styles.label}>Description</Text>
         <TextInput
