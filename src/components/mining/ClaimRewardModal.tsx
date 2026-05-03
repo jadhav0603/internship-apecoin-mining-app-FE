@@ -50,6 +50,13 @@ const ClaimRewardModal = () => {
     miningData?.status !== 'claimed' &&
     Boolean(miningData?.miningStartTime);
 
+  useEffect(() => {
+    if (!isClaimAvailable) {
+      setIsClaimActionBusy(false);
+      setIsPendingReward(false);
+    }
+  }, [isClaimAvailable]);
+
   const spinAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -94,6 +101,7 @@ const ClaimRewardModal = () => {
           console.error('[mining] failed to stop after claim:', error);
         });
         dismissClaimPopup();
+        setIsClaimActionBusy(false);
       }, 300);
     } catch (err) {
       console.error('[mining] claim failed:', err);
