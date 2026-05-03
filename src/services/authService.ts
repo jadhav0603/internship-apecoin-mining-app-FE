@@ -21,6 +21,7 @@ import {
   getBlockedAccountFromStatus,
   setBlockedAccount,
 } from '../session/blockedAccountState';
+import { pushNotificationService } from './pushNotificationService';
 
 const firebaseAuth = getAuth(getApp());
 let authRestorePromise: Promise<FirebaseAuthTypes.User | null> | null = null;
@@ -90,6 +91,9 @@ const signOutFromProviders = async () => {
 };
 
 const clearLocalSessionState = async () => {
+  await pushNotificationService
+    .unregisterCurrentDeviceToken()
+    .catch(() => undefined);
   await Promise.allSettled([AsyncStorage.clear(), signOutFromProviders()]);
 };
 

@@ -43,6 +43,8 @@ import {
   subscribeBlockedAccount,
 } from '../session/blockedAccountState';
 import { authService } from '../services/authService';
+import { navigationRef } from './navigationRef';
+import { pushNotificationService } from '../services/pushNotificationService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -219,7 +221,11 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navigationTheme}
+      onReady={() => pushNotificationService.onNavigationReady()}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {blockedAccount ? (
           <>

@@ -112,4 +112,16 @@ export const userService = {
     const res = await API.patch<AcceptTermsResponse>('/user/accept-terms');
     return res.data;
   },
+
+  registerPushToken: async (token: string) => {
+    const res = await API.put('/user/push-token', { token });
+    return res.data;
+  },
+
+  unregisterPushToken: async (token: string) => {
+    const res = await API.delete('/user/push-token', {
+      data: { token },
+    });
+    return res.data;
+  },
 };
