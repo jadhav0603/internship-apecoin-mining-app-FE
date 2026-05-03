@@ -475,8 +475,8 @@ const ReportIssueScreen = () => {
           />
         </Pressable>
 
-        <Text style={styles.label}>Priority</Text>
-        <PrioritySelector value={priority} onChange={setPriority} />
+        {/* <Text style={styles.label}>Priority</Text>
+        <PrioritySelector value={priority} onChange={setPriority} /> */}
 
         <Text style={styles.label}>Description</Text>
         <TextInput

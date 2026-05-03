@@ -23,10 +23,11 @@ export const TICKET_THEME = {
 };
 
 export const ISSUE_CATEGORIES = [
-  'Missing Reward',
-  'Payment Issue',
-  'Bug',
-  'Other',
+ 'Reward Claim Issue',
+'Withdrawal & Payment Support',
+'Account Access Assistance',
+'Bug / Technical Issue',
+'Other Support Request'
 ] as const;
 
 export const ISSUE_PRIORITIES = ['low', 'medium', 'high'] as const;
