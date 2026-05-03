@@ -12,6 +12,10 @@ export type BackendUser = {
   status?: string;
   wallet?: string;
   walletBalance?: number;
+  totalBalance?: number;
+  miningAmount?: number;
+  rewardAmount?: number;
+  referralAmount?: number;
   totalEarnedBalance?: number;
   withdrawnBalance?: number;
   referredBy?: string | null;

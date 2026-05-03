@@ -1,7 +1,7 @@
 import apiClient from '../api/apiClient';
 
 export type TransactionType = 'reward' | 'mining' | 'referral';
-export type TransactionStatus = 'pending' | 'claimed' | 'withdrawn';
+export type TransactionStatus = 'mining' | 'claimed' | 'withdrawn';
 
 export type TransactionItem = {
   id: string;

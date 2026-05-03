@@ -98,19 +98,19 @@ const getTypeBadgeStyle = (type: TransactionType) => {
 
 const getStatusBadgeStyle = (status: TransactionItem['status']) => {
   switch (status) {
+    case 'mining':
+      return {
+        backgroundColor: 'rgba(89, 164, 255, 0.14)',
+        borderColor: 'rgba(89, 164, 255, 0.28)',
+        textColor: '#85BAFF',
+        label: 'Mining',
+      };
     case 'withdrawn':
       return {
         backgroundColor: 'rgba(255, 92, 92, 0.14)',
         borderColor: 'rgba(255, 92, 92, 0.28)',
         textColor: '#FF8585',
         label: 'Withdrawn',
-      };
-    case 'pending':
-      return {
-        backgroundColor: 'rgba(255, 199, 0, 0.14)',
-        borderColor: 'rgba(255, 199, 0, 0.28)',
-        textColor: '#F5C542',
-        label: 'Pending',
       };
     default:
       return {
