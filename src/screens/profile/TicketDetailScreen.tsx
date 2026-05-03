@@ -12,7 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Loading from '../../components/constant/Loading';
 import TicketHeader from '../../components/tickets/TicketHeader';
-import { TICKET_THEME, getPriorityColor } from '../../components/tickets/ticketTheme';
+import { TICKET_THEME } from '../../components/tickets/ticketTheme';
 import { FONTS } from '../../constants/FONTS';
 import { RootStackParamList } from '../../navigation/types';
 import { ticketService, type TicketItem } from '../../services/ticketService';
@@ -68,8 +68,6 @@ const TicketDetailScreen = () => {
     }, [fetchTicket])
   );
 
-  const priorityColor = getPriorityColor(ticket?.priority);
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -104,11 +102,6 @@ const TicketDetailScreen = () => {
               <Text style={styles.category}>{ticket.category}</Text>
 
               <View style={styles.metaRow}>
-                <View style={[styles.priorityBadge, { borderColor: priorityColor }]}>
-                  <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
-                  <Text style={styles.priorityText}>{ticket.priority.toUpperCase()}</Text>
-                </View>
-
                 <View style={styles.statusBadge}>
                   <Text style={styles.statusText}>{ticket.status}</Text>
                 </View>
@@ -124,6 +117,13 @@ const TicketDetailScreen = () => {
               <Text style={styles.sectionTitle}>Created At</Text>
               <Text style={styles.valueText}>{formatDateTime(ticket.createdAt)}</Text>
             </View>
+
+            {ticket.resolution ? (
+              <View style={styles.detailCard}>
+                <Text style={styles.sectionTitle}>Resolution</Text>
+                <Text style={styles.valueText}>{ticket.resolution}</Text>
+              </View>
+            ) : null}
 
             <View style={styles.detailCard}>
               <Text style={styles.sectionTitle}>Contact Preference</Text>

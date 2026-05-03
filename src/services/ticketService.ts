@@ -1,19 +1,21 @@
 import type { Asset } from 'react-native-image-picker';
+import { NativeModules, Platform } from 'react-native';
 import API from './api';
-
-export type TicketPriority = 'low' | 'medium' | 'high';
 
 export type TicketItem = {
   _id: string;
   ticketId: string;
   userId: string;
   category: string;
-  priority: TicketPriority;
   description: string;
   attachments: string[];
   allowContact: boolean;
   contactEmail: string | null;
   contactPhone: string | null;
+  appVersion?: string | null;
+  deviceName?: string | null;
+  osVersion?: string | null;
+  resolution?: string | null;
   status: 'PENDING';
   createdAt: string;
   updatedAt: string;
@@ -21,12 +23,17 @@ export type TicketItem = {
 
 export type CreateTicketPayload = {
   category: string;
-  priority: TicketPriority;
   description: string;
   attachments?: string[];
   allowContact: boolean;
   contactEmail?: string | null;
   contactPhone?: string | null;
+};
+
+type CreateTicketRequestPayload = CreateTicketPayload & {
+  appVersion?: string | null;
+  deviceName?: string | null;
+  osVersion?: string | null;
 };
 
 type CreateTicketResponse = {
@@ -67,6 +74,57 @@ type TicketAttachmentSignatureResponse = {
   signature: string;
 };
 
+const packageVersion =
+  typeof require === 'function'
+    ? (require('../../package.json')?.version as string | undefined)
+    : undefined;
+
+const normalizeOptionalString = (value: unknown) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const getTicketAppInfo = () => {
+  const platformConstants =
+    (Platform.constants as Record<string, unknown> | undefined) ??
+    (NativeModules.PlatformConstants as Record<string, unknown> | undefined) ??
+    {};
+
+  const appVersion = normalizeOptionalString(
+    platformConstants.appVersion ??
+      platformConstants.VersionName ??
+      packageVersion,
+  );
+
+  const model = normalizeOptionalString(platformConstants.Model);
+  const brand = normalizeOptionalString(platformConstants.Brand);
+  const iosDevice =
+    normalizeOptionalString(platformConstants.interfaceIdiom) ??
+    normalizeOptionalString(platformConstants.systemName);
+  const deviceName =
+    normalizeOptionalString([brand, model].filter(Boolean).join(' ')) ??
+    model ??
+    iosDevice;
+
+  const osVersion = normalizeOptionalString(
+    platformConstants.Release ??
+      platformConstants.osVersion ??
+      (typeof Platform.Version === 'string' || typeof Platform.Version === 'number'
+        ? String(Platform.Version)
+        : ''),
+  );
+
+  return {
+    appVersion,
+    deviceName,
+    osVersion,
+  };
+};
+
 const buildCloudinaryFileValue = (asset: Asset) => {
   if (asset.base64) {
     const mimeType = asset.type ?? 'image/jpeg';
@@ -97,7 +155,13 @@ const buildCloudinaryFormData = (
 
 export const ticketService = {
   async createTicket(payload: CreateTicketPayload): Promise<TicketItem> {
-    const response = await API.post<CreateTicketResponse>('/tickets/create', payload);
+    const response = await API.post<CreateTicketResponse>(
+      '/tickets/create',
+      {
+        ...payload,
+        ...getTicketAppInfo(),
+      } satisfies CreateTicketRequestPayload,
+    );
     return response.data.ticket;
   },
 

@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { TICKET_THEME, getPriorityColor } from '../../components/tickets/ticketTheme';
+import { TICKET_THEME } from '../../components/tickets/ticketTheme';
 import { FONTS } from '../../constants/FONTS';
 
 const styles = StyleSheet.create({
@@ -58,30 +58,9 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginTop: 18,
-  },
-  priorityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: TICKET_THEME.input,
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  priorityText: {
-    color: TICKET_THEME.textPrimary,
-    fontSize: 12,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
   },
   statusBadge: {
     borderRadius: 999,

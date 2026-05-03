@@ -19,7 +19,6 @@ import Loading from '../../components/constant/Loading';
 import AttachmentUploadBox, {
   type TicketAttachmentItem,
 } from '../../components/tickets/AttachmentUploadBox';
-import PrioritySelector from '../../components/tickets/PrioritySelector';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import {
   ISSUE_CATEGORIES,
@@ -35,7 +34,6 @@ import styles from './ReportIssueScreen.style';
 import {
   ticketService,
   type TicketItem,
-  type TicketPriority,
 } from '../../services/ticketService';
 
 const ALLOWED_ATTACHMENT_TYPES = [
@@ -65,7 +63,6 @@ const ReportIssueScreen = () => {
   const { showConfirm, showError, showWarning } = useAlert();
 
   const [category, setCategory] = useState<string>('');
-  const [priority, setPriority] = useState<TicketPriority | ''>('');
   const [description, setDescription] = useState('');
   const [allowContact, setAllowContact] = useState(false);
   const [contactEmail, setContactEmail] = useState(user?.email ?? '');
@@ -127,11 +124,6 @@ const ReportIssueScreen = () => {
   const validateForm = () => {
     if (!category) {
       showWarning('Please select a category.', 'Validation');
-      return false;
-    }
-
-    if (!priority) {
-      showWarning('Please select a priority.', 'Validation');
       return false;
     }
 
@@ -268,7 +260,6 @@ const ReportIssueScreen = () => {
 
   const resetForm = () => {
     setCategory('');
-    setPriority('');
     setDescription('');
     setAllowContact(false);
     setContactEmail(user?.email ?? '');
@@ -277,7 +268,7 @@ const ReportIssueScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm() || !priority) {
+    if (!validateForm()) {
       return;
     }
 
@@ -286,7 +277,6 @@ const ReportIssueScreen = () => {
 
       const ticket = await ticketService.createTicket({
         category,
-        priority,
         description: description.trim(),
         attachments: attachments
           .map(item => item.url)
@@ -434,6 +424,15 @@ const ReportIssueScreen = () => {
                         {ticket.description}
                       </Text>
 
+                      {ticket.resolution ? (
+                        <Text
+                          style={styles.reportPreviewStatus}
+                          numberOfLines={2}
+                        >
+                          Resolution: {ticket.resolution}
+                        </Text>
+                      ) : null}
+
                       <View style={styles.reportPreviewFooter}>
                         <Text style={styles.reportPreviewMeta}>
                           {ticket.ticketId} •{' '}
@@ -476,9 +475,6 @@ const ReportIssueScreen = () => {
             color={TICKET_THEME.textSecondary}
           />
         </Pressable>
-
-        <Text style={styles.label}>Priority</Text>
-        <PrioritySelector value={priority} onChange={setPriority} />
 
         <Text style={styles.label}>Description</Text>
         <TextInput
