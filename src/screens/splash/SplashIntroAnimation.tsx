@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { StatusBar, StyleSheet, View } from 'react-native';
 import LottieView from 'lottie-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/COLORS';
 import styles from './SplashIntroAnimation.style';
 
@@ -31,7 +32,7 @@ const SplashIntroAnimation = ({ onFinish }: SplashIntroAnimationProps) => {
   }, [finish]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={COLORS.backgroundDeep}
@@ -44,7 +45,7 @@ const SplashIntroAnimation = ({ onFinish }: SplashIntroAnimationProps) => {
         style={styles.animation}
         onAnimationFinish={finish}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

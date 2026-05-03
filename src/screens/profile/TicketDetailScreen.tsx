@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Loading from '../../components/constant/Loading';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import { TICKET_THEME } from '../../components/tickets/ticketTheme';
@@ -69,7 +69,7 @@ const TicketDetailScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
         contentContainerStyle={{
           paddingTop: Math.max(insets.top + 12, 28),
@@ -162,7 +162,7 @@ const TicketDetailScreen = () => {
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -316,7 +316,7 @@ const TransactionHistoryScreen = () => {
   const listHeaderComponent = (
     <View>
       <View
-        style={[styles.headerRow, { paddingTop: Math.max(insets.top + 4, 18) }]}
+        style={[styles.headerRow, { paddingTop: Math.max(insets.top > 0 ? 4 : 18, 4) }]}
       >
         <AppBackButton onPress={() => navigation.goBack()} />
 
@@ -403,7 +403,7 @@ const TransactionHistoryScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BACKGROUND} />
 
       {loading ? (
