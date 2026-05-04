@@ -1,9 +1,8 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { FONTS } from '../../constants/FONTS';
 import { TicketItem } from '../../services/ticketService';
-import { TICKET_THEME, getPriorityColor } from './ticketTheme';
+import { TICKET_THEME } from './ticketTheme';
 import styles from './TicketCard.style';
 
 
@@ -24,17 +23,10 @@ const formatDate = (value?: string) => {
   });
 };
 
-const TicketCard = ({ ticket, onPress }: TicketCardProps) => {
-  const priorityColor = getPriorityColor(ticket.priority);
-
-  return (
+const TicketCard = ({ ticket, onPress }: TicketCardProps) => (
     <Pressable onPress={onPress} style={styles.card}>
       <View style={styles.row}>
         <Text style={styles.ticketId}>{ticket.ticketId}</Text>
-        <View style={[styles.priorityBadge, { borderColor: priorityColor }]}>
-          <View style={[styles.priorityDot, { backgroundColor: priorityColor }]} />
-          <Text style={styles.priorityText}>{ticket.priority.toUpperCase()}</Text>
-        </View>
       </View>
 
       <Text style={styles.category}>{ticket.category}</Text>
@@ -49,7 +41,6 @@ const TicketCard = ({ ticket, onPress }: TicketCardProps) => {
         </View>
       </View>
     </Pressable>
-  );
-};
+);
 
 export default TicketCard;

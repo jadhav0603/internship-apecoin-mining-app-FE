@@ -9,6 +9,10 @@ export type AppUser = {
   referredBy?: string | null;
   referralEarnings?: number;
   referralCount?: number;
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
+  currentTermsVersion?: string;
   acceptedTerms?: boolean;
 };
 

@@ -12,11 +12,19 @@ export type BackendUser = {
   status?: string;
   wallet?: string;
   walletBalance?: number;
+  totalBalance?: number;
+  miningAmount?: number;
+  rewardAmount?: number;
+  referralAmount?: number;
   totalEarnedBalance?: number;
   withdrawnBalance?: number;
   referredBy?: string | null;
   referralEarnings?: number;
   referralCount?: number;
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
+  currentTermsVersion?: string;
   acceptedTerms?: boolean;
   lastLogin?: string;
   createdAt?: string;
@@ -32,6 +40,10 @@ export type UploadProfileImageResponse = {
   success: boolean;
   imageUrl: string;
   user: BackendUser;
+};
+
+export type AcceptTermsResponse = BackendUser & {
+  success: boolean;
 };
 
 export const userService = {
@@ -100,8 +112,20 @@ export const userService = {
     return res.data;
   },
 
-  acceptTerms: async (): Promise<BackendUser> => {
-    const res = await API.put<BackendUser>('/user/terms/accept');
+  acceptTerms: async (): Promise<AcceptTermsResponse> => {
+    const res = await API.patch<AcceptTermsResponse>('/user/accept-terms');
+    return res.data;
+  },
+
+  registerPushToken: async (token: string) => {
+    const res = await API.put('/user/push-token', { token });
+    return res.data;
+  },
+
+  unregisterPushToken: async (token: string) => {
+    const res = await API.delete('/user/push-token', {
+      data: { token },
+    });
     return res.data;
   },
 };

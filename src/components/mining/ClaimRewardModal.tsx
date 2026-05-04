@@ -11,6 +11,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
+import Loading from '../constant/Loading';
 import styles from './ClaimRewardModal.style';
 
 const ClaimRewardModal = () => {
@@ -30,6 +31,7 @@ const ClaimRewardModal = () => {
   const { refreshBalance, setBalanceFromServer } = useWallet();
   const [visible, setVisible] = useState(true);
   const [isPendingReward, setIsPendingReward] = useState(false);
+  const [isClaimActionBusy, setIsClaimActionBusy] = useState(false);
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
     AD_UNITS.REWARDED_CLAIM,
     { requestNonPersonalizedAdsOnly: true }
@@ -47,6 +49,13 @@ const ClaimRewardModal = () => {
     hasUnclaimedReward &&
     miningData?.status !== 'claimed' &&
     Boolean(miningData?.miningStartTime);
+
+  useEffect(() => {
+    if (!isClaimAvailable) {
+      setIsClaimActionBusy(false);
+      setIsPendingReward(false);
+    }
+  }, [isClaimAvailable]);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -66,6 +75,11 @@ const ClaimRewardModal = () => {
   });
 
   const handleClaim = () => {
+    if (isClaimActionBusy) {
+      return;
+    }
+
+    setIsClaimActionBusy(true);
     startAd({
       onAdShown: () => setIsPendingReward(true),
     });
@@ -87,9 +101,11 @@ const ClaimRewardModal = () => {
           console.error('[mining] failed to stop after claim:', error);
         });
         dismissClaimPopup();
+        setIsClaimActionBusy(false);
       }, 300);
     } catch (err) {
       console.error('[mining] claim failed:', err);
+      setIsClaimActionBusy(false);
     }
   }, [dismissClaimPopup, refreshBalance, setBalanceFromServer, stopMining]);
 
@@ -98,6 +114,8 @@ const ClaimRewardModal = () => {
       setIsPendingReward(false);
       if (isEarnedReward) {
         executeClaim();
+      } else {
+        setIsClaimActionBusy(false);
       }
     }
   }, [executeClaim, isClosed, isEarnedReward, isPendingReward]);
@@ -136,7 +154,8 @@ const ClaimRewardModal = () => {
 
           <View style={styles.card}>
             <Pressable
-              onPress={dismissClaimPopup}
+              onPress={isClaimActionBusy ? undefined : dismissClaimPopup}
+              disabled={isClaimActionBusy}
               hitSlop={10}
               style={styles.closeButton}
             >
@@ -159,9 +178,17 @@ const ClaimRewardModal = () => {
 
             <Pressable
               onPress={handleClaim}
-              style={styles.claimButton}
+              disabled={isClaimActionBusy}
+              style={[
+                styles.claimButton,
+                isClaimActionBusy ? styles.claimButtonDisabled : null,
+              ]}
             >
-              <Text style={styles.claimButtonText}>CLAIM REWARD</Text>
+              {isClaimActionBusy ? (
+                <Loading size={34} text={null} />
+              ) : (
+                <Text style={styles.claimButtonText}>CLAIM REWARD</Text>
+              )}
             </Pressable>
           </View>
         </View>

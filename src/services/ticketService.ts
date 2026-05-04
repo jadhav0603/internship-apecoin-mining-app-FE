@@ -1,19 +1,21 @@
 import type { Asset } from 'react-native-image-picker';
+import { NativeModules, Platform } from 'react-native';
 import API from './api';
-
-export type TicketPriority = 'low' | 'medium' | 'high';
 
 export type TicketItem = {
   _id: string;
   ticketId: string;
   userId: string;
   category: string;
-  priority: TicketPriority;
   description: string;
   attachments: string[];
   allowContact: boolean;
   contactEmail: string | null;
   contactPhone: string | null;
+  appVersion?: string | null;
+  deviceName?: string | null;
+  osVersion?: string | null;
+  resolution?: string | null;
   status: 'PENDING';
   createdAt: string;
   updatedAt: string;
@@ -21,12 +23,17 @@ export type TicketItem = {
 
 export type CreateTicketPayload = {
   category: string;
-  priority: TicketPriority;
   description: string;
   attachments?: string[];
   allowContact: boolean;
   contactEmail?: string | null;
   contactPhone?: string | null;
+};
+
+type CreateTicketRequestPayload = CreateTicketPayload & {
+  appVersion?: string | null;
+  deviceName?: string | null;
+  osVersion?: string | null;
 };
 
 type CreateTicketResponse = {
@@ -45,11 +52,86 @@ type TicketDetailResponse = {
   success: boolean;
   ticket: TicketItem;
 };
+type UploadAttachmentsResponse = {
+  success: boolean;
+  message: string;
+  attachments: string[];
+};
 
-const CLOUDINARY_CONFIG = {
-  cloudName: 'dvamyyoox',
-  uploadPreset: 'apecoin_unsigned',
-  folder: 'apecoin/tickets',
+type CloudinaryUploadResponse = {
+  secure_url?: string;
+  error?: {
+    message?: string;
+  };
+};
+
+type TicketAttachmentSignatureResponse = {
+  success: boolean;
+  cloudName: string;
+  apiKey: string;
+  folder: string;
+  timestamp: number;
+  signature: string;
+};
+
+const packageVersion =
+  typeof require === 'function'
+    ? (require('../../package.json')?.version as string | undefined)
+    : undefined;
+
+const normalizeOptionalString = (value: unknown) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+};
+
+const getTicketAppInfo = () => {
+  const platformConstants =
+    (Platform.constants as Record<string, unknown> | undefined) ??
+    (NativeModules.PlatformConstants as Record<string, unknown> | undefined) ??
+    {};
+
+  const appVersion = normalizeOptionalString(
+    platformConstants.appVersion ??
+      platformConstants.VersionName ??
+      packageVersion,
+  );
+
+  const model = normalizeOptionalString(platformConstants.Model);
+  const brand = normalizeOptionalString(platformConstants.Brand);
+  const iosDevice =
+    normalizeOptionalString(platformConstants.interfaceIdiom) ??
+    normalizeOptionalString(platformConstants.systemName);
+  const deviceName =
+    normalizeOptionalString([brand, model].filter(Boolean).join(' ')) ??
+    model ??
+    iosDevice;
+
+  const osVersion = normalizeOptionalString(
+    platformConstants.Release ??
+      platformConstants.osVersion ??
+      (typeof Platform.Version === 'string' || typeof Platform.Version === 'number'
+        ? String(Platform.Version)
+        : ''),
+  );
+
+  return {
+    appVersion,
+    deviceName,
+    osVersion,
+  };
+};
+
+const buildCloudinaryFileValue = (asset: Asset) => {
+  if (asset.base64) {
+    const mimeType = asset.type ?? 'image/jpeg';
+    return `data:${mimeType};base64,${asset.base64}`;
+  }
+
+  return getUploadAssetParts(asset) as any;
 };
 
 const getUploadAssetParts = (asset: Asset) => ({
@@ -58,9 +140,28 @@ const getUploadAssetParts = (asset: Asset) => ({
   name: asset.fileName ?? `ticket-${Date.now()}.jpg`,
 });
 
+const buildCloudinaryFormData = (
+  asset: Asset,
+  signatureData: TicketAttachmentSignatureResponse,
+) => {
+  const formData = new FormData();
+  formData.append('file', buildCloudinaryFileValue(asset));
+  formData.append('api_key', signatureData.apiKey);
+  formData.append('folder', signatureData.folder);
+  formData.append('timestamp', String(signatureData.timestamp));
+  formData.append('signature', signatureData.signature);
+  return formData;
+};
+
 export const ticketService = {
   async createTicket(payload: CreateTicketPayload): Promise<TicketItem> {
-    const response = await API.post<CreateTicketResponse>('/tickets/create', payload);
+    const response = await API.post<CreateTicketResponse>(
+      '/tickets/create',
+      {
+        ...payload,
+        ...getTicketAppInfo(),
+      } satisfies CreateTicketRequestPayload,
+    );
     return response.data.ticket;
   },
 
@@ -75,31 +176,47 @@ export const ticketService = {
   },
 
   async uploadAttachment(asset: Asset): Promise<string> {
-    if (!asset.uri) {
-      throw new Error('Selected file is missing a local URI.');
+    if (!asset.uri && !asset.base64) {
+      throw new Error('Selected file is missing upload data.');
     }
 
-    const formData = new FormData();
-    const file = getUploadAssetParts(asset);
+    console.log('formData payload ready');
+    console.log('attachment upload source:', asset.base64 ? 'base64' : 'uri');
 
-    formData.append('file', file as any);
-    formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-    formData.append('folder', CLOUDINARY_CONFIG.folder);
+    try {
+      const signatureResponse =
+        await API.get<TicketAttachmentSignatureResponse>(
+          '/tickets/attachments/signature',
+        );
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
+      const signatureData = signatureResponse.data;
+      const cloudinaryResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${signatureData.cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: buildCloudinaryFormData(asset, signatureData),
+        },
+      );
+
+      const cloudinaryData =
+        (await cloudinaryResponse.json().catch(() => null)) as CloudinaryUploadResponse | null;
+
+      if (
+        cloudinaryResponse.ok &&
+        typeof cloudinaryData?.secure_url === 'string' &&
+        cloudinaryData.secure_url.trim()
+      ) {
+        return cloudinaryData.secure_url;
       }
-    );
 
-    const data = await response.json();
-
-    if (!response.ok || typeof data?.secure_url !== 'string') {
-      throw new Error(data?.error?.message ?? 'Attachment upload failed.');
+      throw new Error(
+        cloudinaryData?.error?.message ?? 'Cloudinary attachment upload failed.',
+      );
+    } catch (cloudinaryError: any) {
+      throw new Error(
+        cloudinaryError?.message ??
+          'Attachment upload failed.',
+      );
     }
-
-    return data.secure_url;
   },
 };

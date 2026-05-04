@@ -12,14 +12,13 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import Loading from '../../components/constant/Loading';
 import AttachmentUploadBox, {
   type TicketAttachmentItem,
 } from '../../components/tickets/AttachmentUploadBox';
-import PrioritySelector from '../../components/tickets/PrioritySelector';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import {
   ISSUE_CATEGORIES,
@@ -35,7 +34,6 @@ import styles from './ReportIssueScreen.style';
 import {
   ticketService,
   type TicketItem,
-  type TicketPriority,
 } from '../../services/ticketService';
 
 const ALLOWED_ATTACHMENT_TYPES = [
@@ -65,7 +63,6 @@ const ReportIssueScreen = () => {
   const { showConfirm, showError, showWarning } = useAlert();
 
   const [category, setCategory] = useState<string>('');
-  const [priority, setPriority] = useState<TicketPriority | ''>('');
   const [description, setDescription] = useState('');
   const [allowContact, setAllowContact] = useState(false);
   const [contactEmail, setContactEmail] = useState(user?.email ?? '');
@@ -130,11 +127,6 @@ const ReportIssueScreen = () => {
       return false;
     }
 
-    if (!priority) {
-      showWarning('Please select a priority.', 'Validation');
-      return false;
-    }
-
     if (!description.trim()) {
       showWarning('Please enter a description.', 'Validation');
       return false;
@@ -176,6 +168,7 @@ const ReportIssueScreen = () => {
           mediaType: 'photo',
           selectionLimit: MAX_TICKET_ATTACHMENTS - attachments.length,
           quality: 0.8,
+          includeBase64: true,
         },
         resolve,
       );
@@ -230,6 +223,7 @@ const ReportIssueScreen = () => {
       uploading: true,
     }));
 
+    console.log('selected attachments:', [...attachments, ...pendingItems]);
     setAttachments(current => [...current, ...pendingItems]);
     setIsUploadingAttachments(true);
 
@@ -266,7 +260,6 @@ const ReportIssueScreen = () => {
 
   const resetForm = () => {
     setCategory('');
-    setPriority('');
     setDescription('');
     setAllowContact(false);
     setContactEmail(user?.email ?? '');
@@ -275,7 +268,7 @@ const ReportIssueScreen = () => {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm() || !priority) {
+    if (!validateForm()) {
       return;
     }
 
@@ -284,7 +277,6 @@ const ReportIssueScreen = () => {
 
       const ticket = await ticketService.createTicket({
         category,
-        priority,
         description: description.trim(),
         attachments: attachments
           .map(item => item.url)
@@ -319,7 +311,7 @@ const ReportIssueScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -432,6 +424,15 @@ const ReportIssueScreen = () => {
                         {ticket.description}
                       </Text>
 
+                      {ticket.resolution ? (
+                        <Text
+                          style={styles.reportPreviewStatus}
+                          numberOfLines={2}
+                        >
+                          Resolution: {ticket.resolution}
+                        </Text>
+                      ) : null}
+
                       <View style={styles.reportPreviewFooter}>
                         <Text style={styles.reportPreviewMeta}>
                           {ticket.ticketId} •{' '}
@@ -474,9 +475,6 @@ const ReportIssueScreen = () => {
             color={TICKET_THEME.textSecondary}
           />
         </Pressable>
-
-        <Text style={styles.label}>Priority</Text>
-        <PrioritySelector value={priority} onChange={setPriority} />
 
         <Text style={styles.label}>Description</Text>
         <TextInput
@@ -594,7 +592,7 @@ const ReportIssueScreen = () => {
           </View>
         </Pressable>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

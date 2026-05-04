@@ -1,11 +1,11 @@
 import React from 'react';
-import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import TabScene from '../../components/layout/TabScene';
 import styles from './RewardScreen.style';
 
 const RewardScreen = () => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <TabScene
         eyebrow="REWARD HUB"
         title="Keep reward history readable and focused."
@@ -18,7 +18,7 @@ const RewardScreen = () => {
         cardTitle="Claim Timing"
         cardBody="Reward actions are framed inside a dedicated card with balanced margins, which gives the screen a clearer hierarchy and leaves room for future list content."
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

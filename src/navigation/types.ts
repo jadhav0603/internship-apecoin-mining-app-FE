@@ -20,7 +20,11 @@ export type RootStackParamList = {
   SignIn: undefined;
   SignUp: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList> | undefined;
-  Mining: { time: number };
+  Mining:
+    | {
+        time?: number;
+      }
+    | undefined;
   TransactionHistory:
     | {
         refreshKey?: number;

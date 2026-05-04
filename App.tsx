@@ -1,5 +1,5 @@
-import React from 'react';
-import { StatusBar, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { Platform, StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { COLORS } from './src/constants/COLORS';
@@ -10,6 +10,8 @@ import { MiningProvider } from './src/context/MiningContext';
 import { WalletProvider } from './src/context/WalletContext';
 import { AlertProvider } from './src/context/AlertContext';
 import mobileAds from 'react-native-google-mobile-ads';
+import { useUser } from './src/context/UserContext';
+import { pushNotificationService } from './src/services/pushNotificationService';
 
 mobileAds()
   .initialize()
@@ -17,10 +19,45 @@ mobileAds()
     console.log('Mobile Ads SDK initialized');
   });
 
+const NotificationBootstrap = () => {
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    void pushNotificationService.initialize().catch(error => {
+      if (__DEV__) {
+        console.warn('[push] initialize failed', error);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    if (!user?.uid) {
+      return;
+    }
+
+    void pushNotificationService.syncCurrentDeviceToken().catch(error => {
+      if (__DEV__) {
+        console.warn('[push] token sync failed', error);
+      }
+    });
+  }, [user?.uid]);
+
+  return null;
+};
+
 function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
       <UserProvider>
+        <NotificationBootstrap />
         <TimeModalProvider>
           <MiningProvider>
             <WalletProvider>

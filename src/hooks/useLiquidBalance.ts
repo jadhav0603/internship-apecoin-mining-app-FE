@@ -55,6 +55,7 @@ export const useLiquidBalance = () => {
   return {
     totalCollected,
     weekData,
+    allMiningTotal: miningTotal,
     miningTotal: settledMiningTotal,
     miningHistory,
     referralEarnings,

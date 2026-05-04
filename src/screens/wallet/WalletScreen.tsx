@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   ImageBackground,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import {
+  useFocusEffect,
   useNavigation,
   type NavigationProp,
   type ParamListBase,
@@ -30,7 +31,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { useUser } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
 import { useWallet } from '../../context/WalletContext';
-import { useLiquidBalance } from '../../hooks/useLiquidBalance';
+import { useWithdrawData } from '../../hooks/useWithdrawData';
 import {
   withdrawService,
   type WithdrawRecord,
@@ -44,7 +45,12 @@ const WalletScreen = () => {
     useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
   const { user } = useUser();
   const { showError } = useAlert();
-  const { refreshBalance } = useWallet();
+  const {
+    balance,
+    loading: isBalanceLoading,
+    breakdown,
+    refreshBalance,
+  } = useWallet();
   const buttonFloat = useRef(new Animated.Value(0)).current;
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [showWithdrawRequestModal, setShowWithdrawRequestModal] =
@@ -60,21 +66,31 @@ const WalletScreen = () => {
   const [selectedWithdrawRecord, setSelectedWithdrawRecord] =
     useState<WalletTransaction | null>(null);
   const {
-    totalCollected,
-    miningTotal,
-    referralEarnings,
     pendingRecords,
     paidRecords,
-    liquidBalance,
-    loading: isBalanceLoading,
-    withdrawLoading: withdrawDataLoading,
+    loading: withdrawDataLoading,
     error: withdrawDataError,
     refreshWithdrawRecords,
-  } = useLiquidBalance();
+  } = useWithdrawData();
 
-  const rawBalance = Number.isFinite(liquidBalance) ? liquidBalance : 0;
+  const rawBalance = Number.isFinite(balance) ? balance : 0;
   const displayBalance = Number(rawBalance.toFixed(6));
+  const miningAmount = Number.isFinite(breakdown.miningAmount)
+    ? breakdown.miningAmount
+    : 0;
+  const rewardAmount = Number.isFinite(breakdown.rewardAmount)
+    ? breakdown.rewardAmount
+    : 0;
+  const referralAmount = Number.isFinite(breakdown.referralAmount)
+    ? breakdown.referralAmount
+    : 0;
   const isWithdrawDisabled = withdrawLoading || displayBalance <= 0;
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshBalance();
+    }, [refreshBalance]),
+  );
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -134,8 +150,8 @@ const WalletScreen = () => {
   const overviewCards = [
     {
       key: 'mining',
-      label: 'Mining',
-      value: formatAmount(miningTotal),
+      label: 'Total Balance',
+      value: formatAmount(miningAmount),
       iconFamily: 'material' as const,
       icon: 'pickaxe',
       iconColor: '#9AFB65',
@@ -144,7 +160,7 @@ const WalletScreen = () => {
     {
       key: 'rewards',
       label: 'Rewards',
-      value: formatAmount(totalCollected),
+      value: formatAmount(rewardAmount),
       iconFamily: 'ionicon' as const,
       icon: 'gift-outline',
       iconColor: '#C5F96C',
@@ -153,7 +169,7 @@ const WalletScreen = () => {
     {
       key: 'referrals',
       label: 'Referrals',
-      value: formatAmount(referralEarnings),
+      value: formatAmount(referralAmount),
       iconFamily: 'material' as const,
       icon: 'vector-link',
       iconColor: '#79F1C7',

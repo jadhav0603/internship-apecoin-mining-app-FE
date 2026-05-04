@@ -19,6 +19,7 @@ import { FONTS } from '../../constants/FONTS';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useMining } from '../../context/MiningContext';
+import { useAlert } from '../../context/AlertContext';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
@@ -40,6 +41,7 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
   onClose,
 }) => {
   const { multiplier, multipliers, setMultiplier } = useMining();
+  const { showError } = useAlert();
   const currentIndex = multipliers.indexOf(multiplier);
   const [shouldRender, setShouldRender] = React.useState(visible);
   
@@ -83,37 +85,71 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
     opacity: opacity.value,
   }));
 
+  const nextIndex = currentIndex + 1;
+  const nextMultiplier =
+    nextIndex >= 0 && nextIndex < multipliers.length
+      ? multipliers[nextIndex]
+      : null;
+
   const performUpgrade = useCallback(async () => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < multipliers.length) {
-      const nextMultiplier = multipliers[nextIndex];
-      await setMultiplier(nextMultiplier);
+    if (nextMultiplier !== null) {
+      return setMultiplier(nextMultiplier);
     }
-  }, [currentIndex, multipliers, setMultiplier]);
+
+    return false;
+  }, [nextMultiplier, setMultiplier]);
 
   useEffect(() => {
     if (isClosed && isPendingUpgrade) {
       setIsPendingUpgrade(false);
       if (isEarnedReward) {
-        performUpgrade().finally(() => {
-          onClose();
-        });
+        performUpgrade()
+          .then(success => {
+            if (success) {
+              onClose();
+              return;
+            }
+
+            showError(
+              'Unable to upgrade multiplier right now. Please try again.',
+              'Upgrade Failed',
+            );
+          })
+          .catch(() => {
+            showError(
+              'Unable to upgrade multiplier right now. Please try again.',
+              'Upgrade Failed',
+            );
+          });
       }
     }
-  }, [isClosed, isEarnedReward, isPendingUpgrade, onClose, performUpgrade]);
+  }, [
+    isClosed,
+    isEarnedReward,
+    isPendingUpgrade,
+    onClose,
+    performUpgrade,
+    showError,
+  ]);
 
-  const handleActivateMultiplier = () => {
-    const nextIndex = currentIndex + 1;
-    if (nextIndex < multipliers.length) {
-      // Animation
-      boostScale.value = withSpring(0.9, { damping: 10, stiffness: 100 }, () => {
-        boostScale.value = withSpring(1);
-      });
+  const triggerUpgradeFlow = useCallback(() => {
+    if (nextMultiplier !== null && !isPendingUpgrade) {
+      boostScale.value = withSpring(
+        0.9,
+        { damping: 10, stiffness: 100 },
+        () => {
+          boostScale.value = withSpring(1);
+        },
+      );
 
       startAd({
         onAdShown: () => setIsPendingUpgrade(true),
       });
     }
+  }, [boostScale, isPendingUpgrade, nextMultiplier, startAd]);
+
+  const handleActivateMultiplier = () => {
+    triggerUpgradeFlow();
   };
 
   const renderMultiplierItem = (m: number, index: number) => {
@@ -124,12 +160,15 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
 
     const isActive = multiplier === m;
     const targetIndex = multipliers.indexOf(m);
-    // Locked if more than one step ahead of current
+    const isNextMultiplier = targetIndex === currentIndex + 1;
     const isLocked = targetIndex > currentIndex + 1;
+    const isClickable = isNextMultiplier && !isPendingUpgrade;
 
     return (
-      <View
+      <Pressable
         key={m}
+        disabled={!isClickable}
+        onPress={isClickable ? triggerUpgradeFlow : undefined}
         style={[
           styles.multiplierItem,
           {
@@ -143,6 +182,8 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
               ? '#A6FF00'
               : isLocked
               ? 'rgba(255, 255, 255, 0.08)'
+              : isNextMultiplier
+              ? 'rgba(166, 255, 0, 0.5)'
               : 'rgba(166, 255, 0, 0.2)',
             opacity: isLocked ? 0.4 : 1,
           },
@@ -155,7 +196,7 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
             {m}x
           </Text>
         )}
-      </View>
+      </Pressable>
     );
   };
 
@@ -200,8 +241,8 @@ const MultiplierUpgradeModal: React.FC<MultiplierUpgradeModalProps> = ({
               styles.activateButton,
               pressed && styles.activateButtonPressed,
               currentIndex >= multipliers.length - 1 && styles.activateButtonDisabled,
-            ]}
-            disabled={currentIndex >= multipliers.length - 1}
+              ]}
+            disabled={currentIndex >= multipliers.length - 1 || isPendingUpgrade}
             onPress={handleActivateMultiplier}
           >
             <Text style={styles.activateButtonText}>

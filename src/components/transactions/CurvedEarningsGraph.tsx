@@ -1,10 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, LayoutChangeEvent, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { COLORS } from '../../constants/COLORS';
-import { FONTS } from '../../constants/FONTS';
 import styles from './CurvedEarningsGraph.style';
-
 
 export type MultiLineChartFilter = 'all' | 'reward' | 'mining' | 'referral';
 
@@ -41,16 +38,13 @@ type SeriesConfig = {
 const DEFAULT_HEIGHT = 210;
 const DEFAULT_WIDTH = 360;
 const BADGE_WIDTH = 92;
-const BADGE_HEIGHT = 38;
 const LABEL_TRACK_HEIGHT = 54;
 const Y_TOP = 18;
 const Y_BOTTOM_PADDING = 28;
 const X_SIDE_PADDING = 12;
 const Y_AXIS_GUTTER = 28;
 const AXIS_COLOR = 'rgba(255,255,255,0.14)';
-const Y_AXIS_STEPS = [2, 1, 0, -1] as const;
-const Y_AXIS_MIN = -1;
-const Y_AXIS_MAX = 2;
+const Y_AXIS_SEGMENTS = 3;
 
 const SERIES_COLORS: Record<SeriesKey, string> = {
   reward: '#3B82F6',
@@ -61,11 +55,28 @@ const SERIES_COLORS: Record<SeriesKey, string> = {
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
 
+const toSafeNumber = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
 const formatValue = (value: number) =>
-  `+${value.toLocaleString('en-US', {
+  `${value >= 0 ? '+' : '-'}${Math.abs(value).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+
+const formatAxisValue = (value: number) => {
+  if (Math.abs(value) >= 1000) {
+    return value.toLocaleString('en-US', {
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    });
+  }
+
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: value > 0 && value < 1 ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+};
 
 const getVisibleKeys = (filter: MultiLineChartFilter): SeriesKey[] => {
   if (filter === 'all') {
@@ -111,7 +122,7 @@ const buildAreaPath = (points: ChartPoint[], bottomY: number) => {
 const MultiLineChart = ({
   data,
   filter = 'all',
-  activeIndex = 3,
+  activeIndex = 0,
   height = DEFAULT_HEIGHT,
   valueText,
 }: MultiLineChartProps) => {
@@ -137,7 +148,7 @@ const MultiLineChart = ({
         useNativeDriver: true,
       }),
     ]).start();
-  }, [fadeAnim, riseAnim, filter, data]);
+  }, [data, fadeAnim, filter, riseAnim]);
 
   const safeActiveIndex = clamp(activeIndex, 0, Math.max(data.labels.length - 1, 0));
   const chartWidth = Math.max(layoutWidth - 28, 240);
@@ -147,7 +158,6 @@ const MultiLineChart = ({
   const plotLeft = Y_AXIS_GUTTER + X_SIDE_PADDING;
   const plotRight = chartWidth - X_SIDE_PADDING;
   const plotWidth = Math.max(plotRight - plotLeft, 120);
-
   const visibleKeys = getVisibleKeys(filter);
 
   const visibleSeries = useMemo<SeriesConfig[]>(
@@ -162,12 +172,22 @@ const MultiLineChart = ({
               : data.referralEarning,
         color: SERIES_COLORS[key],
       })),
-    [data.miningEarning, data.referralEarning, data.rewardEarning, visibleKeys]
+    [data.miningEarning, data.referralEarning, data.rewardEarning, visibleKeys],
   );
 
   const maxVisibleValue = useMemo(() => {
-    const values = visibleSeries.flatMap(series => series.values);
-    return Math.max(...values, 1);
+    let nextMax = 0;
+
+    for (const series of visibleSeries) {
+      for (const value of series.values) {
+        const safeValue = Math.abs(toSafeNumber(value));
+        if (safeValue > nextMax) {
+          nextMax = safeValue;
+        }
+      }
+    }
+
+    return Math.max(nextMax, 1);
   }, [visibleSeries]);
 
   const pointSets = useMemo(() => {
@@ -191,16 +211,14 @@ const MultiLineChart = ({
           x = centerX + ratio * (rightX - centerX);
         }
 
-        const scaledValue =
-          ((series.values[index] ?? 0) / maxVisibleValue) * Y_AXIS_MAX;
-        const normalized =
-          (scaledValue - Y_AXIS_MIN) / (Y_AXIS_MAX - Y_AXIS_MIN);
+        const value = toSafeNumber(series.values[index]);
+        const normalized = clamp(value / maxVisibleValue, 0, 1);
         const y = chartBottom - normalized * chartDrawableHeight;
 
         return {
           x,
           y,
-          value: series.values[index] ?? 0,
+          value,
           label,
         };
       }),
@@ -219,14 +237,15 @@ const MultiLineChart = ({
 
   const axisGuideLines = useMemo(
     () =>
-      Y_AXIS_STEPS.map(step => ({
-        label: step.toString(),
-        y:
-          chartBottom -
-          ((step - Y_AXIS_MIN) / (Y_AXIS_MAX - Y_AXIS_MIN)) *
-            chartDrawableHeight,
-      })),
-    [chartBottom, chartDrawableHeight]
+      Array.from({ length: Y_AXIS_SEGMENTS + 1 }, (_, index) => {
+        const ratio = (Y_AXIS_SEGMENTS - index) / Y_AXIS_SEGMENTS;
+
+        return {
+          label: formatAxisValue(maxVisibleValue * ratio),
+          y: chartBottom - ratio * chartDrawableHeight,
+        };
+      }),
+    [chartBottom, chartDrawableHeight, maxVisibleValue],
   );
 
   const anchorSeries = useMemo(() => {
@@ -237,7 +256,6 @@ const MultiLineChart = ({
     return pointSets.reduce((best, current) => {
       const bestValue = best.points[safeActiveIndex]?.value ?? 0;
       const currentValue = current.points[safeActiveIndex]?.value ?? 0;
-
       return currentValue >= bestValue ? current : best;
     });
   }, [pointSets, safeActiveIndex]);
@@ -246,27 +264,24 @@ const MultiLineChart = ({
 
   const defaultValueText = useMemo(() => {
     const activeTotal = visibleSeries.reduce(
-      (sum, series) => sum + (series.values[safeActiveIndex] ?? 0),
-      0
+      (sum, series) => sum + toSafeNumber(series.values[safeActiveIndex]),
+      0,
     );
 
     return formatValue(activeTotal);
   }, [safeActiveIndex, visibleSeries]);
 
   const badgeText = valueText ?? defaultValueText;
-
   const badgeLeft = activePoint
-    ? clamp(
-        activePoint.x - BADGE_WIDTH / 2 + 14,
-        14,
-        chartWidth - BADGE_WIDTH + 14
-      )
+    ? clamp(activePoint.x - BADGE_WIDTH / 2 + 14, 14, chartWidth - BADGE_WIDTH + 14)
     : 0;
   const badgeTop = activePoint ? Math.max(activePoint.y - 58, 2) : 0;
 
   const handleLayout = (event: LayoutChangeEvent) => {
     setLayoutWidth(event.nativeEvent.layout.width);
   };
+
+  const labelStep = Math.max(1, Math.ceil(data.labels.length / 6));
 
   return (
     <View
@@ -354,7 +369,7 @@ const MultiLineChart = ({
                   series.points.map(point => ({
                     ...point,
                     y: point.y + 1.5,
-                  }))
+                  })),
                 )}
                 stroke={series.color}
                 strokeOpacity={0.14}
@@ -424,12 +439,18 @@ const MultiLineChart = ({
         <View style={[styles.monthsRow, { paddingLeft: plotLeft - 8, paddingRight: 10 }]}>
           {data.labels.map((label, index) => {
             const isActive = index === safeActiveIndex;
+            const shouldShowLabel =
+              data.labels.length <= 8 ||
+              isActive ||
+              index === 0 ||
+              index === data.labels.length - 1 ||
+              index % labelStep === 0;
 
             return (
               <View key={`${label}-${index}`} style={styles.monthCell}>
                 {isActive ? <View style={styles.activeMonthBackground} /> : null}
                 <Text style={[styles.monthLabel, isActive && styles.monthLabelActive]}>
-                  {label}
+                  {shouldShowLabel ? label : ''}
                 </Text>
               </View>
             );

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import TicketCard from '../../components/tickets/TicketCard';
 import TicketHeader from '../../components/tickets/TicketHeader';
 import Loading from '../../components/constant/Loading';
@@ -52,7 +52,7 @@ const TicketListScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <FlatList
         data={tickets}
         keyExtractor={item => item.ticketId}
@@ -98,7 +98,7 @@ const TicketListScreen = () => {
           />
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

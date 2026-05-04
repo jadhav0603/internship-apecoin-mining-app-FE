@@ -64,6 +64,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  claimButtonDisabled: {
+    opacity: 0.7,
   },
   claimButtonText: {
     color: COLORS.textDark,

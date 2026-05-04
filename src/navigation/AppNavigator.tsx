@@ -30,7 +30,6 @@ import ConnectUsScreen from '../screens/profile/ConnectUsScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import { COLORS } from '../constants/COLORS';
 import Loading from '../components/constant/Loading';
-import TermsModal from '../components/terms/TermsModal';
 
 import { RootStackParamList } from './types';
 import { useUser } from '../context/UserContext';
@@ -44,6 +43,8 @@ import {
   subscribeBlockedAccount,
 } from '../session/blockedAccountState';
 import { authService } from '../services/authService';
+import { navigationRef } from './navigationRef';
+import { pushNotificationService } from '../services/pushNotificationService';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -85,11 +86,6 @@ const AppNavigator = () => {
   const [blockedAccount, setBlockedAccountState] = useState(
     getBlockedAccount(),
   );
-  const [termsVisible, setTermsVisible] = useState(false);
-  const [acceptingTerms, setAcceptingTerms] = useState(false);
-  const [dismissedTermsForUid, setDismissedTermsForUid] = useState<
-    string | null
-  >(null);
 
   useEffect(() => subscribeBlockedAccount(setBlockedAccountState), []);
 
@@ -213,54 +209,10 @@ const AppNavigator = () => {
     };
   }, [setUser]);
 
-  useEffect(() => {
-    if (
-      authStatus === 'authenticated' &&
-      user?.uid &&
-      !user.acceptedTerms &&
-      !blockedAccount &&
-      dismissedTermsForUid !== user.uid
-    ) {
-      setTermsVisible(true);
-      return;
-    }
-
-    if (
-      user?.acceptedTerms ||
-      authStatus !== 'authenticated' ||
-      blockedAccount
-    ) {
-      setTermsVisible(false);
-    }
-  }, [
-    authStatus,
-    blockedAccount,
-    dismissedTermsForUid,
-    user?.acceptedTerms,
-    user?.uid,
-  ]);
-
-  const handleAcceptTerms = async () => {
-    if (acceptingTerms) {
-      return;
-    }
-
-    try {
-      setAcceptingTerms(true);
-      const updatedUser = await userService.acceptTerms();
-      setUser(prev =>
-        prev ? { ...prev, ...updatedUser, acceptedTerms: true } : prev,
-      );
-      setTermsVisible(false);
-      setDismissedTermsForUid(null);
-    } catch (error) {
-      if (__DEV__) {
-        console.log('[terms] failed to accept terms:', error);
-      }
-    } finally {
-      setAcceptingTerms(false);
-    }
-  };
+  const requiresTermsAcceptance =
+    authStatus === 'authenticated' &&
+    !blockedAccount &&
+    user?.termsAccepted !== true;
 
   if (showIntroAnimation) {
     return (
@@ -269,24 +221,63 @@ const AppNavigator = () => {
   }
 
   return (
-    <>
-      <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {blockedAccount ? (
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navigationTheme}
+      onReady={() => pushNotificationService.onNavigationReady()}
+    >
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {blockedAccount ? (
+          <>
+            <Stack.Screen name="AccountBlocked">
+              {props => (
+                <AccountBlockedScreen
+                  {...props}
+                  key={`${blockedAccount.type}:${blockedAccount.source}`}
+                />
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+          </>
+        ) : authStatus === 'loading' ? (
+          <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
+        ) : authStatus === 'authenticated' ? (
+          requiresTermsAcceptance ? (
             <>
-              <Stack.Screen name="AccountBlocked">
-                {props => (
-                  <AccountBlockedScreen
-                    {...props}
-                    key={`${blockedAccount.type}:${blockedAccount.source}`}
-                  />
-                )}
-              </Stack.Screen>
+              <Stack.Screen
+                name="TermsAndConditions"
+                component={TermsAndConditionsScreen}
+                options={{ gestureEnabled: false }}
+              />
+              <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+              <Stack.Screen name="Mining" component={MiningScreen} />
+              <Stack.Screen
+                name="TransactionHistory"
+                component={TransactionHistoryScreen}
+              />
               <Stack.Screen name="ReportIssue" component={ReportIssueScreen} />
+              <Stack.Screen name="TicketList" component={TicketListScreen} />
+              <Stack.Screen
+                name="TicketDetail"
+                component={TicketDetailScreen}
+              />
+              <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+              <Stack.Screen
+                name="ReferAndEarn"
+                component={ReferAndEarnScreen}
+              />
+              <Stack.Screen name="MyProgress" component={MyProgressScreen} />
+              <Stack.Screen
+                name="ProfileDetails"
+                component={ProfileDetailsScreen}
+              />
+              <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+              <Stack.Screen name="OtherApps" component={OtherAppsScreen} />
+              <Stack.Screen name="CheckUpdate" component={CheckUpdateScreen} />
+              <Stack.Screen name="FAQ" component={FAQScreen} />
+              <Stack.Screen name="ConnectUs" component={ConnectUsScreen} />
             </>
-          ) : authStatus === 'loading' ? (
-            <Stack.Screen name="AuthLoading" component={AuthLoadingScreen} />
-          ) : authStatus === 'authenticated' ? (
+          ) : (
             <>
               <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
               <Stack.Screen name="Mining" component={MiningScreen} />
@@ -320,35 +311,24 @@ const AppNavigator = () => {
               />
               <Stack.Screen name="ConnectUs" component={ConnectUsScreen} />
             </>
-          ) : showSplash ? (
-            <Stack.Screen name="Splash">
-              {props => (
-                <SplashScreen
-                  {...props}
-                  onFinish={() => setShowSplash(false)}
-                />
-              )}
-            </Stack.Screen>
-          ) : (
-            <>
-              <Stack.Screen name="SignIn" component={SignIn} />
-              <Stack.Screen name="SignUp" component={SignUp} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-      <TermsModal
-        visible={termsVisible}
-        accepting={acceptingTerms}
-        onAccept={handleAcceptTerms}
-        onClose={() => {
-          if (user?.uid) {
-            setDismissedTermsForUid(user.uid);
-          }
-          setTermsVisible(false);
-        }}
-      />
-    </>
+          )
+        ) : showSplash ? (
+          <Stack.Screen name="Splash">
+            {props => (
+              <SplashScreen
+                {...props}
+                onFinish={() => setShowSplash(false)}
+              />
+            )}
+          </Stack.Screen>
+        ) : (
+          <>
+            <Stack.Screen name="SignIn" component={SignIn} />
+            <Stack.Screen name="SignUp" component={SignUp} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { FONTS } from '../../constants/FONTS';
-import { TICKET_THEME, getPriorityColor } from './ticketTheme';
+import { TICKET_THEME } from './ticketTheme';
 
 const styles = StyleSheet.create({
   card: {
@@ -20,27 +20,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: FONTS.medium,
     fontWeight: '500',
-  },
-  priorityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
-    backgroundColor: TICKET_THEME.input,
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  priorityText: {
-    color: TICKET_THEME.textPrimary,
-    fontSize: 11,
-    fontFamily: FONTS.semibold,
-    fontWeight: '600',
   },
   category: {
     color: TICKET_THEME.textPrimary,
