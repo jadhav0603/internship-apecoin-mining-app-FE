@@ -17,6 +17,7 @@ import {
   MINING_LIVE_BAR_GAP,
 } from '../../constants/bottomLayout';
 import styles, { getContainerStyle } from './MiningLiveBar.style';
+import { COLORS } from '../../constants/COLORS';
 
 const SHIMMER_WIDTH = 120;
 const PROGRESS_TICK_MS = 250;
@@ -226,7 +227,7 @@ const MiningLiveBar = () => {
           ]}
         >
           <LinearGradient
-            colors={['#18B7FF', '#7EE6FF']}
+            colors={[COLORS.primaryDark, COLORS.primaryDark]}
             style={styles.buttonGradient}
           >
             <Text style={styles.buttonText}>VIEW</Text>
