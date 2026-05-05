@@ -9,6 +9,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: SCREEN_BACKGROUND,
   },
+  fixedHeader: {
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 10,
+    backgroundColor: SCREEN_BACKGROUND,
+    zIndex: 2,
+  },
+  scrollArea: {
+    flex: 1,
+  },
   listContent: {
     paddingHorizontal: 18,
     paddingBottom: 36,

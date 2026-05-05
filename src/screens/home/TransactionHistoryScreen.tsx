@@ -17,10 +17,7 @@ import {
   type RouteProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AppBackButton from '../../components/navigation/AppBackButton';
 import Loading from '../../components/constant/Loading';
@@ -244,7 +241,6 @@ const TransactionRow = ({ item }: { item: TransactionItem }) => {
 const TransactionHistoryScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<TransactionHistoryRouteProp>();
-  const insets = useSafeAreaInsets();
   const { user } = useUser();
   const refreshKey = route.params?.refreshKey;
   const currentMonthKey = useMemo(() => getCurrentMonthKey(), []);
@@ -448,35 +444,6 @@ const TransactionHistoryScreen = () => {
 
   const listHeaderComponent = (
     <View>
-      <View
-        style={[
-          styles.headerRow,
-          { paddingTop: Math.max(insets.top > 0 ? 4 : 18, 4) },
-        ]}
-      >
-        <AppBackButton onPress={() => navigation.goBack()} />
-
-        <Text style={styles.headerTitle}>My Transactions</Text>
-
-        <Pressable
-          onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
-        >
-          {user?.photoURL ? (
-            <Image
-              source={{ uri: user.photoURL }}
-              style={styles.avatar}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarInitial}>
-                {getUserDisplayName(user).charAt(0).toUpperCase()}
-              </Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
-
       {hasGraphData ? (
         <MultiLineChart
           data={chartData}
@@ -567,10 +534,36 @@ const TransactionHistoryScreen = () => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BACKGROUND} />
 
-      {loading ? (
-        <Loading fullScreen size="medium" text="Loading transactions..." />
-      ) : (
-        <>
+      <View style={styles.fixedHeader}>
+        <View style={styles.headerRow}>
+          <AppBackButton onPress={() => navigation.goBack()} />
+
+          <Text style={styles.headerTitle}>My Transactions</Text>
+
+          <Pressable
+            onPress={() => navigation.navigate('MainTabs', { screen: 'Profile' })}
+          >
+            {user?.photoURL ? (
+              <Image
+                source={{ uri: user.photoURL }}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarInitial}>
+                  {getUserDisplayName(user).charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.scrollArea}>
+        {loading ? (
+          <Loading fullScreen size="medium" text="Loading transactions..." />
+        ) : (
           <FlatList
             data={filteredTransactions}
             keyExtractor={item => item.id}
@@ -602,55 +595,55 @@ const TransactionHistoryScreen = () => {
               />
             }
           />
+        )}
+      </View>
 
-          <Modal
-            visible={isMonthModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setIsMonthModalVisible(false)}
-          >
-            <Pressable
-              style={styles.modalOverlay}
-              onPress={() => setIsMonthModalVisible(false)}
-            >
-              <View style={styles.monthModalCard}>
-                <Text style={styles.monthModalTitle}>Select Month</Text>
+      <Modal
+        visible={isMonthModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsMonthModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setIsMonthModalVisible(false)}
+        >
+          <View style={styles.monthModalCard}>
+            <Text style={styles.monthModalTitle}>Select Month</Text>
 
-                {monthOptions.map(month => {
-                  const isActive = month === selectedMonth;
+            {monthOptions.map(month => {
+              const isActive = month === selectedMonth;
 
-                  return (
-                    <Pressable
-                      key={month}
-                      style={[styles.monthOption, isActive && styles.monthOptionActive]}
-                      onPress={() => {
-                        setSelectedMonth(month);
-                        setIsMonthModalVisible(false);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.monthOptionText,
-                          isActive && styles.monthOptionTextActive,
-                        ]}
-                      >
-                        {formatMonthLabel(month)}
-                      </Text>
-                      {isActive ? (
-                        <Ionicons
-                          name="checkmark"
-                          size={18}
-                          color={COLORS.primary}
-                        />
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Pressable>
-          </Modal>
-        </>
-      )}
+              return (
+                <Pressable
+                  key={month}
+                  style={[styles.monthOption, isActive && styles.monthOptionActive]}
+                  onPress={() => {
+                    setSelectedMonth(month);
+                    setIsMonthModalVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.monthOptionText,
+                      isActive && styles.monthOptionTextActive,
+                    ]}
+                  >
+                    {formatMonthLabel(month)}
+                  </Text>
+                  {isActive ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={18}
+                      color={COLORS.primary}
+                    />
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
