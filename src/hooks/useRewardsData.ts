@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../api/apiClient';
 import { authService } from '../services/authService';
@@ -45,47 +45,61 @@ const INITIAL_STATE: RewardsDataState = {
  */
 export const useRewardsData = () => {
   const [state, setState] = useState<RewardsDataState>(INITIAL_STATE);
-  // Counter incremented by refresh() to trigger the effect
-  const refreshCount = useRef(0);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const requestRef = useRef<Promise<void> | null>(null);
 
   const fetchData = useCallback(async (showLoader: boolean = true) => {
+    if (requestRef.current) {
+      return requestRef.current;
+    }
+
     if (showLoader) {
       setState(prev => ({ ...prev, loading: true, error: null }));
     }
 
+    const request = (async () => {
+      try {
+        const user = await authService.waitForAuthRestore();
+        if (!user?.email) {
+          setState(prev => ({ ...prev, loading: false }));
+          return;
+        }
+
+        const response = await apiClient.get<RewardsHistoryResponse>(
+          `rewards/history/${encodeURIComponent(user.email)}`
+        );
+
+        const { totalCollected, weekData, currency } = response.data;
+
+        setState({
+          totalCollected,
+          weekData,
+          currency: currency ?? 'APE',
+          loading: false,
+          error: null,
+        });
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          (err?.message === 'Network Error'
+            ? 'Unable to reach the server. Check your connection.'
+            : 'Failed to load rewards data.');
+
+        if (__DEV__) {
+          console.warn('[useRewardsData] fetch failed:', message, err?.config?.url);
+        }
+
+        setState(prev => ({ ...prev, loading: false, error: message }));
+      }
+    })();
+
+    requestRef.current = request;
+
     try {
-      const user = await authService.waitForAuthRestore();
-      if (!user?.email) {
-        setState(prev => ({ ...prev, loading: false }));
-        return;
+      await request;
+    } finally {
+      if (requestRef.current === request) {
+        requestRef.current = null;
       }
-
-      const response = await apiClient.get<RewardsHistoryResponse>(
-        `rewards/history/${encodeURIComponent(user.email)}`
-      );
-
-      const { totalCollected, weekData, currency } = response.data;
-
-      setState({
-        totalCollected,
-        weekData,
-        currency: currency ?? 'APE',
-        loading: false,
-        error: null,
-      });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        (err?.message === 'Network Error'
-          ? 'Unable to reach the server. Check your connection.'
-          : 'Failed to load rewards data.');
-
-      if (__DEV__) {
-        console.warn('[useRewardsData] fetch failed:', message, err?.config?.url);
-      }
-
-      setState(prev => ({ ...prev, loading: false, error: message }));
     }
   }, []);
 
@@ -110,17 +124,11 @@ export const useRewardsData = () => {
         isActive = false;
         clearInterval(intervalId);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchData, refreshTick])
+    }, [fetchData])
   );
-
-  const refresh = useCallback(() => {
-    refreshCount.current += 1;
-    setRefreshTick(refreshCount.current);
-  }, []);
 
   return {
     ...state,
-    refresh,
+    refresh: fetchData,
   };
 };

@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import auth from '@react-native-firebase/auth';
@@ -63,20 +64,37 @@ export const WalletProvider = ({ children }: any) => {
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [breakdown, setBreakdown] = useState<WalletBreakdown>(ZERO_BREAKDOWN);
+  const balanceRequestRef = useRef<Promise<void> | null>(null);
 
   const refreshBalance = useCallback(async () => {
+    if (balanceRequestRef.current) {
+      return balanceRequestRef.current;
+    }
+
     setLoading(true);
 
-    try {
-      const response = await API.get('/user/me');
-      const nextBreakdown = normalizeBreakdown(response.data);
+    const request = (async () => {
+      try {
+        const response = await API.get('/user/me');
+        const nextBreakdown = normalizeBreakdown(response.data);
 
-      setBreakdown(nextBreakdown);
-      setBalance(nextBreakdown.totalBalance);
-    } catch (error) {
-      console.error('[wallet] failed to load balance:', error);
+        setBreakdown(nextBreakdown);
+        setBalance(nextBreakdown.totalBalance);
+      } catch (error) {
+        console.error('[wallet] failed to load balance:', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    balanceRequestRef.current = request;
+
+    try {
+      await request;
     } finally {
-      setLoading(false);
+      if (balanceRequestRef.current === request) {
+        balanceRequestRef.current = null;
+      }
     }
   }, []);
 

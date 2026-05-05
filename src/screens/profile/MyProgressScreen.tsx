@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
   Dimensions,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -302,10 +303,12 @@ const MyProgressScreen = () => {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new RNAnimated.Value(0)).current;
 
-  const { miningData } = useMining();
-  const { miningTotal } = useMiningWalletData();
-  const { totalCollected } = useRewardsData();
-  const { referralCount, referralEarnings } = useReferralData();
+  const { miningData, refreshMiningStatus } = useMining();
+  const { miningTotal, refresh: refreshMiningWalletData } = useMiningWalletData();
+  const { totalCollected, refresh: refreshRewardsData } = useRewardsData();
+  const { referralCount, referralEarnings, refresh: refreshReferralData } =
+    useReferralData();
+  const [refreshing, setRefreshing] = useState(false);
 
   const miningGoal = 1000;
   const rewardGoal = 500;
@@ -398,6 +401,31 @@ const MyProgressScreen = () => {
   const topPadding = headerHeight + FIXED_GRAPH_HEIGHT;
   const bottomPadding = insets.bottom + 100;
 
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    try {
+      await Promise.all([
+        refreshMiningStatus(),
+        refreshMiningWalletData(false),
+        refreshRewardsData(false),
+        refreshReferralData(false),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [
+    refreshMiningStatus,
+    refreshMiningWalletData,
+    refreshReferralData,
+    refreshRewardsData,
+    refreshing,
+  ]);
+
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
@@ -468,6 +496,13 @@ const MyProgressScreen = () => {
           offset: CARD_FULL_SIZE * index,
           index,
         })}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={COLORS.primary}
+          />
+        }
       />
     </SafeAreaView>
   );

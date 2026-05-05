@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
@@ -30,6 +31,7 @@ const TermsAndConditionsScreen = () => {
     Awaited<ReturnType<typeof globalSettingsService.getTermsConditions>>
   >(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [checked, setChecked] = useState(false);
 
@@ -37,9 +39,13 @@ const TermsAndConditionsScreen = () => {
   const canGoBack = navigation.canGoBack() && !isMandatory;
   const canContinue = Boolean(content) && checked && !accepting;
 
-  const fetchTerms = useCallback(async () => {
+  const fetchTerms = useCallback(async (showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
       const terms = await globalSettingsService.getTermsConditions();
       setContent(terms);
 
@@ -60,12 +66,21 @@ const TermsAndConditionsScreen = () => {
       );
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [showError]);
 
   useEffect(() => {
-    void fetchTerms();
+    void fetchTerms(true);
   }, [fetchTerms]);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) {
+      return;
+    }
+
+    await fetchTerms(false);
+  }, [fetchTerms, refreshing]);
 
   const handleAccept = async () => {
     if (accepting || !canContinue) {
@@ -147,6 +162,13 @@ const TermsAndConditionsScreen = () => {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={() => void handleRefresh()}
+                    tintColor="#9AFB65"
+                  />
+                }
               >
                 <Text style={styles.title}>
                   {content?.title ?? 'Terms & Conditions'}
@@ -237,7 +259,7 @@ const TermsAndConditionsScreen = () => {
                 again.
               </Text>
               <Pressable
-                onPress={fetchTerms}
+                onPress={() => void fetchTerms(true)}
                 style={({ pressed }) => [
                   styles.retryButton,
                   pressed && styles.buttonOuterPressed,

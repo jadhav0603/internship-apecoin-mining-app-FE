@@ -7,6 +7,7 @@ import {
   Dimensions,
   Image,
   ImageBackground,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
@@ -96,6 +97,7 @@ const DailyRewardsScreen = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isMiningRequired, setIsMiningRequired] = useState(false);
   const [isPendingReward, setIsPendingReward] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { adUnits } = useAds();
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
     adUnits.REWARDED_DAILY,
@@ -103,11 +105,16 @@ const DailyRewardsScreen = () => {
   );
   const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
 
-  const fetchRewards = useCallback(async () => {
+  const fetchRewards = useCallback(async (showLoader = true) => {
     try {
+      if (showLoader) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+
       const user = await authService.waitForAuthRestore();
       if (!user || !user.email) {
-        setLoading(false);
         return;
       }
 
@@ -151,14 +158,23 @@ const DailyRewardsScreen = () => {
       showError(message, 'Rewards unavailable');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [showError]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchRewards();
+      void fetchRewards(true);
     }, [fetchRewards])
   );
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) {
+      return;
+    }
+
+    await fetchRewards(false);
+  }, [fetchRewards, refreshing]);
 
   useEffect(() => {
     if (!isAvailable) {
@@ -268,6 +284,13 @@ const DailyRewardsScreen = () => {
             },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void handleRefresh()}
+              tintColor="#9AFB65"
+            />
+          }
         >
         {/* Floating Title */}
         {/* <View style={styles.titleContainer}>

@@ -10,6 +10,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  RefreshControl,
   Pressable,
   TouchableOpacity,
   Image,
@@ -57,7 +58,7 @@ const ProfileScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const bottomContentPadding = useBottomOverlayPadding(40);
   const { user } = useUser();
-  const { breakdown } = useWallet();
+  const { breakdown, refreshBalance } = useWallet();
   const { showError } = useAlert();
   const { adUnits } = useAds();
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -67,6 +68,7 @@ const ProfileScreen = () => {
   const [, setIsLoading] = useState(true);
   const [isLoggingOut] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [username, setUsername] = useState(getUserDisplayName(user));
   const [email, setEmail] = useState(user?.email ?? '');
@@ -243,36 +245,44 @@ const ProfileScreen = () => {
     menuItems.map(() => new Animated.Value(0)),
   ).current;
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchProfile = async () => {
-      try {
-        const profile = await userService.getMe();
-        if (!isMounted) return;
-        const resolvedName = resolveProfileName(
-          profile.name ?? profile.displayName ?? '',
-          profile.email,
-        );
-        setProfileData(profile);
-        setUsername(resolvedName);
-        setEmail(profile.email);
-        setAvatarUri(profile.imageUrl ?? profile.photoURL ?? '');
-      } catch {
-        if (isMounted) {
-          setUsername(getUserDisplayName(user));
-          setEmail(user?.email ?? '');
-          setAvatarUri(user?.photoURL ?? '');
-          setProfileData(null);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    fetchProfile();
-    return () => {
-      isMounted = false;
-    };
+  const loadProfile = useCallback(async () => {
+    try {
+      const profile = await userService.getMe();
+      const resolvedName = resolveProfileName(
+        profile.name ?? profile.displayName ?? '',
+        profile.email,
+      );
+      setProfileData(profile);
+      setUsername(resolvedName);
+      setEmail(profile.email);
+      setAvatarUri(profile.imageUrl ?? profile.photoURL ?? '');
+    } catch {
+      setUsername(getUserDisplayName(user));
+      setEmail(user?.email ?? '');
+      setAvatarUri(user?.photoURL ?? '');
+      setProfileData(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    try {
+      await Promise.all([loadProfile(), refreshBalance()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadProfile, refreshBalance, refreshing]);
 
   useEffect(() => {
     const animation = Animated.stagger(
@@ -438,6 +448,13 @@ const ProfileScreen = () => {
             styles.scrollContent,
             { paddingBottom: bottomContentPadding },
           ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void handleRefresh()}
+              tintColor={COLORS.primary}
+            />
+          }
         >
           <View style={styles.profileCard}>
             <LinearGradient

@@ -3,6 +3,7 @@ import {
   Animated,
   ImageBackground,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -58,6 +59,7 @@ const WalletScreen = () => {
     useState(false);
   const [showWithdrawSuccessModal, setShowWithdrawSuccessModal] =
     useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [savedUpiId, setSavedUpiId] = useState('');
   const [submittedWithdrawAmount, setSubmittedWithdrawAmount] = useState(0);
   const [submittedUpiId, setSubmittedUpiId] = useState('');
@@ -92,6 +94,20 @@ const WalletScreen = () => {
       void refreshBalance();
     }, [refreshBalance]),
   );
+
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    try {
+      await Promise.all([refreshBalance(), refreshWithdrawRecords()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshBalance, refreshWithdrawRecords, refreshing]);
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -254,6 +270,13 @@ const WalletScreen = () => {
             styles.scrollContent,
             { paddingBottom: bottomContentPadding },
           ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void handleRefresh()}
+              tintColor={THEME.neonGreen}
+            />
+          }
         >
           <View style={[styles.headerRow, styles.headerRowSafe]}>
             <Text style={styles.walletTitle}>Wallet</Text>

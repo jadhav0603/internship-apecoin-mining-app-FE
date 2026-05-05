@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   withdrawService,
   type WithdrawRecord,
@@ -10,20 +10,38 @@ export const useWithdrawData = () => {
   const [records, setRecords] = useState<WithdrawRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const requestRef = useRef<Promise<void> | null>(null);
 
   const fetchWithdrawRecords = useCallback(async () => {
+    if (requestRef.current) {
+      return requestRef.current;
+    }
+
+    setLoading(true);
+
+    const request = (async () => {
+      try {
+        const nextRecords = await withdrawService.getWithdrawRecords();
+        setRecords(nextRecords);
+        setError(null);
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message || 'Failed to load withdraw records.';
+        setError(message);
+        setRecords([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    requestRef.current = request;
+
     try {
-      setLoading(true);
-      const nextRecords = await withdrawService.getWithdrawRecords();
-      setRecords(nextRecords);
-      setError(null);
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message || 'Failed to load withdraw records.';
-      setError(message);
-      setRecords([]);
+      await request;
     } finally {
-      setLoading(false);
+      if (requestRef.current === request) {
+        requestRef.current = null;
+      }
     }
   }, []);
 

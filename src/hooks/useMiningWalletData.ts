@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../api/apiClient';
 import { authService } from '../services/authService';
@@ -33,6 +33,7 @@ const INITIAL_STATE: MiningWalletState = {
 
 export const useMiningWalletData = () => {
   const [state, setState] = useState<MiningWalletState>(INITIAL_STATE);
+  const requestRef = useRef<Promise<void> | null>(null);
 
   const fetchMiningData = useCallback(async () => {
     const user = await authService.waitForAuthRestore();
@@ -54,52 +55,58 @@ export const useMiningWalletData = () => {
     };
   }, []);
 
+  const loadMiningData = useCallback(async (showLoader: boolean = true) => {
+    if (requestRef.current) {
+      return requestRef.current;
+    }
+
+    if (showLoader) {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+    }
+
+    const request = (async () => {
+      try {
+        const { miningTotal, miningHistory, currency } = await fetchMiningData();
+
+        setState({
+          miningTotal,
+          miningHistory,
+          currency,
+          loading: false,
+          error: null,
+        });
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          (err?.message === 'Network Error'
+            ? 'Unable to reach the server. Check your connection.'
+            : 'Failed to load mining wallet data.');
+
+        if (__DEV__) {
+          console.warn('[useMiningWalletData] fetch failed:', message, err?.config?.url);
+        }
+
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error: message,
+        }));
+      }
+    })();
+
+    requestRef.current = request;
+
+    try {
+      await request;
+    } finally {
+      if (requestRef.current === request) {
+        requestRef.current = null;
+      }
+    }
+  }, [fetchMiningData]);
+
   useFocusEffect(
     useCallback(() => {
-      let isActive = true;
-
-      const loadMiningData = async (showLoader: boolean) => {
-        if (showLoader) {
-          setState(prev => ({ ...prev, loading: true, error: null }));
-        }
-
-        try {
-          const { miningTotal, miningHistory, currency } = await fetchMiningData();
-
-          if (!isActive) {
-            return;
-          }
-
-          setState({
-            miningTotal,
-            miningHistory,
-            currency,
-            loading: false,
-            error: null,
-          });
-        } catch (err: any) {
-          if (!isActive) {
-            return;
-          }
-
-          const message =
-            err?.response?.data?.message ||
-            (err?.message === 'Network Error'
-              ? 'Unable to reach the server. Check your connection.'
-              : 'Failed to load mining wallet data.');
-
-          if (__DEV__) {
-            console.warn('[useMiningWalletData] fetch failed:', message, err?.config?.url);
-          }
-
-          setState(prev => ({
-            ...prev,
-            loading: false,
-            error: message,
-          }));
-        }
-      };
-
       loadMiningData(true).catch(() => undefined);
 
       const intervalId = setInterval(() => {
@@ -107,11 +114,13 @@ export const useMiningWalletData = () => {
       }, 2000);
 
       return () => {
-        isActive = false;
         clearInterval(intervalId);
       };
-    }, [fetchMiningData])
+    }, [loadMiningData])
   );
 
-  return state;
+  return {
+    ...state,
+    refresh: loadMiningData,
+  };
 };

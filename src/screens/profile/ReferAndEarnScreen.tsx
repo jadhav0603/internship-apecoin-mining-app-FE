@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Clipboard,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StatusBar,
@@ -75,6 +76,7 @@ const ReferAndEarnScreen = () => {
   const { refreshBalance } = useWallet();
   const [redeemCode, setRedeemCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const {
     referredBy,
     referralEarnings,
@@ -174,7 +176,7 @@ const ReferAndEarnScreen = () => {
       });
 
       setRedeemCode('');
-      refresh();
+      void refresh(false);
       if (response.referralRewardApplied) {
         await refreshBalance();
       }
@@ -214,6 +216,20 @@ const ReferAndEarnScreen = () => {
     }
   };
 
+  const handleRefresh = useCallback(async () => {
+    if (refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+
+    try {
+      await Promise.all([refresh(false), refreshBalance()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refresh, refreshBalance, refreshing]);
+
   return (
     <LinearGradient
       colors={['#11170d', '#090d08', '#050704']}
@@ -232,6 +248,13 @@ const ReferAndEarnScreen = () => {
             { paddingBottom: Math.max(insets.bottom + 24, 32) },
           ]}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void handleRefresh()}
+              tintColor="#A6FF00"
+            />
+          }
         >
           <View style={styles.headerRow}>
             <View style={styles.backButtonWrap}>

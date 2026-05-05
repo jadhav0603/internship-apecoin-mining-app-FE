@@ -33,46 +33,61 @@ const INITIAL_STATE: ReferralDataState = {
 
 export const useReferralData = () => {
   const [state, setState] = useState<ReferralDataState>(INITIAL_STATE);
-  const refreshCount = useRef(0);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const requestRef = useRef<Promise<void> | null>(null);
 
   const fetchData = useCallback(async (showLoader: boolean = true) => {
+    if (requestRef.current) {
+      return requestRef.current;
+    }
+
     if (showLoader) {
       setState(prev => ({ ...prev, loading: true, error: null }));
     }
 
+    const request = (async () => {
+      try {
+        const user = await authService.waitForAuthRestore();
+        if (!user?.email) {
+          setState(prev => ({ ...prev, loading: false }));
+          return;
+        }
+
+        const data = await referralService.getStats(user.email);
+
+        setState({
+          referredBy: data.referredBy ?? null,
+          referralEarnings: data.referralEarnings ?? 0,
+          referralCount: data.referralCount ?? 0,
+          referralHistory: data.referralHistory ?? [],
+          weekData: data.weekData ?? [],
+          referralPercentage: data.referralPercentage ?? 0,
+          currency: data.currency ?? 'APE',
+          loading: false,
+          error: null,
+        });
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.message ||
+          (err?.message === 'Network Error'
+            ? 'Unable to reach the server. Check your connection.'
+            : 'Failed to load referral data.');
+
+        if (__DEV__) {
+          console.warn('[useReferralData] fetch failed:', message, err?.config?.url);
+        }
+
+        setState(prev => ({ ...prev, loading: false, error: message }));
+      }
+    })();
+
+    requestRef.current = request;
+
     try {
-      const user = await authService.waitForAuthRestore();
-      if (!user?.email) {
-        setState(prev => ({ ...prev, loading: false }));
-        return;
+      await request;
+    } finally {
+      if (requestRef.current === request) {
+        requestRef.current = null;
       }
-
-      const data = await referralService.getStats(user.email);
-
-      setState({
-        referredBy: data.referredBy ?? null,
-        referralEarnings: data.referralEarnings ?? 0,
-        referralCount: data.referralCount ?? 0,
-        referralHistory: data.referralHistory ?? [],
-        weekData: data.weekData ?? [],
-        referralPercentage: data.referralPercentage ?? 0,
-        currency: data.currency ?? 'APE',
-        loading: false,
-        error: null,
-      });
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        (err?.message === 'Network Error'
-          ? 'Unable to reach the server. Check your connection.'
-          : 'Failed to load referral data.');
-
-      if (__DEV__) {
-        console.warn('[useReferralData] fetch failed:', message, err?.config?.url);
-      }
-
-      setState(prev => ({ ...prev, loading: false, error: message }));
     }
   }, []);
 
@@ -96,17 +111,11 @@ export const useReferralData = () => {
         isActive = false;
         clearInterval(intervalId);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fetchData, refreshTick])
+    }, [fetchData])
   );
-
-  const refresh = useCallback(() => {
-    refreshCount.current += 1;
-    setRefreshTick(refreshCount.current);
-  }, []);
 
   return {
     ...state,
-    refresh,
+    refresh: fetchData,
   };
 };
