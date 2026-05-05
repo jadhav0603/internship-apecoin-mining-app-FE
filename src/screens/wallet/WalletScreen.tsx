@@ -26,7 +26,7 @@ import type { WalletTransaction } from '../../components/wallet/TransactionItem'
 import WithdrawSuccessModal from '../../components/wallet/WithdrawSuccessModal';
 import Loading from '../../components/constant/Loading';
 import { THEME, formatAmount } from '../../components/wallet/theme';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAds } from '../../context/AdContext';
 import type { RootStackParamList } from '../../navigation/types';
 import { useUser } from '../../context/UserContext';
 import { useAlert } from '../../context/AlertContext';
@@ -45,6 +45,7 @@ const WalletScreen = () => {
     useNavigation<NavigationProp<RootStackParamList & ParamListBase>>();
   const { user } = useUser();
   const { showError } = useAlert();
+  const { adUnits } = useAds();
   const {
     balance,
     loading: isBalanceLoading,
@@ -271,7 +272,7 @@ const WalletScreen = () => {
 
           <View style={styles.adContainer}>
             <BannerAd
-              unitId={AD_UNITS.BANNER_WALLET}
+              unitId={adUnits.BANNER_WALLET}
               size={BannerAdSize.BANNER}
             />
           </View>

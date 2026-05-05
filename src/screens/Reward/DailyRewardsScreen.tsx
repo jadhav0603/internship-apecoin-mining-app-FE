@@ -21,7 +21,7 @@ import { useAlert } from '../../context/AlertContext';
 import { useWallet } from '../../context/WalletContext';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 import { BannerAd, BannerAdSize, useRewardedAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAds } from '../../context/AdContext';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 import styles from './DailyRewardsScreen.style';
 
@@ -48,6 +48,7 @@ interface DailyRewardsResponse {
   nextAvailableIn?: number;
   rewards: ApiRewardItem[];
   currency?: string;
+  isMiningRequired?: boolean;
 }
 
 const buildRewards = (
@@ -93,9 +94,11 @@ const DailyRewardsScreen = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [balance, setBalance] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [isMiningRequired, setIsMiningRequired] = useState(false);
   const [isPendingReward, setIsPendingReward] = useState(false);
+  const { adUnits } = useAds();
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
-    AD_UNITS.REWARDED_DAILY,
+    adUnits.REWARDED_DAILY,
     { requestNonPersonalizedAdsOnly: true }
   );
   const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });
@@ -116,6 +119,7 @@ const DailyRewardsScreen = () => {
 
       setCurrentDay(data.currentDay);
       setIsAvailable(data.isAvailable);
+      setIsMiningRequired(data.isMiningRequired || false);
       setCurrency(currencyFromBackend);
 
       setTimeLeft(data.nextAvailableIn || 0);
@@ -124,7 +128,7 @@ const DailyRewardsScreen = () => {
       setRewards(built);
 
       // Auto-open modal if reward is claimable today
-      if (data.isAvailable) {
+      if (data.isAvailable && !data.isMiningRequired) {
         setClaimComplete(false);
         setModalVisible(true);
       }
@@ -231,6 +235,10 @@ const DailyRewardsScreen = () => {
   };
 
   const handleOpenModal = () => {
+    if (isMiningRequired) {
+      showError("Start mining first to claim today's daily reward.", 'Action Required');
+      return;
+    }
     if (isAvailable) {
       setClaimComplete(false);
       setModalVisible(true);
@@ -287,7 +295,7 @@ const DailyRewardsScreen = () => {
 
          <View style={styles.adContainer}>
           <BannerAd
-            unitId={AD_UNITS.BANNER_HOME}
+            unitId={adUnits.BANNER_HOME}
             size={BannerAdSize.BANNER}
           />
         </View>

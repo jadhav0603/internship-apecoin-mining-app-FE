@@ -9,7 +9,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 // import { useInterstitialAd } from 'react-native-google-mobile-ads';
 // import { AD_UNITS } from '../../constants/AD_UNITS';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAds } from '../../context/AdContext';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 import Loading from '../constant/Loading';
 import styles from './ClaimRewardModal.style';
@@ -32,8 +32,9 @@ const ClaimRewardModal = () => {
   const [visible, setVisible] = useState(true);
   const [isPendingReward, setIsPendingReward] = useState(false);
   const [isClaimActionBusy, setIsClaimActionBusy] = useState(false);
+  const { adUnits } = useAds();
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
-    AD_UNITS.REWARDED_CLAIM,
+    adUnits.REWARDED_CLAIM,
     { requestNonPersonalizedAdsOnly: true }
   );
   const { startAd, adLoadingModal } = useAdLoadingGate({ isLoaded, load, show });

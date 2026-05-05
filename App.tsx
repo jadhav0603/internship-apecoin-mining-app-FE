@@ -9,6 +9,7 @@ import { TimeModalProvider } from './src/context/TimeModal';
 import { MiningProvider } from './src/context/MiningContext';
 import { WalletProvider } from './src/context/WalletContext';
 import { AlertProvider } from './src/context/AlertContext';
+import { AdProvider } from './src/context/AdContext';
 import mobileAds from 'react-native-google-mobile-ads';
 import { useUser } from './src/context/UserContext';
 import { pushNotificationService } from './src/services/pushNotificationService';
@@ -57,22 +58,24 @@ function App(): React.JSX.Element {
   return (
     <GestureHandlerRootView style={styles.root}>
       <UserProvider>
-        <NotificationBootstrap />
-        <TimeModalProvider>
-          <MiningProvider>
-            <WalletProvider>
-              <AlertProvider>
-                <SafeAreaProvider>
-                  <StatusBar
-                    barStyle="light-content"
-                    backgroundColor={COLORS.backgroundDeep}
-                  />
-                  <AppNavigator />
-                </SafeAreaProvider>
-              </AlertProvider>
-            </WalletProvider>
-          </MiningProvider>
-        </TimeModalProvider>
+        <AdProvider>
+          <NotificationBootstrap />
+          <TimeModalProvider>
+            <MiningProvider>
+              <WalletProvider>
+                <AlertProvider>
+                  <SafeAreaProvider>
+                    <StatusBar
+                      barStyle="light-content"
+                      backgroundColor={COLORS.backgroundDeep}
+                    />
+                    <AppNavigator />
+                  </SafeAreaProvider>
+                </AlertProvider>
+              </WalletProvider>
+            </MiningProvider>
+          </TimeModalProvider>
+        </AdProvider>
       </UserProvider>
     </GestureHandlerRootView>
   );

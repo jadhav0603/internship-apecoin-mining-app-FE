@@ -12,11 +12,12 @@ import InfoSlider from '../../components/home/InfoSlider';
 import MiningTimeSelectionPopup from '../../components/mining/MiningTimeSelectionPopup';
 import ClaimRewardModal from '../../components/mining/ClaimRewardModal';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAds } from '../../context/AdContext';
 import useBottomOverlayPadding from '../../hooks/useBottomOverlayPadding';
 
 const HomeScreen = () => {
   const bottomContentPadding = useBottomOverlayPadding(36);
+  const { adUnits } = useAds();
 
   // ✅ Refresh balance & data each time home screen is focused
 
@@ -50,7 +51,7 @@ const HomeScreen = () => {
           <View>
             <View style={styles.adContainer}>
           <BannerAd
-            unitId={AD_UNITS.BANNER_HOME}
+            unitId={adUnits.BANNER_HOME}
             size={BannerAdSize.BANNER}
           />
         </View>

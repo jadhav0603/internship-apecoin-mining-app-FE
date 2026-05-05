@@ -10,7 +10,7 @@ import { useTimeModal } from '../../context/TimeModal';
 import { useMining } from '../../context/MiningContext';
 import { RootStackParamList } from '../../navigation/types';
 import { useRewardedAd } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAds } from '../../context/AdContext';
 import { useAdLoadingGate } from '../../hooks/useAdLoadingGate';
 
 type MiningPopupNavigationProp = NativeStackNavigationProp<
@@ -44,8 +44,10 @@ const MiningTimeSelectionPopup = () => {
     [selectedHours],
   );
 
+  const { adUnits } = useAds();
+
   const { isLoaded, isClosed, load, show, isEarnedReward } = useRewardedAd(
-    AD_UNITS.REWARDED_MINING,
+    adUnits.REWARDED_MINING,
     { requestNonPersonalizedAdsOnly: true }
   );
   const [isPendingStart, setIsPendingStart] = useState(false);

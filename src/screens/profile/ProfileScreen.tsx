@@ -49,7 +49,7 @@ import {
   BannerAdSize,
   useInterstitialAd,
 } from 'react-native-google-mobile-ads';
-import { AD_UNITS } from '../../constants/AD_UNITS';
+import { useAds } from '../../context/AdContext';
 import styles from './ProfileScreen.style';
 
 const ProfileScreen = () => {
@@ -59,6 +59,7 @@ const ProfileScreen = () => {
   const { user } = useUser();
   const { breakdown } = useWallet();
   const { showError } = useAlert();
+  const { adUnits } = useAds();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [deleteAccountVisible, setDeleteAccountVisible] = useState(false);
@@ -76,7 +77,7 @@ const ProfileScreen = () => {
   const isProfileFocusedRef = useRef(false);
 
   const { isLoaded, load, show } = useInterstitialAd(
-    AD_UNITS.INTERSTITIAL_PROFILE,
+    adUnits.INTERSTITIAL_PROFILE,
     {
       requestNonPersonalizedAdsOnly: true,
     },
@@ -580,7 +581,7 @@ const ProfileScreen = () => {
 
           <View style={styles.adContainer}>
             <BannerAd
-              unitId={AD_UNITS.BANNER_PROFILE}
+              unitId={adUnits.BANNER_PROFILE}
               size={BannerAdSize.BANNER}
             />
           </View>

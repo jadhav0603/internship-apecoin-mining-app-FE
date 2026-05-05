@@ -97,6 +97,11 @@ type TermsConditionsSettingsResponse = {
   value: TermsConditionsContent | null;
 };
 
+export type AdUnitsSettingsResponse = {
+  success: boolean;
+  adUnits: Record<string, string> | null;
+};
+
 export const globalSettingsService = {
   async getAboutUs(): Promise<AboutUsContent | null> {
     const response = await API.get<GlobalSettingsResponse>('/global-settings', {
@@ -137,5 +142,16 @@ export const globalSettingsService = {
     );
 
     return response.data.value ?? null;
+  },
+
+  async getAdUnits(): Promise<Record<string, string> | null> {
+    const response = await API.get<AdUnitsSettingsResponse>(
+      '/global-settings/ad-units',
+      {
+        skipAutoSignOut: true,
+      } as any,
+    );
+
+    return response.data.adUnits ?? null;
   },
 };
