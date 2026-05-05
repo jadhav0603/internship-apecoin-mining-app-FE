@@ -29,6 +29,7 @@ import AppBackButton from '../../components/navigation/AppBackButton';
 import MiningActionButton from '../../components/mining/MiningActionButton';
 import MultiplierUpgradeModal from '../../components/mining/MultiplierUpgradeModal';
 import { useTimeModal } from '../../context/TimeModal';
+import { useMiningWalletData } from '../../hooks/useMiningWalletData';
 
 const MiningScreen = () => {
   const TIMER_SEGMENT_COUNT = 72;
@@ -40,13 +41,13 @@ const MiningScreen = () => {
     secondsLeft,
     isMining,
     hours,
-    miningData,
     multiplier,
     refreshMiningStatus,
   } = useMining();
 
   const navigation = useNavigation();
   const { setShowModal } = useTimeModal();
+  const { miningTotal, loading: isMiningTotalLoading } = useMiningWalletData();
   const [multiplierModalVisible, setMultiplierModalVisible] = useState(false);
   const refreshMiningStatusRef = useRef(refreshMiningStatus);
 
@@ -66,7 +67,9 @@ const MiningScreen = () => {
 
   const totalDurationSeconds = Math.max(hours * 3600, 1);
   const displayEarned = hasUnclaimedReward ? claimRewardAmount || earned : earned;
-  const minedBalance = (miningData?.totalEarned ?? 0);
+  const minedBalance = Number.isFinite(miningTotal) ? miningTotal : 0;
+  const minedBalanceText =
+    isMiningTotalLoading && minedBalance <= 0 ? '--' : minedBalance.toFixed(6);
 
   const ringProgress = useMemo(() => {
     if (hasUnclaimedReward) {
@@ -294,7 +297,7 @@ const MiningScreen = () => {
                   <Text style={styles.metricCaption}>Selected Timer</Text>
                 </View>
                 <View style={styles.metricBlock}>
-                  <Text style={styles.metricValue}>{minedBalance.toFixed(6)}</Text>
+                  <Text style={styles.metricValue}>{minedBalanceText}</Text>
                   <Text style={styles.metricCaption}>Mined Balance</Text>
                 </View>
                 <View style={styles.metricBlock}>

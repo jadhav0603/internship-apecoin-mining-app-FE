@@ -25,31 +25,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
     borderWidth: 1,
-    borderColor: COLORS.green500Alpha15,
-
-    shadowColor: COLORS.green300Alpha90,
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: COLORS.black,
+    shadowOpacity: 0.24,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
-    elevation: 12,
+    elevation: 10,
+    overflow: 'hidden',
+    position: 'relative',
+  },
 
+  progressTrack: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 24,
     overflow: 'hidden',
   },
 
-  glow: {
+  progressFill: {
+    height: '100%',
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(34, 245, 108, 0.14)',
+  },
+
+  progressGradient: {
+    ...StyleSheet.absoluteFill,
+  },
+
+  shimmerWrap: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    backgroundColor: 'rgba(0, 255, 17, 0.25)',
-    borderRadius: 100,
-    top: -80,
-    left: -40,
+    top: 0,
+    bottom: 0,
+    width: 120,
+  },
+
+  shimmer: {
+    flex: 1,
+    transform: [{ skewX: '-18deg' }],
   },
 
   left: {
     flex: 1,
+    zIndex: 1,
   },
 
   label: {
@@ -69,6 +87,7 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 999,
     overflow: 'hidden',
+    zIndex: 1,
   },
 
   buttonGradient: {
