@@ -26,9 +26,10 @@ import { RootStackParamList } from '../../navigation/types';
 import { COLORS } from '../../constants/COLORS';
 import { FONTS } from '../../constants/FONTS';
 import { useUser, getUserDisplayName } from '../../context/UserContext';
+import { useWallet } from '../../context/WalletContext';
 import { useAlert } from '../../context/AlertContext';
 import { authService } from '../../services/authService';
-import { userService } from '../../services/userService';
+import { type BackendUser, userService } from '../../services/userService';
 import { isBlockedAccountError } from '../../session/blockedAccountState';
 import ProfileSettingsModal from '../../components/profile/ProfileSettingsModal';
 import MyProfileModal from '../../components/profile/MyProfileModal';
@@ -56,6 +57,7 @@ const ProfileScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const bottomContentPadding = useBottomOverlayPadding(40);
   const { user } = useUser();
+  const { breakdown } = useWallet();
   const { showError } = useAlert();
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [logoutVisible, setLogoutVisible] = useState(false);
@@ -68,6 +70,7 @@ const ProfileScreen = () => {
   const [username, setUsername] = useState(getUserDisplayName(user));
   const [email, setEmail] = useState(user?.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user?.photoURL ?? '');
+  const [profileData, setProfileData] = useState<BackendUser | null>(null);
   const profileAura = useRef(new Animated.Value(0)).current;
   const hasShownInitialProfileAdRef = useRef(false);
   const isProfileFocusedRef = useRef(false);
@@ -243,20 +246,22 @@ const ProfileScreen = () => {
     let isMounted = true;
     const fetchProfile = async () => {
       try {
-        const profile = await userService.getProfileIdentity();
+        const profile = await userService.getMe();
         if (!isMounted) return;
         const resolvedName = resolveProfileName(
-          profile.username,
+          profile.name ?? profile.displayName ?? '',
           profile.email,
         );
+        setProfileData(profile);
         setUsername(resolvedName);
         setEmail(profile.email);
-        setAvatarUri(profile.photoURL ?? '');
+        setAvatarUri(profile.imageUrl ?? profile.photoURL ?? '');
       } catch {
         if (isMounted) {
           setUsername(getUserDisplayName(user));
           setEmail(user?.email ?? '');
           setAvatarUri(user?.photoURL ?? '');
+          setProfileData(null);
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -313,8 +318,68 @@ const ProfileScreen = () => {
     navigation.navigate('MainTabs', { screen: 'Home' });
   };
 
+  const formatMetricValue = (value: number) => {
+    if (!Number.isFinite(value) || value <= 0) {
+      return '0';
+    }
+
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    }
+
+    if (value >= 1000) {
+      return `${(value / 1000).toFixed(1)}K`;
+    }
+
+    return value.toFixed(value >= 100 ? 0 : 1);
+  };
+
+  const buildProfileSubtitle = (profile: BackendUser | null) => {
+    const plan =
+      typeof profile?.plan === 'string' && profile.plan.trim()
+        ? profile.plan.trim()
+        : 'APE Coin';
+    const status =
+      typeof profile?.status === 'string' && profile.status.trim()
+        ? profile.status.trim().toLowerCase()
+        : 'active';
+
+    return `${plan} member with an ${status} profile focused on steady mining and rewards.`;
+  };
+
   const profileHandle = buildHandle(username);
   const profileInitial = getInitial(username);
+  const profileSubtitle = buildProfileSubtitle(profileData);
+  const totalBreakdown =
+    Math.max(0, breakdown.miningAmount) +
+    Math.max(0, breakdown.rewardAmount) +
+    Math.max(0, breakdown.referralAmount);
+  const profileStats = [
+    {
+      key: 'mining',
+      label: 'Mining',
+      value: formatMetricValue(breakdown.miningAmount),
+    },
+    {
+      key: 'rewards',
+      label: 'Rewards',
+      value: formatMetricValue(breakdown.rewardAmount),
+    },
+    {
+      key: 'referral',
+      label: 'Referral',
+      value:
+        Number.isFinite(profileData?.referralCount) && (profileData?.referralCount ?? 0) > 0
+          ? String(profileData?.referralCount ?? 0)
+          : formatMetricValue(breakdown.referralAmount),
+    },
+  ];
+  const miningRatio =
+    totalBreakdown > 0 ? Math.max(0.12, breakdown.miningAmount / totalBreakdown) : 0.34;
+  const rewardRatio =
+    totalBreakdown > 0 ? Math.max(0.12, breakdown.rewardAmount / totalBreakdown) : 0.33;
+  const referralRatio =
+    totalBreakdown > 0 ? Math.max(0.12, breakdown.referralAmount / totalBreakdown) : 0.33;
   const avatarPulseStyle = {
     transform: [
       {
@@ -373,16 +438,31 @@ const ProfileScreen = () => {
             { paddingBottom: bottomContentPadding },
           ]}
         >
-          <LinearGradient
-            colors={['rgba(23, 31, 21, 0.96)', 'rgba(10, 15, 10, 0.94)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.profileCard}
-          >
-            <View style={styles.profileCardGlow} />
+          <View style={styles.profileCard}>
+            <LinearGradient
+              colors={['#314514', '#1d2b0f', '#10170c']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.profileCover}
+            >
+              <View style={styles.cloudOne} />
+              <View style={styles.cloudTwo} />
+              <View style={styles.cloudThree} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.profileTopAction,
+                  pressed && styles.profileTopActionPressed,
+                ]}
+                onPress={() => setMyProfileVisible(true)}
+              >
+                <Text style={styles.profileTopActionText}>Edit</Text>
+                <Ionicons name="add" size={16} color={COLORS.primary} />
+              </Pressable>
+            </LinearGradient>
 
             <View style={styles.profileSection}>
-              <View style={styles.profileTopRow}>
+              <View style={styles.profileIdentityRow}>
                 <View style={styles.avatarShell}>
                   <Animated.View
                     style={[styles.avatarPulseRing, avatarPulseStyle]}
@@ -396,7 +476,7 @@ const ProfileScreen = () => {
                         />
                       ) : (
                         <LinearGradient
-                          colors={['#2E420F', '#131D0C']}
+                          colors={['#30521d', '#16240f']}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 1 }}
                           style={styles.avatarFallback}
@@ -411,77 +491,92 @@ const ProfileScreen = () => {
                 </View>
 
                 <View style={styles.identityContent}>
-                  {/* <View style={styles.identityPill}>
-                    <Text style={styles.identityPillText}>Premium profile</Text>
-                  </View> */}
-
-                  <Text style={styles.userName}>{username}</Text>
-                  <Text style={styles.userHandle}>{profileHandle}</Text>
-
-                  <View style={styles.userMetaRow}>
-                    <View style={styles.userMetaChip}>
-                      <Ionicons
-                        name="mail-outline"
-                        size={13}
-                        color={COLORS.textMuted}
+                  <View style={styles.profileMiniMeta}>
+                    <Text style={styles.profileMiniMetaLabel}>exp.</Text>
+                    <View style={styles.profileMiniBarTrack}>
+                      <View
+                        style={[
+                          styles.profileMiniBarSegment,
+                          styles.profileMiniBarSegmentMining,
+                          { flex: miningRatio },
+                        ]}
                       />
-                      <Text style={styles.userMetaText} numberOfLines={1}>
-                        {email}
-                      </Text>
-                    </View>
-                    <View style={styles.userMetaChip}>
-                      <Ionicons
-                        name="shield-checkmark-outline"
-                        size={13}
-                        color={COLORS.primary}
+                      <View
+                        style={[
+                          styles.profileMiniBarSegment,
+                          styles.profileMiniBarSegmentReward,
+                          { flex: rewardRatio },
+                        ]}
                       />
-                      <Text style={styles.userMetaText}>Verified</Text>
+                      <View
+                        style={[
+                          styles.profileMiniBarSegment,
+                          styles.profileMiniBarSegmentReferral,
+                          { flex: referralRatio },
+                        ]}
+                      />
                     </View>
                   </View>
+
+                  <Text style={styles.userName}>{username}</Text>
+                  <Text style={styles.profileSubtitle}>{profileSubtitle}</Text>
+                  <Text style={styles.userHandle}>{profileHandle}</Text>
+                  <Text style={styles.emailPlain} numberOfLines={1}>
+                    {email}
+                  </Text>
                 </View>
               </View>
 
-              <View style={styles.profileStatsRow}>
-                <View
-                  style={[
-                    styles.profileStatCard,
-                    styles.profileStatCardSpacing,
-                  ]}
-                >
-                  <Text style={styles.profileStatLabel}>Account</Text>
-                  <Text style={styles.profileStatValue}>Active</Text>
-                </View>
-                <View style={styles.profileStatCard}>
-                  <Text style={styles.profileStatLabel}>Support</Text>
-                  <Text style={styles.profileStatValue}>Priority</Text>
-                </View>
-              </View>
+              {/* <View style={styles.profileStatsRow}>
+                {profileStats.map((item, index) => (
+                  <View
+                    key={item.key}
+                    style={[
+                      styles.profileStatCard,
+                      index < profileStats.length - 1 &&
+                        styles.profileStatCardSpacing,
+                    ]}
+                  >
+                    <Text style={styles.profileStatValue}>{item.value}</Text>
+                    <Text style={styles.profileStatLabel}>{item.label}</Text>
+                  </View>
+                ))}
+              </View> */}
 
-              <Pressable
-                style={({ pressed }) => [
-                  styles.profilePrimaryAction,
-                  pressed && styles.profilePrimaryActionPressed,
-                ]}
-                onPress={() => setMyProfileVisible(true)}
-              >
-                <LinearGradient
-                  colors={['rgba(200,255,114,0.22)', 'rgba(170,255,0,0.08)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.profilePrimaryActionInner}
+              <View style={[styles.profileQuickRow , styles.profileStatsRow]}>
+                <Pressable
+                  style={styles.profileQuickIcon}
+                  onPress={() => navigation.navigate('TransactionHistory')}
                 >
                   <Ionicons
-                    name="create-outline"
+                    name="wallet-outline"
                     size={18}
                     color={COLORS.primary}
                   />
-                  <Text style={styles.profilePrimaryActionText}>
-                    Edit profile details
-                  </Text>
-                </LinearGradient>
-              </Pressable>
+                </Pressable>
+                <Pressable
+                  style={styles.profileQuickIcon}
+                  onPress={() => navigation.navigate('MyProgress')}
+                >
+                  <Ionicons
+                    name="stats-chart-outline"
+                    size={18}
+                    color={COLORS.primary}
+                  />
+                </Pressable>
+                <Pressable
+                  style={styles.profileQuickIcon}
+                  onPress={() => setSettingsVisible(true)}
+                >
+                  <Ionicons
+                    name="settings-outline"
+                    size={18}
+                    color={COLORS.primary}
+                  />
+                </Pressable>
+              </View>
             </View>
-          </LinearGradient>
+          </View>
 
           <View style={styles.adContainer}>
             <BannerAd
