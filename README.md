@@ -1,97 +1,113 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# ApeCoin Mining App - Frontend
 
-# Getting Started
+A modern React Native mobile application developed during my internship.  
+This app provides a mining-based reward experience where users can start mining, track live earnings, view wallet balance, claim rewards, check transaction history, and manage profile-related actions.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 📱 Project Overview
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+ApeCoin Mining App is a mobile rewards application built using **React Native CLI**.  
+The frontend focuses on a smooth user experience, modern UI design, Firebase authentication, mining flow, wallet tracking, reward screens, and API integration with the backend.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+This project was created as part of my internship work and showcases my contribution to building production-style mobile app features.
 
-```sh
-# Using npm
-npm start
+---
 
-# OR using Yarn
-yarn start
-```
+## 🚀 Tech Stack
 
-## Step 2: Build and run your app
+- React Native CLI
+- TypeScript
+- React Navigation
+- Firebase Authentication
+- React Native Firebase
+- AsyncStorage
+- React Native Vector Icons
+- React Native SVG
+- Lottie Animations
+- Linear Gradient
+- Axios
+- Notifee / Firebase Messaging
+- React Native Google Mobile Ads
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+---
 
-### Android
+## ✨ Key Features
 
-```sh
-# Using npm
-npm run android
+### 🔐 Authentication
+- Firebase login/signup flow
+- User session handling
+- Auth-based navigation
+- Protected app screens
 
-# OR using Yarn
-yarn android
-```
+### ⛏️ Mining System
+- Start mining flow
+- Mining timer UI
+- Live mining status
+- Mining power selection
+- Claim reward flow
+- Backend-driven mining data integration
 
-### iOS
+### 💰 Wallet Screen
+- Total balance display
+- Available balance section
+- Withdraw button UI
+- Wallet-related API integration
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+### 📜 Transaction History
+- Transaction history screen
+- Reward, mining, referral, and withdrawal-related entries
+- Clean list-based UI
+- User-specific transaction data
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### 🎁 Reward System
+- Daily reward UI
+- Reward claim flow
+- Reward status handling
 
-```sh
-bundle install
-```
+### 👤 Profile & Menu
+- Profile screen
+- Custom menu UI
+- Navigation to important screens
+- User information display
 
-Then, and every time you update your native dependencies, run:
+### 📢 Ads Integration
+- Banner ad placement
+- Google Mobile Ads integration
 
-```sh
-bundle exec pod install
-```
+### 🔔 Notifications
+- Firebase Cloud Messaging setup
+- Notifee integration support
+- Android notification handling
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+---
 
-```sh
-# Using npm
-npm run ios
+## 🎨 UI/UX Highlights
 
-# OR using Yarn
-yarn ios
-```
+- Modern mobile-first design
+- Gradient-based UI
+- Premium card layouts
+- Smooth navigation flow
+- Custom styled buttons
+- Lottie animation support
+- Responsive spacing and layout
+- Dark/neon theme inspired interface
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## 🧑‍💻 My Contribution
 
-## Step 3: Modify your app
+During my internship, I worked on multiple frontend features and improvements, including:
 
-Now that you have successfully run the app, let's make changes!
+- Built and improved mining-related screens
+- Worked on wallet and transaction history UI
+- Integrated frontend screens with backend APIs
+- Improved navigation flow between screens
+- Implemented Firebase authentication flow
+- Designed modern UI components
+- Worked on profile, menu, reward, and mining screens
+- Fixed UI bugs and improved user experience
+- Added reusable components and better folder structure
+- Worked with Git branches, pull requests, and merge workflows
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+---
